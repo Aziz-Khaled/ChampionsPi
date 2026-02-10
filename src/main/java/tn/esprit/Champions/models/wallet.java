@@ -26,6 +26,13 @@ public class wallet {
         this.statut = statut;
     }
 
+    public wallet(typeWallet typeWallet,
+                  String categorie, statutWallet statut) {
+        this.typeWallet = typeWallet;
+        this.categorie = categorie;
+        this.statut = statut;
+    }
+
 
     public int getIdWallet() {
         return idWallet;
