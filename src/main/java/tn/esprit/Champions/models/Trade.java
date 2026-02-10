@@ -6,33 +6,44 @@ import java.util.Objects;
 public class Trade {
     private int id;
     private int id_user;
-    private Asset asset;
     private TradeType tradeType;
     private OrderMode orderMode;
     private Double price;
     private Double quantity;
     private Status status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     private int id_transaction;
     private int asset_id;
+    private LocalDateTime createdAt;
+    private LocalDateTime executedAt;
+
 
     public Trade() {
     }
 
-    public Trade(int id, int id_user, Asset asset, TradeType tradeType, OrderMode orderMode, Double price, Double quantity, Status status, LocalDateTime createdAt, LocalDateTime updatedAt, int id_transaction, int asset_id) {
+    public Trade(
+            int id,
+            int user_id,
+            int asset_id,
+            TradeType tradeType,
+            OrderMode orderMode,
+            double price,
+            double quantity,
+            Status status,
+            LocalDateTime createdAt,
+            LocalDateTime executedAt,
+            int id_transaction
+    ) {
         this.id = id;
-        this.id_user = id_user;
-        this.asset = asset;
+        this.id_user = user_id;
+        this.asset_id = asset_id;
         this.tradeType = tradeType;
         this.orderMode = orderMode;
         this.price = price;
         this.quantity = quantity;
         this.status = status;
         this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.executedAt = executedAt;
         this.id_transaction = id_transaction;
-        this.asset_id = asset_id;
     }
 
     public int getId() {
@@ -49,14 +60,6 @@ public class Trade {
 
     public void setId_user(int id_user) {
         this.id_user = id_user;
-    }
-
-    public Asset getAsset() {
-        return asset;
-    }
-
-    public void setAsset(Asset asset) {
-        this.asset = asset;
     }
 
     public TradeType getTradeType() {
@@ -107,12 +110,12 @@ public class Trade {
         this.createdAt = createdAt;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public LocalDateTime getExecutedAt() {
+        return executedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setExecutedAt(LocalDateTime executedAt) {
+        this.executedAt = executedAt;
     }
 
     public int getId_transaction() {
@@ -136,16 +139,16 @@ public class Trade {
         return "Trade{" +
                 "id=" + id +
                 ", id_user=" + id_user +
-                ", asset=" + asset +
                 ", tradeType=" + tradeType +
                 ", orderMode=" + orderMode +
                 ", price=" + price +
                 ", quantity=" + quantity +
                 ", status=" + status +
                 ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
+                ", executedAt=" + executedAt +
                 ", id_transaction=" + id_transaction +
                 ", asset_id=" + asset_id +
                 '}';
     }
+
 }

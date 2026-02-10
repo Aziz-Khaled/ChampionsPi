@@ -64,8 +64,11 @@ public class AssetService implements CRUD <Asset>  {
     @Override
     public void deleteOne(Asset asset) throws SQLException {
         String req ="DELETE FROM `asset` WHERE id = ?";
+
         PreparedStatement ps = cnx.prepareStatement(req);
+
         ps.setInt(1, asset.getId());
+
         ps.executeUpdate();
 
 
