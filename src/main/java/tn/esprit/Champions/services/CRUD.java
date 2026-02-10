@@ -1,6 +1,8 @@
 package tn.esprit.Champions.services;
 
 
+import tn.esprit.Champions.models.Asset;
+
 import java.sql.SQLException;
 import java.util.List;
 

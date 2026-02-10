@@ -18,8 +18,8 @@ public class Asset {
     private LocalDateTime updatedAt;
     private int user_id ;
 
-    public Asset() {
-    }
+    public Asset(){};
+
 
     public Asset(int id, String symbol, String name, AssetType type, Market market, Double currentPrice, Status status, LocalDateTime createdAt, LocalDateTime updatedAt, int user_id) {
         this.id = id;
@@ -106,7 +106,7 @@ public class Asset {
         this.updatedAt = updatedAt;
     }
 
-    public int getUser_id() {
+    public int getUserId() {
         return user_id;
     }
 
@@ -140,4 +140,6 @@ public class Asset {
                 ", user_id=" + user_id +
                 '}';
     }
+
+
 }
