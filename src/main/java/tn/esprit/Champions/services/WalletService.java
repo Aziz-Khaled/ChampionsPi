@@ -22,7 +22,7 @@ public class WalletService implements CRUD <wallet>
         PreparedStatement pst = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         pst.setString(1, wallet.getTypeWallet().name());
         pst.setString(2, wallet.getStatut().name());
-        pst.setInt(3, wallet.getIdUser());  // mieux utiliser setInt pour un int
+        pst.setInt(3, wallet.getIdUser()); 
 
         pst.executeUpdate();
 
