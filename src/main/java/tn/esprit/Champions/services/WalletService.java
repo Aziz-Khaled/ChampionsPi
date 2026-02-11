@@ -1,8 +1,5 @@
 package tn.esprit.Champions.services;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,24 +17,32 @@ public class WalletService implements CRUD <wallet>
 
     @Override
     public void insertOne(wallet wallet) throws SQLException {
-        String query =" INSERT INTO `wallet`( `type_wallet`, `categorie`, `statut`)"
-        + "VALUES (?,?,?)";
-        PreparedStatement pst = cnx.prepareStatement(query);
+        String query = "INSERT INTO wallet (type_wallet, statut, id_user) VALUES (?, ?, ?)";
+
+        PreparedStatement pst = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         pst.setString(1, wallet.getTypeWallet().name());
-        pst.setString(2, wallet.getCategorie());
-        pst.setString(3, String.valueOf(wallet.getStatut()));
+        pst.setString(2, wallet.getStatut().name());
+        pst.setInt(3, wallet.getIdUser());  // mieux utiliser setInt pour un int
+
         pst.executeUpdate();
+
+        // Récupérer l'ID auto-généré
+        ResultSet rs = pst.getGeneratedKeys();
+        if (rs.next()) {
+            wallet.setIdWallet(rs.getInt(1));
+        }
+
+        System.out.println("Wallet inséré avec ID : " + wallet.getIdWallet());
     }
 
     @Override
     public void updateOne(wallet wallet) throws SQLException {
-        String query ="UPDATE `wallet` SET `type_wallet`=?,`categorie`=?,`solde`=?,`statut`=? WHERE id_wallet=?";
+        String query ="UPDATE `wallet` SET `type_wallet`=?,`solde`=?,`statut`=? WHERE id_wallet=?";
         PreparedStatement pst = cnx.prepareStatement(query);
         pst.setString(1, wallet.getTypeWallet().name());
-        pst.setString(2, wallet.getCategorie());
-        pst.setDouble(3,wallet.getSolde());
-        pst.setString(4, String.valueOf(wallet.getStatut()));
-        pst.setInt(5, wallet.getIdWallet());
+        pst.setDouble(2,wallet.getSolde());
+        pst.setString(3, String.valueOf(wallet.getStatut()));
+        pst.setInt(4, wallet.getIdWallet());
         pst.executeUpdate();
 
     }
@@ -59,9 +64,7 @@ public class WalletService implements CRUD <wallet>
         ResultSet rs = pst.executeQuery();
         while (rs.next()) {
             wallet wallet = new wallet();
-            wallet.setIdWallet(rs.getInt("id_wallet"));
             wallet.setTypeWallet(typeWallet.valueOf(rs.getString("type_wallet")));
-            wallet.setCategorie(rs.getString("categorie"));
             wallet.setSolde(rs.getDouble("solde"));
             wallets.add(wallet);
         }

@@ -3,11 +3,10 @@ package tn.esprit.Champions.models;
 import java.util.Objects;
 
 public class wallet {
-
+    private Utilisateur user;
     private int idWallet;
     private int idUser;
     private typeWallet typeWallet;   // fiat, crypto, trading
-    private String categorie;
     private double solde;
     private statutWallet statut;       // bloque, actif
 
@@ -16,21 +15,23 @@ public class wallet {
     }
 
 
-    public wallet(int idWallet, int idUser, typeWallet typeWallet,
-                  String categorie, double solde, statutWallet statut) {
+    public wallet(int idWallet, int idUser, typeWallet typeWallet, double solde, statutWallet statut) {
         this.idWallet = idWallet;
         this.idUser = idUser;
         this.typeWallet = typeWallet;
-        this.categorie = categorie;
         this.solde = solde;
         this.statut = statut;
     }
 
-    public wallet(typeWallet typeWallet,
-                  String categorie, statutWallet statut) {
+    public wallet(int idUser,typeWallet typeWallet, statutWallet statut) {
         this.typeWallet = typeWallet;
-        this.categorie = categorie;
         this.statut = statut;
+        this.idUser = idUser;
+    }
+    public wallet(typeWallet typeWallet, statutWallet statut) {
+        this.typeWallet = typeWallet;
+        this.statut = statut;
+        this.idUser = idUser;
     }
 
 
@@ -58,13 +59,6 @@ public class wallet {
         this.typeWallet = typeWallet;
     }
 
-    public String getCategorie() {
-        return categorie;
-    }
-
-    public void setCategorie(String categorie) {
-        this.categorie = categorie;
-    }
 
     public double getSolde() {
         return solde;
@@ -86,11 +80,11 @@ public class wallet {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         wallet wallet = (wallet) o;
-        return idWallet == wallet.idWallet && idUser == wallet.idUser && Double.compare(solde, wallet.solde) == 0 && Objects.equals(typeWallet, wallet.typeWallet) && Objects.equals(categorie, wallet.categorie) && Objects.equals(statut, wallet.statut);
+        return idWallet == wallet.idWallet && idUser == wallet.idUser && Double.compare(solde, wallet.solde) == 0 && Objects.equals(typeWallet, wallet.typeWallet) &&  Objects.equals(statut, wallet.statut);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idWallet, idUser, typeWallet, categorie, solde, statut);
+        return Objects.hash(idWallet, idUser, typeWallet, solde, statut);
     }
 }

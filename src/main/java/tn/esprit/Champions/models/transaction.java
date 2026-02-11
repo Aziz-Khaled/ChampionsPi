@@ -29,6 +29,7 @@ public class transaction {
         this.type = type;
         this.statut = statut;
         this.dateTransaction = dateTransaction;
+
     }
 
 
@@ -87,6 +88,8 @@ public class transaction {
     public void setDateTransaction(LocalDateTime dateTransaction) {
         this.dateTransaction = dateTransaction;
     }
+
+
 
     @Override
     public boolean equals(Object o) {
