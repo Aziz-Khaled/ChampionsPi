@@ -19,6 +19,32 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>8.3.0</version>
         </dependency>
+
+        <!-- JavaFX Controls (inclut graphics et base) -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>21.0.2</version>
+        </dependency>
+
+        <!-- JavaFX FXML -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>21.0.2</version>
+        </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>tn.esprit.Champions.test.Test</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
