@@ -66,6 +66,14 @@ public class UtilisateurService implements CRUD<Utilisateur>{
     @Override
     public void deleteOne(Utilisateur utilisateur) throws SQLException {
 
+        String query = "DELETE FROM utilisateur WHERE id_user = ?";
+
+        try (PreparedStatement ps =
+                     DbConnection.getInstance().getCnx().prepareStatement(query)) {
+
+            ps.setInt(1, utilisateur.getId_user());
+            ps.executeUpdate();
+        }
     }
 
     @Override
@@ -97,4 +105,35 @@ public class UtilisateurService implements CRUD<Utilisateur>{
 
         return users;
     }
+
+    public List<Utilisateur> getAllUsers() throws SQLException {
+
+        String query = "SELECT * FROM utilisateur";
+
+        List<Utilisateur> users = new ArrayList<>();
+
+        try (PreparedStatement ps =
+                     DbConnection.getInstance().getCnx().prepareStatement(query)) {
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                users.add(new Utilisateur(
+                        rs.getInt("id_user"),
+                        rs.getString("nom"),
+                        rs.getString("prenom"),
+                        rs.getString("email"),
+                        rs.getString("mot_de_passe"),
+                        rs.getString("telephone"),
+                        rs.getString("piece_identite"),
+                        rs.getString("user_image"),
+                        Status.valueOf(rs.getString("statut")),
+                        Role.valueOf(rs.getString("role"))
+                ));
+            }
+        }
+
+        return users;
+    }
+
 }
