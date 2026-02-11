@@ -54,7 +54,7 @@ public class TradeService implements CRUD<Trade> {
 
     @Override
     public void updateOne(Trade trade) throws SQLException {
-        String req =" UPDATE `trade` SET `user_id`=?,`asset_id`=?,`trade_type`=?,`order_mode`=?,`price`=?,`quantity`=?,`status`=?,`created_at`=?,`executed_at`=?,`id_transaction`=?WHERE id = ?";
+        String req =" UPDATE `trade` SET `user_id`=?,`asset_id`=?,`trade_type`=?,`order_mode`=?,`price`=?,`quantity`=?,`status`=?,`created_at`=?,`executed_at`=?,`id_transaction`=? WHERE id = ?";
         PreparedStatement ps =  cnx.prepareStatement(req);
         ps.setInt(1,trade.getId_user());
         ps.setInt(2,trade.getAsset_id());
