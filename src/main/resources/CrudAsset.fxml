@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="556.0" prefWidth="858.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.CrudAsset">
+   <children>
+      <GridPane layoutX="14.0" layoutY="94.0" prefHeight="30.0" prefWidth="619.0">
+        <columnConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="302.79998779296875" minWidth="10.0" prefWidth="90.20002593994141" />
+          <ColumnConstraints hgrow="SOMETIMES" maxWidth="571.7999862670898" minWidth="10.0" prefWidth="528.5999740600586" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <Label fx:id="labelSearch" prefHeight="18.0" prefWidth="90.0" text="Search">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <TextField fx:id="txtSearch" prefHeight="26.0" prefWidth="118.0" promptText="Search ..." GridPane.columnIndex="1" />
+         </children>
+      </GridPane>
+      <TableView fx:id="table" layoutX="16.0" layoutY="146.0" prefHeight="314.0" prefWidth="826.0">
+        <columns>
+          <TableColumn fx:id="id_asset" prefWidth="75.0" text="ID" />
+          <TableColumn fx:id="symbol" prefWidth="75.0" text="Symbol" />
+            <TableColumn fx:id="name" prefWidth="75.0" text="Name" />
+            <TableColumn fx:id="type" prefWidth="75.0" text="Type" />
+            <TableColumn fx:id="market" prefWidth="75.0" text="Market" />
+            <TableColumn fx:id="price" prefWidth="75.0" text="Price" />
+            <TableColumn fx:id="status" prefWidth="75.0" text="Status" />
+            <TableColumn fx:id="created" prefWidth="75.0" text="Created" />
+            <TableColumn fx:id="updated" prefWidth="75.0" text="Updated" />
+            <TableColumn fx:id="user_id" prefWidth="75.0" text="User_ID" />
+            <TableColumn fx:id="colAction" prefWidth="75.0" text="Actions" />
+
+        </columns>
+      </TableView>
+   </children>
+</AnchorPane>

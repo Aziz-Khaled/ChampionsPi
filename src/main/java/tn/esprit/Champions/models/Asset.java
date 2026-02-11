@@ -16,12 +16,12 @@ public class Asset {
     private Status status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private int user_id ;
+    private int userId ;
 
     public Asset(){};
 
 
-    public Asset(int id, String symbol, String name, AssetType type, Market market, Double currentPrice, Status status, LocalDateTime createdAt, LocalDateTime updatedAt, int user_id) {
+    public Asset(int id, String symbol, String name, AssetType type, Market market, Double currentPrice, Status status, LocalDateTime createdAt, LocalDateTime updatedAt, int userId) {
         this.id = id;
         this.symbol = symbol;
         this.name = name;
@@ -31,10 +31,10 @@ public class Asset {
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.user_id = user_id;
+        this.userId = userId;
     }
 
-    public int getId() {
+    public int getId() {  // ← Change Asset en int
         return id;
     }
 
@@ -107,22 +107,22 @@ public class Asset {
     }
 
     public int getUserId() {
-        return user_id;
+        return userId;
     }
 
-    public void setUser_id(int user_id) {
-        this.user_id = user_id;
+    public void setUser_id(int userId) {
+        this.userId = userId;
     }
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Asset asset)) return false;
-        return id == asset.id && user_id == asset.user_id && Objects.equals(symbol, asset.symbol) && Objects.equals(name, asset.name) && type == asset.type && market == asset.market && Objects.equals(currentPrice, asset.currentPrice) && status == asset.status && Objects.equals(createdAt, asset.createdAt) && Objects.equals(updatedAt, asset.updatedAt);
+        return id == asset.id && userId == asset.userId && Objects.equals(symbol, asset.symbol) && Objects.equals(name, asset.name) && type == asset.type && market == asset.market && Objects.equals(currentPrice, asset.currentPrice) && status == asset.status && Objects.equals(createdAt, asset.createdAt) && Objects.equals(updatedAt, asset.updatedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, symbol, name, type, market, currentPrice, status, createdAt, updatedAt, user_id);
+        return Objects.hash(id, symbol, name, type, market, currentPrice, status, createdAt, updatedAt, userId);
     }
 
     @Override
@@ -137,7 +137,7 @@ public class Asset {
                 ", status=" + status +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
-                ", user_id=" + user_id +
+                ", user_id=" + userId +
                 '}';
     }
 
