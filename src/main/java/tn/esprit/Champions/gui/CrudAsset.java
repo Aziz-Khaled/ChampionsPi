@@ -87,13 +87,13 @@ public class CrudAsset {
                 // Action Edit
                 btnEdit.setOnAction(event -> {
                     Asset asset = getTableView().getItems().get(getIndex());
-                    openEditDialog(asset); // Ouvre un dialog pour modifier l'asset
+                    openEditDialog(asset);
                 });
 
                 // Action Delete
                 btnDelete.setOnAction(event -> {
                     Asset asset = getTableView().getItems().get(getIndex());
-                    deleteAsset(asset); // Supprime l'objet complet
+                    deleteAsset(asset);
                 });
             }
 
@@ -104,7 +104,7 @@ public class CrudAsset {
                 if (empty) {
                     setGraphic(null);
                 } else {
-                    // Met les deux boutons dans un HBox avec un espacement de 10
+
                     HBox box = new HBox(10, btnEdit, btnDelete);
                     setGraphic(box);
                 }
@@ -203,11 +203,11 @@ public class CrudAsset {
             return null;
         });
 
-        // Affiche le dialog et récupère le résultat
+
         dialog.showAndWait().ifPresent(updatedAsset -> {
             try {
-                assetService.updateOne(updatedAsset); // Mise à jour dans la DB
-                table.refresh(); // Rafraîchit la TableView
+                assetService.updateOne(updatedAsset);
+                table.refresh();
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "Asset modifié avec succès");
             } catch (Exception e) {
                 e.printStackTrace();
