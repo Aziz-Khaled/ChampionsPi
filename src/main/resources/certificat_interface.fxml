@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<VBox spacing="25" style="-fx-background-color: #f8f9fa; -fx-padding: 30;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.CertificatController">
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <VBox>
+            <Label text="Coffre-fort des Certificats" style="-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+            <Label text="Émission et vérification des titres certifiants" style="-fx-text-fill: #95a5a6;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS" />
+        <TextField fx:id="searchField" promptText="🔍 Rechercher par code de vérification..." style="-fx-pref-width: 300; -fx-background-radius: 25;"/>
+        <Button text="+ Générer Certificat" onAction="#handleAdding" style="-fx-background-color: #00d4ff; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 12 25; -fx-cursor: hand;"/>
+    </HBox>
+
+    <TableView fx:id="certificatTable" VBox.vgrow="ALWAYS" style="-fx-background-radius: 10;">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="50" />
+            <TableColumn fx:id="colParticipation" text="ID Participation" prefWidth="120" />
+            <TableColumn fx:id="colDate" text="Date Émission" prefWidth="150" />
+            <TableColumn fx:id="colCode" text="Code Vérification" prefWidth="180" />
+            <TableColumn fx:id="colMention" text="Mention" prefWidth="120" />
+            <TableColumn fx:id="colUrl" text="URL Fichier" prefWidth="200" />
+            <TableColumn fx:id="colActions" text="Actions" prefWidth="150" />
+        </columns>
+        <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY" /></columnResizePolicy>
+    </TableView>
+</VBox>
