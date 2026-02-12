@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefWidth="500.0" spacing="0.0" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.AjouterCreditController">
+    <children>
+        <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #2C3E50;">
+            <children>
+                <Label text="NOUVELLE DEMANDE DE CRÉDIT" textFill="WHITE">
+                    <font><Font name="System Bold" size="18.0" /></font>
+                </Label>
+            </children>
+            <padding><Insets left="30.0" /></padding>
+        </HBox>
+
+        <VBox spacing="20.0">
+            <padding><Insets bottom="30.0" left="30.0" right="30.0" top="30.0" /></padding>
+            <children>
+                <GridPane hgap="20.0" vgap="15.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" prefWidth="100.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" prefHeight="60.0" />
+                        <RowConstraints minHeight="10.0" prefHeight="60.0" />
+                        <RowConstraints minHeight="10.0" prefHeight="100.0" />
+                    </rowConstraints>
+                    <children>
+                        <VBox spacing="5.0">
+                            <children>
+                                <Label text="Montant" textFill="#636e72" />
+                                <TextField fx:id="txtMontant" prefHeight="40.0" promptText="0.00" style="-fx-background-radius: 5;" />
+                            </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="1">
+                            <children>
+                                <Label text="Devise" textFill="#636e72" />
+                                <ComboBox fx:id="comboDevise" maxWidth="Infinity" prefHeight="40.0" style="-fx-background-radius: 5;" />
+                            </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.rowIndex="1">
+                            <children>
+                                <Label text="Taux (%)" textFill="#636e72" />
+                                <TextField fx:id="txtTaux" prefHeight="40.0" promptText="ex: 5.5" style="-fx-background-radius: 5;" />
+                            </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <children>
+                                <Label text="Sélectionner le Projet" textFill="#636e72" />
+                                <ComboBox fx:id="comboProjet" maxWidth="Infinity" prefHeight="40.0" promptText="Choisir un projet..." style="-fx-background-radius: 5;" />
+                            </children>
+                        </VBox>
+                        <VBox spacing="5.0" GridPane.columnSpan="2" GridPane.rowIndex="2">
+                            <children>
+                                <Label text="Description du crédit" textFill="#636e72" />
+                                <TextArea fx:id="txtDescription" prefHeight="80.0" promptText="Précisez l'objet de la demande..." style="-fx-background-radius: 5;" wrapText="true" />
+                            </children>
+                        </VBox>
+                    </children>
+                </GridPane>
+
+                <HBox alignment="CENTER_RIGHT" spacing="15.0">
+                    <children>
+                        <Button onAction="#annuler" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: transparent; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-cursor: hand;" text="Annuler" textFill="#7f8c8d" />
+                        <Button onAction="#enregistrer" prefHeight="40.0" prefWidth="150.0" style="-fx-background-color: #0984e3; -fx-text-fill: white; -fx-background-radius: 5; -fx-font-weight: bold; -fx-cursor: hand;" text="ENREGISTRER" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</VBox>
