@@ -20,7 +20,7 @@ public class AddTrade {
     private ComboBox<Status> boxStatus;
 
     @FXML
-    private ComboBox<TradeType> boxtype;
+    private ComboBox<TradeType> boxType;
 
     @FXML
     private Button btnCancel;
@@ -38,7 +38,7 @@ public class AddTrade {
 
     @FXML
     public void initialize() {
-        boxtype.getItems().setAll(TradeType.values());
+        boxType.getItems().setAll(TradeType.values());
         boxStatus.getItems().setAll(Status.values());
         boxOrder.getItems().setAll(OrderMode.values());
     }
@@ -49,7 +49,7 @@ public class AddTrade {
             // Validation
             if (txtPrice.getText().isEmpty()
                     || txtQuantity.getText().isEmpty()
-                    || boxtype.getValue() == null
+                    || boxType.getValue() == null
                     || boxOrder.getValue() == null
                     || boxStatus.getValue() == null) {
 
@@ -61,7 +61,7 @@ public class AddTrade {
                     0,
                     1,
                     1003,
-                    boxtype.getValue(),
+                    boxType.getValue(),
                     boxOrder.getValue(),
                     Double.parseDouble(txtPrice.getText()),
                     Double.parseDouble(txtQuantity.getText()),
@@ -90,7 +90,7 @@ public class AddTrade {
     private void clearFields() {
         txtPrice.clear();
         txtQuantity.clear();
-        boxtype.setValue(null);
+        boxType.setValue(null);
         boxOrder.setValue(null);
         boxStatus.setValue(null);
     }

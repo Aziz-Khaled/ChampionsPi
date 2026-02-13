@@ -4,54 +4,78 @@ package tn.esprit.Champions.gui;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
-
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.AssetService;
 
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class CrudAsset {
 
-    @FXML
-    private TableView<Asset> table;
 
-    @FXML
-    private TableColumn<Asset, Integer> id_asset;
-    @FXML
-    private TableColumn<Asset, String> symbol;
-    @FXML
-    private TableColumn<Asset, String> name;
-    @FXML
-    private TableColumn<Asset, AssetType> type;
-    @FXML
-    private TableColumn<Asset, Market> market;
-    @FXML
-    private TableColumn<Asset, Double> price;
-    @FXML
-    private TableColumn<Asset, Status> status;
-    @FXML
-    private TableColumn<Asset, LocalDateTime> created;
-    @FXML
-    private TableColumn<Asset, LocalDateTime> updated;
-    @FXML
-    private TableColumn<Asset, Integer> user_id;
-    @FXML
-    private TableColumn<Asset, Void> colAction;
+
+
+
+
+    @FXML private TextField txtSymbol;
+    @FXML private TextField txtName;
+    @FXML private ComboBox<AssetType> boxType;
+    @FXML private ComboBox<Market> boxMarket;
+    @FXML private TextField txtCurrentPrice;
+    @FXML private ComboBox<Status> boxStatus;
+
+
+    @FXML private Button btnAdd;
+    @FXML private Button btnUpdate;
+    @FXML private Button btnClear;
+    @FXML private Button btnDelete;
+
+
+    @FXML private TableView<Asset> table;
+    @FXML private TableColumn<Asset, Integer> id_asset;
+    @FXML private TableColumn<Asset, String> symbol;
+    @FXML private TableColumn<Asset, String> name;
+    @FXML private TableColumn<Asset, AssetType> type;
+    @FXML private TableColumn<Asset, Market> market;
+    @FXML private TableColumn<Asset, Double> price;
+    @FXML private TableColumn<Asset, Status> status;
+    @FXML private TableColumn<Asset, LocalDateTime> created;
+    @FXML private TableColumn<Asset, LocalDateTime> updated;
+    @FXML private TableColumn<Asset, Void> colAction;
+
+
+    @FXML private TextField txtSearch;
+    @FXML private Button btnClearSearch;
+    @FXML private Label labelStatus;
+    @FXML private Label labelCount;
+
 
     private AssetService assetService = new AssetService();
+    private List<Asset> allAssets;
+    private Asset currentAsset = null;
 
     @FXML
     public void initialize() {
-        initColumns();
+        initializeComboBoxes();
+        initializeTableColumns();
         loadAssets();
-        addActionButtons(); // ⚡ important
+        addActionButtons();
+        setupTableRowSelection();
     }
 
-    private void initColumns() {
+
+
+    private void initializeComboBoxes() {
+        boxType.getItems().setAll(AssetType.values());
+        boxMarket.getItems().setAll(Market.values());
+        boxStatus.getItems().setAll(Status.values());
+    }
+
+    private void initializeTableColumns() {
         id_asset.setCellValueFactory(new PropertyValueFactory<>("id"));
         symbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
         name.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -61,16 +85,165 @@ public class CrudAsset {
         status.setCellValueFactory(new PropertyValueFactory<>("status"));
         created.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
         updated.setCellValueFactory(new PropertyValueFactory<>("updatedAt"));
-        user_id.setCellValueFactory(new PropertyValueFactory<>("userId"));
     }
 
     private void loadAssets() {
         try {
-            table.getItems().clear();
-            table.getItems().addAll(assetService.SelectAll());
+            allAssets = assetService.SelectAll();
+            refreshTableView();
+            updateStatusLabel();
         } catch (SQLException e) {
-            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to load assets: " + e.getMessage());
         }
+    }
+
+
+
+    @FXML
+    private void handleAdd() {
+        try {
+            if (!validateForm()) {
+                return;
+            }
+
+            Asset newAsset = new Asset(
+                    0,
+                    txtSymbol.getText().trim(),
+                    txtName.getText().trim(),
+                    boxType.getValue(),
+                    boxMarket.getValue(),
+                    Double.parseDouble(txtCurrentPrice.getText()),
+                    boxStatus.getValue(),
+                    LocalDateTime.now(),
+                    LocalDateTime.now(),
+                    1
+            );
+
+            assetService.insertOne(newAsset);
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Asset added successfully!");
+            loadAssets();
+            clearForm();
+            currentAsset = null;
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Price must be a valid number");
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database Error", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleUpdate() {
+        try {
+            if (currentAsset == null) {
+                showAlert(Alert.AlertType.WARNING, "Warning", "Please select an asset to update");
+                return;
+            }
+
+            if (!validateForm()) {
+                return;
+            }
+
+            currentAsset.setSymbol(txtSymbol.getText().trim());
+            currentAsset.setName(txtName.getText().trim());
+            currentAsset.setType(boxType.getValue());
+            currentAsset.setMarket(boxMarket.getValue());
+            currentAsset.setCurrentPrice(Double.parseDouble(txtCurrentPrice.getText()));
+            currentAsset.setStatus(boxStatus.getValue());
+            currentAsset.setUpdatedAt(LocalDateTime.now());
+
+            assetService.updateOne(currentAsset);
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Asset updated successfully!");
+            loadAssets();
+            clearForm();
+            currentAsset = null;
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Price must be a valid number");
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database Error", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleDelete() {
+        try {
+            if (currentAsset == null) {
+                showAlert(Alert.AlertType.WARNING, "Warning", "Please select an asset to delete");
+                return;
+            }
+
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Confirm Delete");
+            confirmAlert.setHeaderText("Delete Asset: " + currentAsset.getSymbol());
+            confirmAlert.setContentText("Are you sure you want to delete this asset?");
+
+            if (confirmAlert.showAndWait().get() == ButtonType.OK) {
+                assetService.deleteOne(currentAsset);
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Asset deleted successfully!");
+                loadAssets();
+                clearForm();
+                currentAsset = null;
+            }
+
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database Error", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleClear() {
+        clearForm();
+        currentAsset = null;
+        table.getSelectionModel().clearSelection();
+    }
+
+
+    @FXML
+    private void handleSearch() {
+        String searchText = txtSearch.getText().toLowerCase().trim();
+
+        if (searchText.isEmpty()) {
+            refreshTableView();
+        } else {
+            List<Asset> filteredAssets = allAssets.stream()
+                    .filter(asset -> asset.getSymbol().toLowerCase().contains(searchText)
+                            || asset.getName().toLowerCase().contains(searchText)
+                            || asset.getType().toString().toLowerCase().contains(searchText)
+                            || asset.getMarket().toString().toLowerCase().contains(searchText))
+                    .collect(Collectors.toList());
+
+            table.getItems().clear();
+            table.getItems().addAll(filteredAssets);
+        }
+
+        updateStatusLabel();
+    }
+
+    @FXML
+    private void handleClearSearch() {
+        txtSearch.clear();
+        refreshTableView();
+    }
+
+
+
+    private void setupTableRowSelection() {
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                populateFormWithAsset(newVal);
+            }
+        });
+    }
+
+    private void populateFormWithAsset(Asset asset) {
+        currentAsset = asset;
+        txtSymbol.setText(asset.getSymbol());
+        txtName.setText(asset.getName());
+        boxType.setValue(asset.getType());
+        boxMarket.setValue(asset.getMarket());
+        txtCurrentPrice.setText(String.valueOf(asset.getCurrentPrice()));
+        boxStatus.setValue(asset.getStatus());
     }
 
     private void addActionButtons() {
@@ -80,20 +253,18 @@ public class CrudAsset {
             private final Button btnDelete = new Button("🗑");
 
             {
-                // Styles des boutons
-                btnEdit.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-                btnDelete.setStyle("-fx-background-color: #F44336; -fx-text-fill: white;");
+                btnEdit.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-padding: 6 10 6 10; -fx-font-size: 11px;");
+                btnDelete.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-padding: 6 10 6 10; -fx-font-size: 11px;");
 
-                // Action Edit
                 btnEdit.setOnAction(event -> {
                     Asset asset = getTableView().getItems().get(getIndex());
-                    openEditDialog(asset);
+                    table.getSelectionModel().select(asset);
+                    populateFormWithAsset(asset);
                 });
 
-                // Action Delete
                 btnDelete.setOnAction(event -> {
                     Asset asset = getTableView().getItems().get(getIndex());
-                    deleteAsset(asset);
+                    deleteAssetDirectly(asset);
                 });
             }
 
@@ -104,31 +275,91 @@ public class CrudAsset {
                 if (empty) {
                     setGraphic(null);
                 } else {
-
-                    HBox box = new HBox(10, btnEdit, btnDelete);
+                    HBox box = new HBox(6, btnEdit, btnDelete);
+                    box.setPadding(new Insets(4));
                     setGraphic(box);
                 }
             }
         });
     }
 
-    private void deleteAsset(Asset asset) {
+    private void deleteAssetDirectly(Asset asset) {
         try {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirmation");
-            alert.setHeaderText(null);
-            alert.setContentText("Supprimer cet asset ?");
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Confirm Delete");
+            confirmAlert.setHeaderText("Delete Asset: " + asset.getSymbol());
+            confirmAlert.setContentText("Are you sure?");
 
-            if (alert.showAndWait().get() == ButtonType.OK) {
-                assetService.deleteOne(asset);  // passe l'objet complet
-                table.getItems().remove(asset); // supprime de la TableView
-                showAlert(Alert.AlertType.INFORMATION, "Succès", "Asset supprimé avec succès");
+            if (confirmAlert.showAndWait().get() == ButtonType.OK) {
+                assetService.deleteOne(asset);
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Asset deleted successfully!");
+                loadAssets();
+                if (currentAsset != null && currentAsset.getId() == asset.getId()) {
+                    clearForm();
+                    currentAsset = null;
+                }
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Database Error", e.getMessage());
         }
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private boolean validateForm() {
+        if (txtSymbol.getText().trim().isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Symbol is required");
+            return false;
+        }
+
+        if (txtName.getText().trim().isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Name is required");
+            return false;
+        }
+
+        if (txtCurrentPrice.getText().trim().isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Price is required");
+            return false;
+        }
+
+        if (boxType.getValue() == null) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Type is required");
+            return false;
+        }
+
+        if (boxMarket.getValue() == null) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Market is required");
+            return false;
+        }
+
+        if (boxStatus.getValue() == null) {
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Status is required");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void clearForm() {
+        txtSymbol.clear();
+        txtName.clear();
+        txtCurrentPrice.clear();
+        boxType.setValue(null);
+        boxMarket.setValue(null);
+        boxStatus.setValue(null);
+    }
+
+    private void refreshTableView() {
+        table.getItems().clear();
+        table.getItems().addAll(allAssets);
+    }
+
+    private void updateStatusLabel() {
+        int displayed = table.getItems().size();
+        int total = allAssets.size();
+        labelStatus.setText("Showing " + displayed + " of " + total + " assets");
+        labelCount.setText("Total: " + total);
     }
 
     private void showAlert(Alert.AlertType type, String title, String message) {
@@ -138,87 +369,4 @@ public class CrudAsset {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
-    private void openEditDialog(Asset asset) {
-
-        Dialog<Asset> dialog = new Dialog<>();
-        dialog.setTitle("Modifier Asset");
-        dialog.setHeaderText("Modifier les informations de l'asset");
-
-
-        ButtonType okButtonType = new ButtonType("Modifier", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
-
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-
-        TextField txtSymbol = new TextField(asset.getSymbol());
-        TextField txtName = new TextField(asset.getName());
-        TextField txtPrice = new TextField(String.valueOf(asset.getCurrentPrice()));
-
-        ComboBox<AssetType> boxType = new ComboBox<>();
-        boxType.getItems().setAll(AssetType.values());
-        boxType.setValue(asset.getType());
-
-        ComboBox<Market> boxMarket = new ComboBox<>();
-        boxMarket.getItems().setAll(Market.values());
-        boxMarket.setValue(asset.getMarket());
-
-        ComboBox<Status> boxStatus = new ComboBox<>();
-        boxStatus.getItems().setAll(Status.values());
-        boxStatus.setValue(asset.getStatus());
-
-
-        grid.add(new Label("Symbol:"), 0, 0);
-        grid.add(txtSymbol, 1, 0);
-        grid.add(new Label("Name:"), 0, 1);
-        grid.add(txtName, 1, 1);
-        grid.add(new Label("Price:"), 0, 2);
-        grid.add(txtPrice, 1, 2);
-        grid.add(new Label("Type:"), 0, 3);
-        grid.add(boxType, 1, 3);
-        grid.add(new Label("Market:"), 0, 4);
-        grid.add(boxMarket, 1, 4);
-        grid.add(new Label("Status:"), 0, 5);
-        grid.add(boxStatus, 1, 5);
-
-        dialog.getDialogPane().setContent(grid);
-
-
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == okButtonType) {
-                asset.setSymbol(txtSymbol.getText());
-                asset.setName(txtName.getText());
-                asset.setCurrentPrice(Double.parseDouble(txtPrice.getText()));
-                asset.setType(boxType.getValue());
-                asset.setMarket(boxMarket.getValue());
-                asset.setStatus(boxStatus.getValue());
-                asset.setUpdatedAt(java.time.LocalDateTime.now());
-                return asset;
-            }
-            return null;
-        });
-
-
-        dialog.showAndWait().ifPresent(updatedAsset -> {
-            try {
-                assetService.updateOne(updatedAsset);
-                table.refresh();
-                showAlert(Alert.AlertType.INFORMATION, "Succès", "Asset modifié avec succès");
-            } catch (Exception e) {
-                e.printStackTrace();
-                showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
-            }
-        });
-    }
-
-
-
-
-
-
 }
