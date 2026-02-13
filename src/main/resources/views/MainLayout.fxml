@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="tn.esprit.Champions.gui.MainLayoutController"
+            stylesheets="@/styles/app.css"
+            prefHeight="720.0" prefWidth="1080.0"
+            styleClass="main-container">
+    
+    <top>
+        <HBox styleClass="navbar" spacing="30">
+            <children>
+                <Text text="FinTech App" styleClass="logo-text"/>
+                <Region HBox.hgrow="ALWAYS" />
+                <HBox spacing="20" alignment="CENTER_RIGHT">
+                    <Label text="Home" styleClass="nav-link" onMouseClicked="#showCatalogue"/>
+                    <Label text="Catalogue" styleClass="nav-link" onMouseClicked="#showCatalogue"/>
+                    <Label text="Panier" styleClass="nav-link" onMouseClicked="#showCart"/>
+                    <Label text="Vendeur" styleClass="nav-link" onMouseClicked="#showDashboard"/>
+                    <Separator orientation="VERTICAL" prefHeight="20"/>
+                    <Label fx:id="userNameLabel" text="User Name" style="-fx-text-fill: white;"/>
+                    <Button text="Logout" styleClass="btn-secondary" onAction="#handleLogout" style="-fx-text-fill: white; -fx-border-color: white;"/>
+                </HBox>
+            </children>
+        </HBox>
+    </top>
+
+    <center>
+        <StackPane fx:id="contentArea">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+        </StackPane>
+    </center>
+
+</BorderPane>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.CartController" spacing="20">
+    <children>
+        <Label text="Votre Panier" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+        
+        <TableView fx:id="cartTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colProduct" text="Produit" prefWidth="250"/>
+                <TableColumn fx:id="colQuantity" text="Quantité" prefWidth="100"/>
+                <TableColumn fx:id="colPrice" text="Prix Unitaire" prefWidth="150"/>
+                <TableColumn fx:id="colTotal" text="Total" prefWidth="150"/>
+                <TableColumn fx:id="colAction" text="Action" prefWidth="100"/>
+            </columns>
+        </TableView>
+
+        <HBox spacing="20" alignment="CENTER_RIGHT">
+            <VBox alignment="CENTER_RIGHT" spacing="5">
+                <Label text="Total à payer:" style="-fx-font-size: 14; -fx-text-fill: -fx-text-light;"/>
+                <Label fx:id="totalLabel" text="\$0.00" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: -fx-primary-emerald;"/>
+            </VBox>
+            <Button text="Passer la commande" styleClass="btn-primary" prefHeight="50" prefWidth="200" onAction="#handleCheckout"/>
+        </HBox>
+    </children>
+</VBox>

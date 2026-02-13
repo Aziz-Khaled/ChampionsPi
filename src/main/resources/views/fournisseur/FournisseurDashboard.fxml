@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<HBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.fournisseur.FournisseurDashboardController" spacing="30">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <children>
+        <!-- Form Area -->
+        <VBox spacing="15" prefWidth="350" styleClass="card">
+            <children>
+                <Label text="Ajouter un Produit" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                
+                <VBox spacing="5">
+                    <Label text="Nom du produit" styleClass="form-label"/>
+                    <TextField fx:id="nameField" promptText="ex: iPhone 15"/>
+                    <Label fx:id="nameError" styleClass="error-label" visible="false"/>
+                </VBox>
+
+                <VBox spacing="5">
+                    <Label text="Description" styleClass="form-label"/>
+                    <TextArea fx:id="descField" prefHeight="80" promptText="Détails du produit..."/>
+                </VBox>
+
+                <HBox spacing="10">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Marque" styleClass="form-label"/>
+                        <TextField fx:id="brandField" promptText="ex: Apple"/>
+                    </VBox>
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Catégorie" styleClass="form-label"/>
+                        <ComboBox fx:id="categoryCombo" maxWidth="Infinity" promptText="Choisir..."/>
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="10">
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Prix Normal (\$)" styleClass="form-label"/>
+                        <TextField fx:id="priceField" promptText="0.00"/>
+                        <Label fx:id="priceError" styleClass="error-label" visible="false"/>
+                    </VBox>
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Prix Promo (\$)" styleClass="form-label"/>
+                        <TextField fx:id="discountPriceField" promptText="0.00"/>
+                    </VBox>
+                </HBox>
+
+                <VBox spacing="5">
+                    <Label text="Stock" styleClass="form-label"/>
+                    <Spinner fx:id="stockSpinner" editable="true" maxWidth="Infinity"/>
+                </VBox>
+
+                <VBox spacing="10" alignment="CENTER_LEFT">
+                    <Button text="Uploader une Image" onAction="#handleUploadImage" styleClass="btn-secondary" maxWidth="Infinity"/>
+                    <Label fx:id="imageStatus" text="Aucune image choisie" style="-fx-text-fill: -fx-text-light;"/>
+                </VBox>
+
+                <Button fx:id="saveButton" text="Enregistrer le Produit" onAction="#handleSave" styleClass="btn-primary" maxWidth="Infinity" prefHeight="45"/>
+            </children>
+        </VBox>
+
+        <!-- List Area -->
+        <VBox spacing="15" HBox.hgrow="ALWAYS">
+            <children>
+                <Label text="Mes Produits en vente" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                <TableView fx:id="productsTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colName" text="Produit" prefWidth="150"/>
+                        <TableColumn fx:id="colPrice" text="Prix" prefWidth="80"/>
+                        <TableColumn fx:id="colDiscount" text="Promo" prefWidth="80"/>
+                        <TableColumn fx:id="colStock" text="Stock" prefWidth="80"/>
+                        <TableColumn fx:id="colStatus" text="Statut" prefWidth="100"/>
+                        <TableColumn fx:id="colAction" text="Actions" prefWidth="150"/>
+                    </columns>
+                </TableView>
+            </children>
+        </VBox>
+    </children>
+</HBox>
