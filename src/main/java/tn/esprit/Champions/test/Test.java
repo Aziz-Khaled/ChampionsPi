@@ -127,10 +127,10 @@ public class Test {
             cs.SelectAll().forEach(System.out::println);
 
             // DELETE CERTIFICAT
-            cs.deleteOne(c);
+            /*cs.deleteOne(c);
 
             System.out.println("===== APRES DELETE CERTIFICAT =====");
-            cs.SelectAll().forEach(System.out::println);
+            cs.SelectAll().forEach(System.out::println);*/
 
             // =========================
             // DELETE PARTICIPATION

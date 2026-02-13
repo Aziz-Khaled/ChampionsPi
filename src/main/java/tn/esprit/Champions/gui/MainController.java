@@ -3,7 +3,6 @@ package tn.esprit.Champions.gui;
 import javafx.animation.FadeTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.Button;
@@ -13,52 +12,55 @@ import java.io.IOException;
 public class MainController {
 
     @FXML private StackPane contentArea;
-    @FXML private Button btnFormations;
-    @FXML private Button btnParticipations;
+    @FXML private Button btnFormations, btnParticipations, btnCertificats;
 
     @FXML
     public void initialize() {
-        // Charger les formations par défaut au démarrage
         showFormations();
     }
 
     @FXML
     public void showFormations() {
         loadView("/interface.fxml");
-        updateButtonStyle(btnFormations, btnParticipations);
+        updateUI(btnFormations);
     }
 
     @FXML
     public void showParticipations() {
         loadView("/participation_interface.fxml");
-        updateButtonStyle(btnParticipations, btnFormations);
+        updateUI(btnParticipations);
+    }
+
+    @FXML
+    public void showCertificats() {
+        // CORRIGÉ selon votre capture d'écran
+        loadView("/certificat_interface.fxml");
+        updateUI(btnCertificats);
     }
 
     private void loadView(String fxmlPath) {
         try {
-            // 1. Charger le nouveau fichier FXML
             Parent view = FXMLLoader.load(getClass().getResource(fxmlPath));
+            view.setOpacity(0);
+            contentArea.getChildren().setAll(view);
 
-            // 2. Préparer l'animation de fondu
-            view.setOpacity(0); // On commence invisible
-            contentArea.getChildren().clear();
-            contentArea.getChildren().add(view);
-
-            // 3. Lancer l'animation (durée: 400 millisecondes)
             FadeTransition fade = new FadeTransition(Duration.millis(400), view);
             fade.setFromValue(0);
             fade.setToValue(1);
             fade.play();
-
         } catch (IOException e) {
-            System.err.println("Erreur de chargement : " + e.getMessage());
+            System.err.println("Fichier introuvable : " + fxmlPath);
+            e.printStackTrace();
         }
     }
 
-    private void updateButtonStyle(Button selected, Button other) {
-        // Style pour le bouton actif (Bleu sombre/Cyan)
-        selected.setStyle("-fx-text-fill: white; -fx-background-color: #2c3e50; -fx-background-radius: 8; -fx-font-weight: bold; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210; -fx-padding: 10 15;");
-        // Style pour le bouton inactif
-        other.setStyle("-fx-text-fill: #bdc3c7; -fx-background-color: transparent; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210; -fx-padding: 10 15;");
+    private void updateUI(Button selected) {
+        Button[] btns = {btnFormations, btnParticipations, btnCertificats};
+        for (Button b : btns) {
+            if (b == null) continue;
+            b.setStyle(b == selected ?
+                    "-fx-background-color: #2c3e50; -fx-text-fill: white;" :
+                    "-fx-background-color: transparent; -fx-text-fill: #bdc3c7;");
+        }
     }
 }

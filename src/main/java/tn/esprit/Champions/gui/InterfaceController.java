@@ -42,7 +42,6 @@ public class InterfaceController {
         setupSearchAndSort();
         loadTableData();
 
-        // Tooltip sur le bouton d'ajout principal
         btnAdd.setTooltip(new Tooltip("Cliquer pour créer une nouvelle offre de formation"));
         searchField.setTooltip(new Tooltip("Filtrer par titre ou domaine en temps réel"));
     }
@@ -80,17 +79,23 @@ public class InterfaceController {
         actionsColumn.setCellFactory(param -> new TableCell<>() {
             private final Button btnEdit = new Button("Modifier");
             private final Button btnDelete = new Button("Supprimer");
-            private final HBox pane = new HBox(btnEdit, btnDelete);
+            private final Button btnInscrire = new Button("Inscrire"); // NOUVEAU
+            private final HBox pane = new HBox(btnEdit, btnDelete, btnInscrire);
             {
                 pane.setSpacing(10); pane.setAlignment(Pos.CENTER);
                 btnEdit.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5;");
                 btnDelete.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5;");
-
-                btnEdit.setTooltip(new Tooltip("Modifier les détails de cette formation"));
-                btnDelete.setTooltip(new Tooltip("Supprimer définitivement cette formation"));
+                btnInscrire.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-background-radius: 5; -fx-font-weight: bold;");
 
                 btnEdit.setOnAction(e -> showFormationForm(getTableView().getItems().get(getIndex())));
                 btnDelete.setOnAction(e -> handleDelete(getTableView().getItems().get(getIndex())));
+
+                // ACTION : Ouvre le formulaire de participation avec l'ID pré-rempli
+                btnInscrire.setOnAction(e -> {
+                    formations selected = getTableView().getItems().get(getIndex());
+                    ParticipationController pc = new ParticipationController();
+                    pc.showForm(null, selected.getIdFormation());
+                });
             }
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
@@ -129,16 +134,12 @@ public class InterfaceController {
         GridPane grid = new GridPane();
         grid.setHgap(20); grid.setVgap(5); grid.setPadding(new Insets(20, 40, 20, 40));
 
-        // Champs + Labels d'erreur
-        TextField txtTitre = new TextField(); txtTitre.setPromptText("Ex: JavaFX Mastery");
+        TextField txtTitre = new TextField();
         Label errTitre = new Label(); errTitre.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 10;");
-
-        TextField txtDomaine = new TextField(); txtDomaine.setPromptText("Ex: Informatique");
+        TextField txtDomaine = new TextField();
         Label errDomaine = new Label(); errDomaine.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 10;");
-
-        TextField txtPrix = new TextField(); txtPrix.setPromptText("0.00");
+        TextField txtPrix = new TextField();
         Label errPrix = new Label(); errPrix.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 10;");
-
         DatePicker dpDebut = new DatePicker(LocalDate.now());
         Label errDate = new Label(); errDate.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 10;");
 
@@ -151,10 +152,6 @@ public class InterfaceController {
             cbStatut.setValue(existing.getStatut());
         }
 
-        // Tooltips internes
-        txtPrix.setTooltip(new Tooltip("Entrez un montant numérique positif (DT)"));
-        dpDebut.setTooltip(new Tooltip("La formation ne peut pas commencer dans le passé"));
-
         grid.add(createLabel("Titre du programme *"), 0, 0); grid.add(txtTitre, 0, 1); grid.add(errTitre, 0, 2);
         grid.add(createLabel("Domaine d'études *"), 1, 0); grid.add(txtDomaine, 1, 1); grid.add(errDomaine, 1, 2);
         grid.add(createLabel("Tarif (DT) *"), 0, 3); grid.add(txtPrix, 0, 4); grid.add(errPrix, 0, 5);
@@ -164,12 +161,6 @@ public class InterfaceController {
         dialogPane.setContent(grid);
         Node saveBtn = dialogPane.lookupButton(saveBtnType);
         saveBtn.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
-
-        // VALIDATION DYNAMIQUE
-        txtTitre.textProperty().addListener((obs, old, val) -> validateTitre(txtTitre, errTitre));
-        txtDomaine.textProperty().addListener((obs, old, val) -> validateDomaine(txtDomaine, errDomaine));
-        txtPrix.textProperty().addListener((obs, old, val) -> validatePrix(txtPrix, errPrix));
-        dpDebut.valueProperty().addListener((obs, old, val) -> validateDate(dpDebut, errDate));
 
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             if (!(validateTitre(txtTitre, errTitre) & validateDomaine(txtDomaine, errDomaine) &
@@ -184,7 +175,11 @@ public class InterfaceController {
                 f.setTitre(txtTitre.getText()); f.setDomaine(txtDomaine.getText());
                 f.setPrix(Double.parseDouble(txtPrix.getText())); f.setDateDebut(dpDebut.getValue());
                 f.setStatut(cbStatut.getValue());
-                if(!isEdit) { f.setDescription("Formation Fintech"); f.setDateFin(f.getDateDebut().plusDays(30)); f.setCapaciteMax(20); }
+                if(!isEdit) {
+                    f.setDescription("Formation Fintech");
+                    f.setDateFin(f.getDateDebut().plusDays(30));
+                    f.setCapaciteMax(20);
+                }
                 return f;
             }
             return null;
@@ -211,7 +206,7 @@ public class InterfaceController {
             double p = Double.parseDouble(t.getText());
             if (p <= 0) return applyError(t, l, "Le prix doit être positif");
             return applySuccess(t, l);
-        } catch (Exception e) { return applyError(t, l, "Format numérique attendu (ex: 100.0)"); }
+        } catch (Exception e) { return applyError(t, l, "Format numérique attendu"); }
     }
 
     private boolean validateDate(DatePicker d, Label l) {

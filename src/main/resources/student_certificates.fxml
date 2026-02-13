@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="700.0" prefWidth="1000.0" style="-fx-background-color: #F9FAFB;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.StudentCertifController">
+    <children>
+        <HBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="20.0" style="-fx-background-color: white; -fx-border-color: #EEEEEE; -fx-border-width: 0 0 1 0;">
+            <padding>
+                <Insets left="40.0" right="40.0" />
+            </padding>
+            <children>
+                <Label text="CHAMPIONS" textFill="#fe4a49">
+                    <font>
+                        <Font name="System Bold" size="24.0" />
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS" />
+                <HBox alignment="CENTER" spacing="25.0">
+                    <children>
+                        <Button fx:id="btnNavDashboard"
+                                text="Tableau de bord"
+                                onAction="#handleGoToDashboard"
+                                onMouseEntered="#handleHoverIn"
+                                onMouseExited="#handleHoverOut"
+                                style="-fx-background-color: transparent; -fx-text-fill: #FE4A49; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: 14;">
+                        </Button>
+                        <Button mnemonicParsing="false" style="-fx-background-color: transparent; -fx-text-fill: #FE4A49; -fx-cursor: hand;" text="Mes Certificats">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Separator orientation="VERTICAL" prefHeight="30.0" />
+                        <Circle fill="#dfe6e9" radius="18.0" stroke="TRANSPARENT" strokeType="INSIDE" />
+                    </children>
+                </HBox>
+            </children>
+        </HBox>
+
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F9FAFB;" VBox.vgrow="ALWAYS">
+            <content>
+                <VBox spacing="30.0">
+                    <padding>
+                        <Insets bottom="40.0" left="50.0" right="50.0" top="40.0" />
+                    </padding>
+                    <children>
+                        <VBox spacing="5.0">
+                            <children>
+                                <Label text="Mes Certificats 🎓" textFill="#2d3436">
+                                    <font>
+                                        <Font name="System Bold" size="32.0" />
+                                    </font>
+                                </Label>
+                                <Label text="Retrouvez ici tous vos diplômes et certifications obtenus." textFill="#636e72">
+                                    <font>
+                                        <Font size="16.0" />
+                                    </font>
+                                </Label>
+                            </children>
+                        </VBox>
+
+                        <VBox fx:id="certifsListContainer" spacing="15.0">
+                        </VBox>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </children>
+</VBox>

@@ -42,7 +42,9 @@ public class ParticipationController {
     }
 
     private void initTable() {
-        colId.setCellValueFactory(new PropertyValueFactory<>("idParticipation"));
+        // --- MASQUER L'ID TECHNIQUE ---
+        colId.setVisible(false);
+
         colFormation.setCellValueFactory(new PropertyValueFactory<>("idFormation"));
         colUtilisateur.setCellValueFactory(new PropertyValueFactory<>("idUtilisateur"));
         colDate.setCellValueFactory(new PropertyValueFactory<>("dateInscription"));
@@ -74,16 +76,36 @@ public class ParticipationController {
         colActions.setCellFactory(param -> new TableCell<>() {
             private final Button editBtn = new Button("Modifier");
             private final Button deleteBtn = new Button("Supprimer");
-            private final HBox pane = new HBox(editBtn, deleteBtn);
-            {
-                pane.setSpacing(10); pane.setAlignment(Pos.CENTER);
-                editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5;");
-                deleteBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5;");
-                editBtn.setTooltip(new Tooltip("Mettre à jour cette participation"));
+            private final Button certBtn = new Button("Certifier");
+            private final HBox pane = new HBox(editBtn, deleteBtn, certBtn);
 
-                editBtn.setOnAction(e -> showForm(getTableView().getItems().get(getIndex())));
+            {
+                pane.setSpacing(8); pane.setAlignment(Pos.CENTER);
+
+                // Styles de base
+                editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
+                deleteBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
+                certBtn.setStyle("-fx-background-color: #f1c40f; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
+
+                // --- ANIMATIONS HOVER ---
+                applyHoverEffect(editBtn, "#2980b9");
+                applyHoverEffect(deleteBtn, "#c0392b");
+                applyHoverEffect(certBtn, "#f39c12");
+
+                editBtn.setOnAction(e -> showForm(getTableView().getItems().get(getIndex()), null));
                 deleteBtn.setOnAction(e -> handleDelete(getTableView().getItems().get(getIndex())));
+
+                // Action pour générer un certificat
+                certBtn.setOnAction(e -> {
+                    participations p = getTableView().getItems().get(getIndex());
+                    if (p.getNote() >= 10) {
+                        new CertificatController().showCertForm(null, (long) p.getIdParticipation());
+                    } else {
+                        showError("Condition non remplie", "L'élève doit avoir une note >= 10 pour être certifié.");
+                    }
+                });
             }
+
             @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 setGraphic(empty ? null : pane);
@@ -91,7 +113,17 @@ public class ParticipationController {
         });
     }
 
-    @FXML private void handleAdding() { showForm(null); }
+    private void applyHoverEffect(Button b, String hoverColor) {
+        String originalColor = b.getStyle().split(";")[0]; // Récupère le bg color actuel
+        b.setOnMouseEntered(e -> {
+            b.setStyle(originalColor.replace(originalColor.split(":")[1].trim(), hoverColor) + "; -fx-text-fill: white; -fx-background-radius: 5; -fx-scale-x: 1.05; -fx-scale-y: 1.05;");
+        });
+        b.setOnMouseExited(e -> {
+            b.setStyle(originalColor + "; -fx-text-fill: white; -fx-background-radius: 5; -fx-scale-x: 1; -fx-scale-y: 1;");
+        });
+    }
+
+    @FXML private void handleAdding() { showForm(null, null); }
 
     private void handleDelete(participations p) {
         if (new Alert(Alert.AlertType.CONFIRMATION, "Supprimer l'inscription ?").showAndWait().get() == ButtonType.OK) {
@@ -99,7 +131,7 @@ public class ParticipationController {
         }
     }
 
-    private void showForm(participations existing) {
+    public void showForm(participations existing, Integer defaultFormationId) {
         boolean isEdit = (existing != null);
         Dialog<participations> dialog = new Dialog<>();
         dialog.setTitle(isEdit ? "Modifier Participation" : "Nouvelle Inscription");
@@ -108,7 +140,6 @@ public class ParticipationController {
         ButtonType saveType = new ButtonType("Enregistrer", ButtonBar.ButtonData.OK_DONE);
         dp.getButtonTypes().addAll(saveType, ButtonType.CANCEL);
 
-        // Header Style (Harmonie avec Formations)
         VBox header = new VBox();
         header.setStyle("-fx-background-color: #1a2a3a; -fx-padding: 20;");
         Label title = new Label(isEdit ? "ÉDITION PARTICIPATION" : "INSCRIPTION ÉLÈVE");
@@ -119,26 +150,29 @@ public class ParticipationController {
         GridPane grid = new GridPane();
         grid.setHgap(15); grid.setVgap(10); grid.setPadding(new Insets(20));
 
-        TextField txtFormation = new TextField(); txtFormation.setPromptText("ID Formation");
+        TextField txtFormation = new TextField();
+        if (isEdit) txtFormation.setText(String.valueOf(existing.getIdFormation()));
+        else if (defaultFormationId != null) {
+            txtFormation.setText(String.valueOf(defaultFormationId));
+            txtFormation.setEditable(false);
+            txtFormation.setStyle("-fx-background-color: #ecf0f1;");
+        }
+
+        TextField txtUtilisateur = new TextField();
         Label errFormation = new Label(); errFormation.setStyle("-fx-text-fill: red; -fx-font-size: 10;");
-
-        TextField txtUtilisateur = new TextField(); txtUtilisateur.setPromptText("ID Utilisateur");
         Label errUtilisateur = new Label(); errUtilisateur.setStyle("-fx-text-fill: red; -fx-font-size: 10;");
-
-        TextField txtNote = new TextField(); txtNote.setPromptText("Note / 20.0");
+        TextField txtNote = new TextField();
         Label errNote = new Label(); errNote.setStyle("-fx-text-fill: red; -fx-font-size: 10;");
-
         ComboBox<StatutParticipation> cbStatut = new ComboBox<>(FXCollections.observableArrayList(StatutParticipation.values()));
         CheckBox chkPresence = new CheckBox("Présent à la formation");
 
         if (isEdit) {
-            txtFormation.setText(String.valueOf(existing.getIdFormation()));
             txtUtilisateur.setText(String.valueOf(existing.getIdUtilisateur()));
             txtNote.setText(String.valueOf(existing.getNote()));
             cbStatut.setValue(existing.getStatut());
             chkPresence.setSelected(existing.isPresence());
         } else {
-            cbStatut.setValue(StatutParticipation. PAYEE);
+            cbStatut.setValue(StatutParticipation.PAYEE);
         }
 
         grid.add(new Label("ID Formation *"), 0, 0); grid.add(txtFormation, 0, 1); grid.add(errFormation, 0, 2);
@@ -150,13 +184,10 @@ public class ParticipationController {
         dp.setContent(grid);
         Node saveBtn = dp.lookupButton(saveType);
 
-        // --- CONTRÔLE DE SAISIE PARFAIT ---
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-            boolean fOk = validateInt(txtFormation, errFormation);
-            boolean uOk = validateInt(txtUtilisateur, errUtilisateur);
-            boolean nOk = validateNote(txtNote, errNote);
-
-            if (!(fOk && uOk && nOk)) event.consume();
+            if (!(validateInt(txtFormation, errFormation) && validateInt(txtUtilisateur, errUtilisateur) && validateNote(txtNote, errNote))) {
+                event.consume();
+            }
         });
 
         dialog.setResultConverter(btn -> {
@@ -181,7 +212,6 @@ public class ParticipationController {
         });
     }
 
-    // Méthodes de validation "Wow"
     private boolean validateInt(TextField t, Label l) {
         try {
             Integer.parseInt(t.getText());

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.shape.*?>
+
+<VBox prefHeight="700.0" prefWidth="1000.0" style="-fx-background-color: #F9FAFB;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.StudentDashboardController">
+
+    <HBox alignment="CENTER_LEFT" prefHeight="75.0" spacing="30.0" style="-fx-background-color: white; -fx-border-color: #EEEEEE; -fx-border-width: 0 0 1 0;">
+        <padding><Insets left="40.0" right="40.0" /></padding>
+
+        <Label text="CHAMPIONS" style="-fx-font-size: 24; -fx-font-weight: 900; -fx-text-fill: #FE4A49;" /> <Region HBox.hgrow="ALWAYS" />
+
+        <HBox spacing="25.0" alignment="CENTER">
+            <Button text="Tableau de bord" style="-fx-background-color: transparent; -fx-text-fill: #2D3436; -fx-font-weight: bold; -fx-cursor: hand;" />
+            <Button text="Mes Certificats" onAction="#handleGoToCertifs" style="-fx-background-color: transparent; -fx-text-fill: #636E72; -fx-cursor: hand;" />
+            <Separator orientation="VERTICAL" prefHeight="30.0" />
+            <Label text="Mon Profil" style="-fx-text-fill: #2D3436;" />
+            <Circle fill="#DFE6E9" radius="18.0" />
+        </HBox>
+    </HBox>
+
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F9FAFB;">
+        <VBox spacing="35.0">
+            <padding><Insets bottom="40.0" left="50.0" right="50.0" top="35.0" /></padding>
+
+            <VBox spacing="8.0">
+                <Label text="Bienvenue dans votre espace ! 🚀" style="-fx-font-size: 30; -fx-font-weight: bold; -fx-text-fill: #2D3436;" />
+                <Label text="Continuez là où vous vous êtes arrêté." style="-fx-text-fill: #636E72; -fx-font-size: 16;" />
+            </VBox>
+
+            <FlowPane fx:id="coursesGrid" hgap="30.0" vgap="30.0">
+            </FlowPane>
+        </VBox>
+    </ScrollPane>
+</VBox>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+
+<VBox prefHeight="750.0" prefWidth="1050.0" style="-fx-background-color: #F9FAFB;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.FormationDetailsController">
+
+    <HBox alignment="CENTER_LEFT" prefHeight="80.0" spacing="20.0" style="-fx-background-color: white; -fx-border-color: #EEEEEE; -fx-border-width: 0 0 1 0;">
+        <padding><Insets left="40.0" right="40.0" /></padding>
+        <Button text="← Retour" onAction="#handleBack" style="-fx-background-color: transparent; -fx-text-fill: #636E72; -fx-font-weight: bold; -fx-cursor: hand;"/>
+        <Region HBox.hgrow="ALWAYS" />
+        <Label text="CHAMPIONS" style="-fx-font-size: 22; -fx-font-weight: 900; -fx-text-fill: #FE4A49;" />
+    </HBox>
+
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F9FAFB;">
+        <HBox spacing="40.0">
+            <padding><Insets top="40.0" left="50.0" right="50.0" bottom="40.0"/></padding>
+
+            <VBox spacing="25.0" HBox.hgrow="ALWAYS">
+                <VBox spacing="10.0">
+                    <Label fx:id="lblDomaine" text="TECHNOLOGIE" style="-fx-text-fill: #FE4A49; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Label fx:id="lblTitre" text="Titre de la formation" style="-fx-font-size: 36; -fx-font-weight: bold; -fx-text-fill: #2D3436;" wrapText="true"/>
+                </VBox>
+
+                <Label text="À propos de cette formation" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+                <TextFlow>
+                    <Text fx:id="txtDescription" text="Description détaillée ici..." style="-fx-font-size: 16; -fx-fill: #636E72; line-spacing: 1.5;"/>
+                </TextFlow>
+
+                <HBox spacing="20.0">
+                    <Button text="Discutons-en" style="-fx-background-color: white; -fx-border-color: #FE4A49; -fx-border-radius: 8; -fx-text-fill: #FE4A49; -fx-font-weight: bold; -fx-padding: 12 25;"/>
+                    <Button text="Télécharger la brochure" style="-fx-background-color: #F1F2F6; -fx-background-radius: 8; -fx-text-fill: #2D3436; -fx-font-weight: bold; -fx-padding: 12 25;"/>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="20.0" prefWidth="350.0" style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+                <Label text="Informations" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+                <VBox spacing="15.0">
+                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                        <Label text="📅 Durée :" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblDuree" text="12 semaines"/>
+                    </HBox>
+                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                        <Label text="⏰ Intensité :" style="-fx-font-weight: bold;"/>
+                        <Label text="4 heures / semaine"/>
+                    </HBox>
+                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                        <Label text="📍 Mode :" style="-fx-font-weight: bold;"/>
+                        <Label text="En personne ou en ligne"/>
+                    </HBox>
+                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                        <Label text="💰 Prix :" style="-fx-font-weight: bold;"/>
+                        <Label fx:id="lblPrix" text="--- DT" style="-fx-text-fill: #27ae60; -fx-font-weight: bold;"/>
+                    </HBox>
+                </VBox>
+
+                <Separator/>
+
+                <Button onAction="#handleParticipation" text="Participer maintenant" maxWidth="Infinity" style="-fx-background-color: #FE4A49; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 10; -fx-padding: 15; -fx-cursor: hand;"/>
+            </VBox>
+        </HBox>
+    </ScrollPane>
+</VBox>
