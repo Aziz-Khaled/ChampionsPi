@@ -102,4 +102,52 @@ public class projetService implements CRUD<projet> {
         st.close();
         return listeProjets;
     }
+    public int getTotalProjets() {
+        int count = 0;
+        String query = "SELECT COUNT(*) FROM `projet`"; // Assure-toi que le nom de la table est exact
+
+        try (Statement st = cnx.createStatement();
+             ResultSet rs = st.executeQuery(query)) {
+
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors du comptage des projets : " + e.getMessage());
+            e.printStackTrace();
+        }
+        return count;
+    }
+    public projet findById(int id) throws SQLException {
+        String req = "SELECT * FROM `projet` WHERE `id_projet` = ?";
+        PreparedStatement pst = cnx.prepareStatement(req);
+        pst.setInt(1, id);
+        ResultSet rs = pst.executeQuery();
+
+        if (rs.next()) {
+            projet p = new projet();
+            p.setId_project(rs.getInt("id_projet"));
+            p.setOwner_id(rs.getInt("owner_id"));
+            p.setTitle(rs.getString("title"));
+            p.setDescription(rs.getString("description"));
+
+            // Conversion String -> Enum
+            String statusFromDB = rs.getString("status");
+            if (statusFromDB != null) {
+                p.setStatus(projetStatus.valueOf(statusFromDB));
+            }
+
+            p.setTarget_amount(rs.getFloat("target_amount"));
+            p.setStart_date(rs.getTimestamp("start_date"));
+            p.setEnd_date(rs.getTimestamp("end_date"));
+
+            rs.close();
+            pst.close();
+            return p;
+        }
+
+        rs.close();
+        pst.close();
+        return null; // Retourne null si aucun projet n'est trouvé avec cet ID
+    }
 }

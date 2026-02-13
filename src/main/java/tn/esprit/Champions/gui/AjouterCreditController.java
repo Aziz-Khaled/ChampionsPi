@@ -4,77 +4,122 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import tn.esprit.Champions.models.CreditStatus;
+import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.credit;
+import tn.esprit.Champions.models.CreditStatus;
+import tn.esprit.Champions.services.projetService;
 import tn.esprit.Champions.services.creditService;
+
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ResourceBundle;
 
 public class AjouterCreditController implements Initializable {
 
-    @FXML private TextField txtMontant, txtTaux;
-    @FXML private TextArea txtDescription;
+    @FXML private ComboBox<projet> comboProjet;
     @FXML private ComboBox<String> comboDevise;
-    @FXML private ComboBox<String> comboProjet; // On affiche les noms des projets
+    @FXML private TextField txtMontant, txtTaux, txtDuree;
+    @FXML private TextArea txtDescription;
 
-    private creditService cs = new creditService();
-    // private projetService ps = new projetService(); // Service pour charger les projets
+    private final projetService ps = new projetService();
+    private final creditService cs = new creditService();
+
+    private int connectedUserId;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        comboDevise.getItems().addAll("TND", "EUR", "USD");
-        comboDevise.setValue("TND");
+        configurerComboBoxProjet();
+        configurerComboBoxDevise();
+        chargerDonneesProjets();
+    }
 
-        // TEST : On ajoute manuellement des projets pour vérifier la logique
-        // Dans le futur, tu feras : comboProjet.getItems().addAll(ps.getNomsProjets());
-        comboProjet.getItems().addAll("Projet Solaire A", "Expansion Boutique B");
+    public void setConnectedUserId(int id) {
+        this.connectedUserId = id;
+    }
+
+    private void configurerComboBoxProjet() {
+        comboProjet.setCellFactory(lv -> new ListCell<projet>() {
+            @Override
+            protected void updateItem(projet p, boolean empty) {
+                super.updateItem(p, empty);
+                setText((empty || p == null) ? "" : p.getTitle());
+            }
+        });
+        comboProjet.setButtonCell(new ListCell<projet>() {
+            @Override
+            protected void updateItem(projet p, boolean empty) {
+                super.updateItem(p, empty);
+                setText((empty || p == null) ? "" : p.getTitle());
+            }
+        });
+    }
+
+    private void configurerComboBoxDevise() {
+        comboDevise.getItems().addAll("TND", "EUR", "USD");
+        comboDevise.getSelectionModel().selectFirst();
+    }
+
+    private void chargerDonneesProjets() {
+        try {
+            comboProjet.getItems().setAll(ps.SelectAll());
+        } catch (Exception e) {
+            System.err.println("Erreur chargement projets : " + e.getMessage());
+        }
     }
 
     @FXML
     private void enregistrer() {
+        projet pSelected = comboProjet.getValue();
+        String deviseSelected = comboDevise.getValue();
+
+        // Validation stricte
+        if (pSelected == null || txtMontant.getText().trim().isEmpty() || deviseSelected == null
+                || txtTaux.getText().trim().isEmpty() || txtDuree.getText().trim().isEmpty()) {
+            afficherAlerte("Champs manquants", "Veuillez remplir toutes les informations du formulaire.");
+            return;
+        }
+
         try {
-            if (comboProjet.getValue() == null) {
-                afficherErreur("Erreur", "Veuillez sélectionner un projet valide.");
-                return;
-            }
+            credit nouveauCredit = new credit();
 
-            credit c = new credit();
-            c.setMontant(Double.parseDouble(txtMontant.getText()));
-            c.setTaux(Double.parseDouble(txtTaux.getText()));
-            c.setDevise(comboDevise.getValue());
-            c.setDescription(txtDescription.getText());
+            // 1. Liaison des IDs
+            nouveauCredit.setProject_id(pSelected.getId_project());
+            nouveauCredit.setBorrower_id(this.connectedUserId);
 
-            // LOGIQUE AUTOMATIQUE
-            c.setStatus(CreditStatus.PENDING); // Toujours en attente à la création
-            c.setDuree(12); // Valeur par défaut ou ajouter un champ si nécessaire
+            // 2. Données saisies (Parsing)
+            nouveauCredit.setMontant(Double.parseDouble(txtMontant.getText()));
+            nouveauCredit.setDevise(deviseSelected);
+            nouveauCredit.setTaux(Double.parseDouble(txtTaux.getText()));
+            nouveauCredit.setDuree(Integer.parseInt(txtDuree.getText()));
+            nouveauCredit.setDescription(txtDescription.getText());
 
-            // RÉSOLUTION CLÉ ÉTRANGÈRE :
-            // Pour l'instant on force des IDs qui existent en BDD pour tester
-            c.setProject_id(1);  // Assure-toi que l'ID 1 existe en table projet
-            c.setBorrower_id(1); // Assure-toi que l'ID 1 existe en table user/borrower
-            // c.setInvestisseur_id(null); // Optionnel si ta BDD accepte le null
+            // 3. Statut initial (doit correspondre à ton Enum CreditStatus)
+            nouveauCredit.setStatus(CreditStatus.OPEN);
 
-            cs.insertOne(c);
+            // Appel au service (ta nouvelle méthode insertOne avec 9 paramètres)
+            cs.insertOne(nouveauCredit);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setContentText("Demande envoyée avec succès !");
-            alert.showAndWait();
             annuler();
 
+        } catch (NumberFormatException e) {
+            afficherAlerte("Erreur de saisie", "Le montant, le taux et la durée doivent être des nombres valides.");
         } catch (Exception e) {
-            afficherErreur("Erreur SQL", "Impossible d'ajouter : " + e.getMessage());
+            e.printStackTrace();
+            // Affiche l'erreur réelle pour faciliter le débogage
+            afficherAlerte("Erreur", "Impossible d'enregistrer : " + e.getMessage());
         }
     }
 
-    @FXML private void annuler() {
-        ((Stage) txtMontant.getScene().getWindow()).close();
+    @FXML
+    private void annuler() {
+        Stage stage = (Stage) txtMontant.getScene().getWindow();
+        stage.close();
     }
 
-    private void afficherErreur(String titre, String msg) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle(titre);
-        a.setContentText(msg);
-        a.showAndWait();
+    private void afficherAlerte(String titre, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(titre);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

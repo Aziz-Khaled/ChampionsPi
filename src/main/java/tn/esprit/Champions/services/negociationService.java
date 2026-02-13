@@ -55,6 +55,21 @@ public class negociationService implements CRUD<Negociation> {
         pst.close();
         System.out.println("Négociation supprimée !");
     }
+    // Méthode pour accepter un deal
+    public void accepterNegociation(int id) throws SQLException {
+        String req = "UPDATE `negociation` SET `status` = 'ACCEPTED' WHERE `id_negociation` = ?";
+        PreparedStatement pst = cnx.prepareStatement(req);
+        pst.setInt(1, id);
+        pst.executeUpdate();
+    }
+
+    // Méthode pour refuser un deal
+    public void refuserNegociation(int id) throws SQLException {
+        String req = "UPDATE `negociation` SET `status` = 'REJECTED' WHERE `id_negociation` = ?";
+        PreparedStatement pst = cnx.prepareStatement(req);
+        pst.setInt(1, id);
+        pst.executeUpdate();
+    }
 
     @Override
     public List<Negociation> SelectAll() throws SQLException {

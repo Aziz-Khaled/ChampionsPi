@@ -18,6 +18,10 @@ public class Utilisateur {
         this.role = role;
     }
 
+     public Utilisateur() {
+    }
+
+
     public int getId_user() {
         return id_user;
     }

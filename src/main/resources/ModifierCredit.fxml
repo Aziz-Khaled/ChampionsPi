@@ -5,17 +5,17 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefWidth="550.0" spacing="0.0" style="-fx-background-color: white; -fx-background-radius: 20; -fx-border-radius: 20; -fx-border-color: #dcdde1;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.AjouterCreditController">
+<VBox prefWidth="550.0" spacing="0.0" style="-fx-background-color: white; -fx-background-radius: 20; -fx-border-radius: 20; -fx-border-color: #dcdde1;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.ModifierCreditController">
     <children>
-        <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #0984e3; -fx-background-radius: 20 20 0 0;">
+        <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #f1c40f; -fx-background-radius: 20 20 0 0;">
             <padding><Insets left="30.0" /></padding>
             <children>
                 <VBox alignment="CENTER_LEFT">
                     <children>
-                        <Label text="Nouvelle Demande de Crédit" textFill="WHITE">
+                        <Label text="Modifier la Demande de Crédit" textFill="WHITE">
                             <font><Font name="System Bold" size="22.0" /></font>
                         </Label>
-                        <Label text="Formulaire de demande de financement" textFill="#e3f2fd">
+                        <Label text="Mise à jour des informations de financement" textFill="#fff9db">
                             <font><Font size="13.0" /></font>
                         </Label>
                     </children>
@@ -42,7 +42,7 @@
                         </Label>
                         <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                             <children>
-                                <TextField fx:id="txtMontant" prefHeight="40.0" promptText="0.00" HBox.hgrow="ALWAYS" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
+                                <TextField fx:id="txtMontant" prefHeight="40.0" promptText="0.00" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" HBox.hgrow="ALWAYS" />
                                 <ComboBox fx:id="comboDevise" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
                             </children>
                         </HBox>
@@ -52,8 +52,8 @@
                         </Label>
                         <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                             <children>
-                                <TextField fx:id="txtTaux" prefHeight="40.0" promptText="Taux %" HBox.hgrow="ALWAYS" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
-                                <TextField fx:id="txtDuree" prefHeight="40.0" promptText="Mois" HBox.hgrow="ALWAYS" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
+                                <TextField fx:id="txtTaux" prefHeight="40.0" promptText="Taux %" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" HBox.hgrow="ALWAYS" />
+                                <TextField fx:id="txtDuree" prefHeight="40.0" promptText="Mois" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" HBox.hgrow="ALWAYS" />
                             </children>
                         </HBox>
 
@@ -69,8 +69,8 @@
 
                 <HBox alignment="CENTER_RIGHT" spacing="15.0">
                     <children>
-                        <Button onAction="#annuler" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: transparent; -fx-text-fill: #b2bec3; -fx-font-weight: bold; -fx-cursor: hand;" text="ANNULER" />
-                        <Button onAction="#enregistrer" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="SOUMETTRE" />
+                        <Button onAction="#fermer" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: transparent; -fx-text-fill: #b2bec3; -fx-font-weight: bold; -fx-cursor: hand;" text="ANNULER" />
+                        <Button onAction="#modifier" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #f1c40f; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="ENREGISTRER" />
                     </children>
                 </HBox>
             </children>

@@ -25,7 +25,7 @@ public class AjouterProjetController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         comboStatus.getItems().setAll(projetStatus.values());
-        comboStatus.setValue(projetStatus.DRAFT); // Statut par défaut
+        comboStatus.setValue(projetStatus.ACTIVE); // Statut par défaut
         dateDebut.setValue(LocalDate.now()); // Date du jour par défaut
     }
 

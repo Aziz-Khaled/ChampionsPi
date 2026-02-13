@@ -6,15 +6,9 @@ import javafx.stage.Modality;
 import javafx.scene.Scene;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.HBox;
-import javafx.stage.Modality;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.projetStatus;
 import tn.esprit.Champions.services.projetService;
@@ -27,13 +21,15 @@ import java.util.ResourceBundle;
 public class AfficherProjetsController implements Initializable {
 
     @FXML private TableView<projet> tableProjets;
-    @FXML private TableColumn<projet, Integer> colId;
     @FXML private TableColumn<projet, String> colTitre;
     @FXML private TableColumn<projet, String> colDescription;
-    @FXML private TableColumn<projet, Double> colMontant;
+    @FXML private TableColumn<projet, Float> colMontant; // Adapté en Float selon ton modèle
     @FXML private TableColumn<projet, projetStatus> colStatus;
     @FXML private TableColumn<projet, Timestamp> colDateDebut;
-    @FXML private TableColumn<projet, Void> colActions;
+    @FXML private TableColumn<projet, Timestamp> colDateFin;
+
+    @FXML private Button btnEdit;
+    @FXML private Button btnDelete;
     @FXML private TextField searchField;
 
     private projetService ps = new projetService();
@@ -41,17 +37,25 @@ public class AfficherProjetsController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         configurerColonnes();
-        configurerBoutonsActions();
         chargerDonnees();
+        configurerSelectionTableau();
     }
 
     private void configurerColonnes() {
-        colId.setCellValueFactory(new PropertyValueFactory<>("id_project"));
         colTitre.setCellValueFactory(new PropertyValueFactory<>("title"));
         colDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
         colMontant.setCellValueFactory(new PropertyValueFactory<>("target_amount"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colDateDebut.setCellValueFactory(new PropertyValueFactory<>("start_date"));
+        colDateFin.setCellValueFactory(new PropertyValueFactory<>("end_date"));
+    }
+
+    private void configurerSelectionTableau() {
+        tableProjets.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            boolean selectionExiste = (newSelection != null);
+            btnEdit.setDisable(!selectionExiste);
+            btnDelete.setDisable(!selectionExiste);
+        });
     }
 
     private void chargerDonnees() {
@@ -62,85 +66,82 @@ public class AfficherProjetsController implements Initializable {
         }
     }
 
-    private void configurerBoutonsActions() {
-        colActions.setCellFactory(param -> new TableCell<>() {
-            private final Button btnEdit = new Button("✎");
-            private final Button btnDelete = new Button("✕");
-            private final HBox container = new HBox(btnEdit, btnDelete);
+    @FXML
+    private void handleEditSelection() {
+        projet p = tableProjets.getSelectionModel().getSelectedItem();
+        if (p != null) {
+            try {
+                // 1. Charger le FXML de modification
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/ModifierProjet.fxml"));
+                Parent root = loader.load();
 
-            {
-                container.setSpacing(12);
-                container.setAlignment(Pos.CENTER);
+                // 2. Accéder au contrôleur de la fenêtre de modification pour lui envoyer l'objet
+                ModifierProjetController controller = loader.getController();
+                controller.initData(p);
 
-                // Style Modifier (Jaune)
-                btnEdit.setStyle("-fx-background-color: #FFB300; -fx-text-fill: white; -fx-background-radius: 15; -fx-min-width: 30px; -fx-cursor: hand;");
+                // 3. Configurer et afficher la fenêtre modale
+                Stage stage = new Stage();
+                stage.setTitle("CHAMPIONS | Modifier le Projet : " + p.getTitle());
+                stage.initModality(Modality.APPLICATION_MODAL);
+                stage.setScene(new Scene(root));
+                stage.setResizable(false);
 
-                // Style Supprimer (Rouge)
-                btnDelete.setStyle("-fx-background-color: #FF5252; -fx-text-fill: white; -fx-background-radius: 15; -fx-min-width: 30px; -fx-cursor: hand;");
+                stage.showAndWait(); // Attend la fermeture de la fenêtre pour continuer
 
-                btnDelete.setOnAction(event -> {
-                    projet p = getTableView().getItems().get(getIndex());
-                    handleDelete(p);
-                });
+                // 4. Rafraîchir le tableau après la modification
+                chargerDonnees();
+
+            } catch (IOException e) {
+                afficherErreur("Impossible d'ouvrir l'interface de modification : " + e.getMessage());
+                e.printStackTrace();
             }
-
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : container);
-            }
-        });
+        }
     }
 
-    private void handleDelete(projet p) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer le projet : " + p.getTitle() + " ?", ButtonType.YES, ButtonType.NO);
-        alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.YES) {
-                try {
-                    ps.deleteOne(p);
-                    chargerDonnees();
-                } catch (Exception e) {
-                    System.err.println("Erreur suppression : " + e.getMessage());
+    @FXML
+    private void handleDeleteSelection() {
+        projet p = tableProjets.getSelectionModel().getSelectedItem();
+        if (p != null) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer le projet : " + p.getTitle() + " ?", ButtonType.YES, ButtonType.NO);
+            alert.setHeaderText("Confirmation de suppression");
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    try {
+                        ps.deleteOne(p);
+                        chargerDonnees();
+                    } catch (Exception e) {
+                        System.err.println("Erreur suppression : " + e.getMessage());
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @FXML
     private void ouvrirAjout() {
         try {
-            // 1. Charger le fichier FXML de l'interface d'ajout
-            // Assure-toi que le chemin correspond à l'emplacement de ton fichier dans resources
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/AjouterProjet.fxml"));
             Parent root = loader.load();
 
-            // 2. Créer une nouvelle fenêtre (Stage)
             Stage stage = new Stage();
             stage.setTitle("CHAMPIONS | Nouveau Projet");
-
-            // 3. Rendre la fenêtre modale (bloque la fenêtre principale tant qu'elle est ouverte)
             stage.initModality(Modality.APPLICATION_MODAL);
-
-            // 4. Configurer la scène et l'afficher
             stage.setScene(new Scene(root));
-            stage.setResizable(false); // Optionnel : empêche de redimensionner la popup
+            stage.setResizable(false);
 
-            // Utiliser showAndWait pour rafraîchir le tableau automatiquement après la fermeture
             stage.showAndWait();
-
-            // 5. Rafraîchir les données du tableau après l'ajout
             chargerDonnees();
 
         } catch (IOException e) {
-            System.err.println("Erreur lors de l'ouverture de l'interface d'ajout : " + e.getMessage());
+            afficherErreur("Fichier AjouterProjet.fxml introuvable.");
             e.printStackTrace();
-
-            // Afficher une alerte à l'utilisateur en cas d'erreur de chargement
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Erreur de chargement");
-            alert.setHeaderText("Impossible d'ouvrir le formulaire");
-            alert.setContentText("Le fichier AjouterProjet.fxml est introuvable ou corrompu.");
-            alert.showAndWait();
         }
+    }
+
+    private void afficherErreur(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Erreur");
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
