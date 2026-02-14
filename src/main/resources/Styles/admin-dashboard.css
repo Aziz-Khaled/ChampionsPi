@@ -60,3 +60,33 @@
 .table-row-cell:selected {
     -fx-background-color: #eff6ff;
 }
+
+/* Base style for the Logout button */
+.logout-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ef4444; /* A soft red color */
+    -fx-border-color: #fee2e2;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s ease-in-out;
+}
+
+/* Hover effect: Fills the button with red */
+.logout-button:hover {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+    -fx-border-color: #ef4444;
+}
+
+/* Pressed effect: darkens slightly */
+.logout-button:pressed {
+    -fx-background-color: #b91c1c;
+}
+
+/* Optional: Add an icon style if you want to add a logout icon later */
+.logout-button .text {
+    -fx-padding: 0 0 0 10;
+}

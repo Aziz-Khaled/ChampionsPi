@@ -4,10 +4,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import org.mindrot.jbcrypt.BCrypt;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.services.UtilisateurService;
 
-import java.awt.*;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,21 +42,29 @@ public class LoginService {
         }
 
         try {
-            // Check user in DB
-            Utilisateur user = getUserByEmailAndPassword(email, password);
+            // 1. Fetch user by email only
+            Utilisateur user = getUserByEmail(email);
 
-            if (user != null) {
+            // 2. Use BCrypt.checkpw to verify the plain-text password against the hash
+            if (user != null && BCrypt.checkpw(password, user.getMot_de_passe())) {
+
                 // Check if user is pending
                 if (user.getStatut() == tn.esprit.Champions.models.Status.PENDING) {
                     showAlert(Alert.AlertType.WARNING, "Compte en attente",
-                            "Votre compte est en attente de validation par l'administrateur.\nVeuillez patienter.");
-                    return; // stop login here
+                            "Votre compte est en attente de validation par l'administrateur.");
+                    return;
                 }
 
-                // If status is approved, continue
+                // Check if account is disabled
+                if (user.getStatut() == tn.esprit.Champions.models.Status.DESACTIVE) {
+                    showAlert(Alert.AlertType.ERROR, "Compte désactivé", "Votre compte a été suspendu.");
+                    return;
+                }
+
                 showAlert(Alert.AlertType.INFORMATION, "Succès", "Bienvenue, " + user.getNom() + " !");
 
-                // Role-based redirection
+                tn.esprit.Champions.utils.UserSession.setLoggedInUser(user);
+
                 if (user.getRole() == tn.esprit.Champions.models.Role.ADMIN) {
                     openPage("/Admin.fxml", "Admin Panel");
                 } else {
@@ -63,6 +72,7 @@ public class LoginService {
                 }
 
             } else {
+                // This error covers both "user not found" and "wrong password" for better security
                 showAlert(Alert.AlertType.ERROR, "Erreur", "Email ou mot de passe incorrect.");
             }
 
@@ -72,12 +82,11 @@ public class LoginService {
         }
     }
 
-
-    private Utilisateur getUserByEmailAndPassword(String email, String password) throws SQLException {
-        String query = "SELECT * FROM utilisateur WHERE email = ? AND mot_de_passe = ?";
+    // Updated method to find user by email ONLY
+    private Utilisateur getUserByEmail(String email) throws SQLException {
+        String query = "SELECT * FROM utilisateur WHERE email = ?";
         try (PreparedStatement ps = tn.esprit.Champions.utils.DbConnection.getInstance().getCnx().prepareStatement(query)) {
             ps.setString(1, email);
-            ps.setString(2, password);
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -86,18 +95,20 @@ public class LoginService {
                         rs.getString("nom"),
                         rs.getString("prenom"),
                         rs.getString("email"),
-                        rs.getString("mot_de_passe"),
+                        rs.getString("mot_de_passe"), // This will be the hashed string
                         rs.getString("telephone"),
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),
                         tn.esprit.Champions.models.Status.valueOf(rs.getString("statut")),
                         tn.esprit.Champions.models.Role.valueOf(rs.getString("role"))
                 );
-            } else {
-                return null;
             }
+            return null;
         }
     }
+
+
+
 
     private void showAlert(Alert.AlertType type, String title, String message){
         Alert alert = new Alert(type);

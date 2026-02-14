@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.services.UtilisateurService;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -29,12 +30,31 @@ public class AdminPanelService {
 
     @FXML
     private void initialize() {
+
+        Utilisateur currentUser = UserSession.getLoggedInUser();
+        if (currentUser != null) {
+            lblTitle.setText("Hello, " + currentUser.getNom());
+        }
         showGestionUsers();
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
 
         if (btnLogout != null) {
-            btnLogout.setOnAction(e -> System.exit(0));
+            btnLogout.setOnAction(e -> {
+
+                UserSession.clearSession();
+
+                try {
+                    javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/LoginPage.fxml"));
+                    javafx.scene.Parent root = loader.load();
+                    javafx.stage.Stage stage = (javafx.stage.Stage) btnLogout.getScene().getWindow();
+                    stage.setScene(new javafx.scene.Scene(root));
+                    stage.setTitle("Login - Champions");
+                    stage.show();
+                } catch (java.io.IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
         }
     }
 
