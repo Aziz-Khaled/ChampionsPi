@@ -80,6 +80,9 @@
                         <padding>
                             <Insets left="10.0" />
                         </padding>
+                  <VBox.margin>
+                     <Insets bottom="20.0" top="30.0" />
+                  </VBox.margin>
                     </Label>
 
                     <!-- GridPane Wallet Type/Status -->
@@ -111,11 +114,17 @@
                             <font><Font name="System Bold" size="27.0" /></font>
                             <HBox.margin><Insets /></HBox.margin>
                         </Button>
+                  <VBox.margin>
+                     <Insets top="20.0" />
+                  </VBox.margin>
                     </HBox>
 
                     <!-- Wallet Currency Section -->
                     <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="wallet_currency">
                         <padding><Insets left="10.0" /></padding>
+                  <VBox.margin>
+                     <Insets bottom="20.0" top="50.0" />
+                  </VBox.margin>
                     </Label>
 
                     <!-- GridPane Wallet Currency -->
@@ -147,6 +156,9 @@
                             <font><Font name="System Bold" size="27.0" /></font>
                             <HBox.margin><Insets /></HBox.margin>
                         </Button>
+                  <VBox.margin>
+                     <Insets top="20.0" />
+                  </VBox.margin>
                     </HBox>
 
                 </VBox>
