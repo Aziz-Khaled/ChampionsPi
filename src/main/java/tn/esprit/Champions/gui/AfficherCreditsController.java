@@ -1,6 +1,10 @@
 package tn.esprit.Champions.gui;
 
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -20,6 +24,8 @@ import tn.esprit.Champions.services.projetService;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class AfficherCreditsController implements Initializable {
@@ -34,34 +40,37 @@ public class AfficherCreditsController implements Initializable {
     @FXML private TableColumn<credit, String> colDescription;
     @FXML private TableColumn<credit, Void> colActions;
 
-    @FXML private Button btnEdit;
-    @FXML private Button btnDelete;
+    @FXML private Button btnEdit, btnDelete;
     @FXML private TextField searchField;
+    @FXML private ComboBox<String> statusFilterCombo;
+    @FXML private Label statLabel;
 
     private final creditService cs = new creditService();
     private final projetService ps = new projetService();
+
+    private final ObservableList<credit> masterData = FXCollections.observableArrayList();
+
+    // ✅ Cache pour stocker les noms des projets et permettre une recherche instantanée
+    private final Map<Integer, String> projetCache = new HashMap<>();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         configurerColonnes();
         chargerDonnees();
+        configurerRechercheDynamique();
 
-        tableCredits.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            boolean selectionExiste = (newSelection != null);
+        tableCredits.getSelectionModel().selectedItemProperty().addListener((obs, old, selection) -> {
+            boolean selectionExiste = (selection != null);
             btnEdit.setDisable(!selectionExiste);
             btnDelete.setDisable(!selectionExiste);
         });
     }
 
     private void configurerColonnes() {
+        // Affichage du titre du projet (utilise le cache pour la performance)
         colProjet.setCellValueFactory(cellData -> {
-            int idProjet = cellData.getValue().getProject_id();
-            try {
-                projet p = ps.findById(idProjet);
-                return new SimpleStringProperty(p != null ? p.getTitle() : "Inconnu");
-            } catch (Exception e) {
-                return new SimpleStringProperty("Erreur");
-            }
+            int id = cellData.getValue().getProject_id();
+            return new SimpleStringProperty(projetCache.getOrDefault(id, "Inconnu"));
         });
 
         colMontant.setCellValueFactory(new PropertyValueFactory<>("montant"));
@@ -69,29 +78,24 @@ public class AfficherCreditsController implements Initializable {
         colTaux.setCellValueFactory(new PropertyValueFactory<>("taux"));
         colDuree.setCellValueFactory(new PropertyValueFactory<>("duree"));
         colDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
-
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
         colStatus.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(CreditStatus item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                } else {
+                if (empty || item == null) setGraphic(null);
+                else {
                     Label badge = new Label(item.toString());
-                    badge.setPrefWidth(85);
+                    badge.setPrefWidth(90);
                     badge.setAlignment(Pos.CENTER);
-                    String styleBase = "-fx-padding: 3 10; -fx-background-radius: 12; -fx-font-weight: bold; -fx-text-fill: white; -fx-font-size: 11px;";
+                    String styleBase = "-fx-padding: 4 10; -fx-background-radius: 15; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;";
 
-                    switch (item) {
-                        case OPEN -> badge.setStyle(styleBase + "-fx-background-color: #f39c12;");
-                        case APPROVED -> badge.setStyle(styleBase + "-fx-background-color: #27ae60;");
-                        case REJECTED -> badge.setStyle(styleBase + "-fx-background-color: #e74c3c;");
-                        default -> badge.setStyle(styleBase + "-fx-background-color: #95a5a6;");
-                    }
+                    if (item == CreditStatus.OPEN) badge.setStyle(styleBase + "-fx-background-color: #f39c12;");
+                    else if (item == CreditStatus.APPROVED) badge.setStyle(styleBase + "-fx-background-color: #27ae60;");
+                    else if (item == CreditStatus.REJECTED) badge.setStyle(styleBase + "-fx-background-color: #e74c3c;");
+                    else badge.setStyle(styleBase + "-fx-background-color: #95a5a6;");
                     setGraphic(badge);
-                    setAlignment(Pos.CENTER);
                 }
             }
         });
@@ -99,9 +103,7 @@ public class AfficherCreditsController implements Initializable {
         colActions.setCellFactory(param -> new TableCell<>() {
             private final Button btnOffers = new Button("Offres");
             {
-                btnOffers.setStyle("-fx-background-color: transparent; -fx-border-color: #0fbcf9; -fx-border-radius: 15; -fx-text-fill: #0fbcf9; -fx-font-weight: bold; -fx-font-size: 10px; -fx-cursor: hand;");
-                btnOffers.setOnMouseEntered(e -> btnOffers.setStyle("-fx-background-color: #0fbcf9; -fx-text-fill: white; -fx-background-radius: 15; -fx-font-weight: bold; -fx-font-size: 10px;"));
-                btnOffers.setOnMouseExited(e -> btnOffers.setStyle("-fx-background-color: transparent; -fx-border-color: #0fbcf9; -fx-border-radius: 15; -fx-text-fill: #0fbcf9; -fx-font-weight: bold; -fx-font-size: 10px;"));
+                btnOffers.setStyle("-fx-background-color: transparent; -fx-border-color: #0fbcf9; -fx-border-radius: 15; -fx-text-fill: #0fbcf9; -fx-font-weight: bold; -fx-cursor: hand;");
                 btnOffers.setOnAction(event -> ouvrirNegociationEmprunteur(getTableView().getItems().get(getIndex())));
             }
             @Override
@@ -109,17 +111,116 @@ public class AfficherCreditsController implements Initializable {
                 super.updateItem(item, empty);
                 if (empty) setGraphic(null);
                 else {
-                    HBox container = new HBox(btnOffers);
-                    container.setAlignment(Pos.CENTER);
-                    setGraphic(container);
+                    HBox c = new HBox(btnOffers); c.setAlignment(Pos.CENTER); setGraphic(c);
                 }
             }
         });
     }
 
+    private void configurerRechercheDynamique() {
+        ObservableList<String> options = FXCollections.observableArrayList("Tous");
+        for (CreditStatus s : CreditStatus.values()) options.add(s.toString());
+        statusFilterCombo.setItems(options);
+        statusFilterCombo.setValue("Tous");
+
+        FilteredList<credit> filteredData = new FilteredList<>(masterData, c -> true);
+
+        Runnable applyFilters = () -> {
+            String text = searchField.getText() == null ? "" : searchField.getText().toLowerCase();
+            String status = statusFilterCombo.getValue();
+
+            filteredData.setPredicate(c -> {
+                // ✅ RECHERCHE PAR NOM DE PROJET (via le cache)
+                String nomProjet = projetCache.getOrDefault(c.getProject_id(), "").toLowerCase();
+
+                boolean matchesText = text.isEmpty() ||
+                        nomProjet.contains(text) || // Recherche dans le nom du projet
+                        c.getDescription().toLowerCase().contains(text) ||
+                        c.getDevise().toLowerCase().contains(text) ||
+                        String.valueOf(c.getMontant()).contains(text);
+
+                boolean matchesStatus = status.equals("Tous") || c.getStatus().toString().equals(status);
+
+                return matchesText && matchesStatus;
+            });
+            updateStatLabel(filteredData.size());
+        };
+
+        searchField.textProperty().addListener((obs, old, val) -> applyFilters.run());
+        statusFilterCombo.valueProperty().addListener((obs, old, val) -> applyFilters.run());
+
+        SortedList<credit> sortedData = new SortedList<>(filteredData);
+        sortedData.comparatorProperty().bind(tableCredits.comparatorProperty());
+        tableCredits.setItems(sortedData);
+    }
+
     private void chargerDonnees() {
-        try { tableCredits.getItems().setAll(cs.SelectAll()); }
-        catch (Exception e) { afficherErreur("Erreur chargement : " + e.getMessage()); }
+        try {
+            // 1. Charger les projets pour le cache (Recherche par nom)
+            projetCache.clear();
+            for (projet p : ps.SelectAll()) {
+                projetCache.put(p.getId_project(), p.getTitle());
+            }
+
+            // 2. Charger les crédits
+            masterData.setAll(cs.SelectAll());
+            updateStatLabel(masterData.size());
+        } catch (Exception e) {
+            afficherErreur("Erreur chargement : " + e.getMessage());
+        }
+    }
+
+    private void updateStatLabel(int count) {
+        if (statLabel != null) {
+            statLabel.setText(count + (count > 1 ? " Crédits trouvés" : " Crédit trouvé"));
+        }
+    }
+
+    @FXML
+    private void ouvrirAjout() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/AjouterCredit.fxml"));
+            Parent root = loader.load();
+            AjouterCreditController controller = loader.getController();
+            controller.setConnectedUserId(1);
+
+            Stage stage = new Stage();
+            stage.setTitle("Nouvelle Demande");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.showAndWait();
+            chargerDonnees();
+        } catch (IOException e) { afficherErreur("Erreur FXML : " + e.getMessage()); }
+    }
+
+    @FXML
+    private void handleEditSelection() {
+        credit selected = tableCredits.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ModifierCredit.fxml"));
+            Parent root = loader.load();
+            ModifierCreditController controller = loader.getController();
+            controller.initData(selected);
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.showAndWait();
+            chargerDonnees();
+        } catch (IOException e) { afficherErreur("Erreur FXML : " + e.getMessage()); }
+    }
+
+    @FXML
+    private void handleDeleteSelection() {
+        credit selected = tableCredits.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer ce crédit ?", ButtonType.YES, ButtonType.NO);
+        alert.showAndWait().ifPresent(res -> {
+            if (res == ButtonType.YES) {
+                try { cs.deleteOne(selected); chargerDonnees(); }
+                catch (Exception e) { afficherErreur("Erreur suppression."); }
+            }
+        });
     }
 
     private void ouvrirNegociationEmprunteur(credit c) {
@@ -128,79 +229,10 @@ public class AfficherCreditsController implements Initializable {
             Parent root = loader.load();
             NegociationController controller = loader.getController();
             controller.setCreditSelectionne(c);
-
             Stage stage = new Stage();
-            stage.setTitle("Offres de négociation");
             stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
             stage.show();
-        } catch (IOException e) { afficherErreur("Erreur FXML : " + e.getMessage()); }
-    }
-
-    @FXML
-    private void ouvrirAjout() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/AjouterCredit.fxml"));
-            Parent root = loader.load();
-
-            // ✅ RÉPARATION : Passage de l'ID utilisateur pour éviter l'erreur de contrainte SQL
-            AjouterCreditController controller = loader.getController();
-            // Assurez-vous que l'ID 1 existe dans votre table 'utilisateur' sur phpMyAdmin
-            controller.setConnectedUserId(1);
-
-            Stage stage = new Stage();
-            stage.setTitle("Nouvelle Demande");
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-
-            chargerDonnees();
-        } catch (IOException e) {
-            afficherErreur("Impossible d'ouvrir AjouterCredit.fxml : " + e.getMessage());
-        }
-    }
-
-    @FXML
-    private void handleEditSelection() {
-        credit selected = tableCredits.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
-
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ModifierCredit.fxml"));
-            Parent root = loader.load();
-
-            ModifierCreditController controller = loader.getController();
-            controller.initData(selected);
-
-            Stage stage = new Stage();
-            stage.setTitle("Modifier Crédit");
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-
-            chargerDonnees();
-        } catch (IOException e) {
-            afficherErreur("Impossible d'ouvrir ModifierCredit.fxml : " + e.getMessage());
-        }
-    }
-
-    @FXML
-    private void handleDeleteSelection() {
-        credit selected = tableCredits.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
-
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer ce crédit définitivement ?", ButtonType.YES, ButtonType.NO);
-        alert.setTitle("Confirmation de suppression");
-        alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.YES) {
-                try {
-                    cs.deleteOne(selected);
-                    chargerDonnees();
-                } catch (Exception e) {
-                    afficherErreur("Erreur lors de la suppression : " + e.getMessage());
-                }
-            }
-        });
+        } catch (IOException e) { afficherErreur("Erreur : " + e.getMessage()); }
     }
 
     private void afficherErreur(String message) {

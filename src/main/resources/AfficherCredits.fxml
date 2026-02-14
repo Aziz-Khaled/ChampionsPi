@@ -25,13 +25,20 @@
 
         <HBox alignment="CENTER_LEFT" spacing="15.0">
             <children>
-                <HBox alignment="CENTER_LEFT" prefHeight="50.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 3);" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 3);" HBox.hgrow="ALWAYS">
                     <padding><Insets left="15.0" right="15.0" /></padding>
                     <children>
-                        <Label text="🔍 " textFill="#b2bec3" />
-                        <TextField fx:id="searchField" promptText="Rechercher un crédit..." style="-fx-background-color: transparent;" HBox.hgrow="ALWAYS" />
+                        <Label text="🔍" textFill="#b2bec3" />
+                        <TextField fx:id="searchField" promptText="Rechercher montant, devise, description..." style="-fx-background-color: transparent;" HBox.hgrow="ALWAYS" />
+
+                        <Separator orientation="VERTICAL" prefHeight="25.0" />
+
+                        <ComboBox fx:id="statusFilterCombo" prefWidth="160.0" promptText="Tous les Statuts" style="-fx-background-color: transparent; -fx-cursor: hand;" />
                     </children>
                 </HBox>
+
+                <Label fx:id="statLabel" alignment="CENTER" minWidth="120.0" style="-fx-background-color: #dfe6e9; -fx-padding: 8 15; -fx-background-radius: 20; -fx-text-fill: #2d3436; -fx-font-weight: bold;" text="0 Crédits" />
+
                 <Button fx:id="btnEdit" disable="true" onAction="#handleEditSelection" prefHeight="50.0" prefWidth="120.0" style="-fx-background-color: #f1c40f; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="✎ Modifier" />
                 <Button fx:id="btnDelete" disable="true" onAction="#handleDeleteSelection" prefHeight="50.0" prefWidth="120.0" style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="✕ Supprimer" />
             </children>
@@ -47,11 +54,8 @@
                         <TableColumn fx:id="colDevise" prefWidth="70.0" text="DEVISE" />
                         <TableColumn fx:id="colTaux" prefWidth="70.0" text="TAUX (%)" />
                         <TableColumn fx:id="colDuree" prefWidth="80.0" text="DURÉE" />
-
                         <TableColumn fx:id="colStatus" prefWidth="110.0" text="STATUT" />
-
                         <TableColumn fx:id="colDescription" prefWidth="180.0" text="DESCRIPTION" />
-
                         <TableColumn fx:id="colActions" prefWidth="120.0" text="ACTIONS" />
                     </columns>
                     <columnResizePolicy>
