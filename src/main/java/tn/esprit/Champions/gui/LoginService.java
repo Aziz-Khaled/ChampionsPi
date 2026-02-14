@@ -57,7 +57,7 @@ public class LoginService {
 
                 // Role-based redirection
                 if (user.getRole() == tn.esprit.Champions.models.Role.ADMIN) {
-                    openPage("/AdminPanel.fxml", "Admin Panel");
+                    openPage("/Admin.fxml", "Admin Panel");
                 } else {
                     openPage("/ClientPanel.fxml", "Client Panel");
                 }
