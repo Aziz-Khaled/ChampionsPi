@@ -36,22 +36,25 @@ public class wallet_currencyService implements CRUD <wallet_currency>
 
         // Récupérer l'id de la currency selon son nom
         int idCurrency = getCurrencyIdByName(walletCurrency.getNom_currency());
-
-        // Vérification de sécurité
-        if (idCurrency == 0) {
-            throw new SQLException("Currency introuvable : " + walletCurrency.getNom_currency());
-        }
-
         walletCurrency.setId_currency(idCurrency);
 
-        // INSERT sans le solde, il prendra automatiquement la valeur par défaut (0.00)
-        String query = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency) VALUES (?,?,?)";
+        // Vérifier si la currency existe déjà pour ce wallet
+        String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement checkStmt = cnx.prepareStatement(checkQuery)) {
+            checkStmt.setInt(1, walletCurrency.getId_wallet());
+            checkStmt.setInt(2, walletCurrency.getId_currency());
+            ResultSet rs = checkStmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                throw new SQLException("Cette currency existe déjà dans ce wallet !");
+            }
+        }
 
-        try (PreparedStatement pst = cnx.prepareStatement(query)) {
+        // Si pas existante, INSERT
+        String insertQuery = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency) VALUES (?,?,?)";
+        try (PreparedStatement pst = cnx.prepareStatement(insertQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
             pst.setString(3, walletCurrency.getNom_currency());
-
             pst.executeUpdate();
             System.out.println("wallet_currency ajouté avec succès : " + walletCurrency.getNom_currency());
         }
@@ -64,7 +67,32 @@ public class wallet_currencyService implements CRUD <wallet_currency>
 
     @Override
     public void deleteOne(wallet_currency walletCurrency) throws SQLException {
+        // Récupérer le solde actuel depuis la DB
+        String selectQuery = "SELECT solde FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(selectQuery)) {
+            pst.setInt(1, walletCurrency.getId_wallet());
+            pst.setInt(2, walletCurrency.getId_currency());
 
+            ResultSet rs = pst.executeQuery();
+            if (rs.next()) {
+                double solde = rs.getDouble("solde");
+                if (solde > 0) {
+                    throw new SQLException("Impossible de supprimer : le solde de cette currency n'est pas nul !");
+                }
+            } else {
+                throw new SQLException("Aucune currency trouvée pour suppression !");
+            }
+        }
+
+        // Suppression si le solde est nul
+        String deleteQuery = "DELETE FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(deleteQuery)) {
+            pst.setInt(1, walletCurrency.getId_wallet());
+            pst.setInt(2, walletCurrency.getId_currency());
+
+            pst.executeUpdate();
+            System.out.println("wallet_currency supprimé avec succès : " + walletCurrency.getNom_currency());
+        }
     }
 
     @Override

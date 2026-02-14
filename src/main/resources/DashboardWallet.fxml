@@ -129,23 +129,23 @@
                             <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
                         </rowConstraints>
                         <Label styleClass="label-header" text="Id" GridPane.columnIndex="0" />
-                        <TextField fx:id="txtName1" promptText="wallet id" styleClass="text-field" GridPane.columnIndex="1" />
-                        <ComboBox fx:id="boxStatus21" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <TextField fx:id="walletIdField" promptText="wallet id" styleClass="text-field" GridPane.columnIndex="1" />
+                        <ComboBox fx:id="currencyComboBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <Label styleClass="label-header" text="currency" GridPane.rowIndex="1" />
                     </GridPane>
 
                     <!-- Wallet Currency Buttons -->
                     <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
-                        <Button fx:id="add_wallet_currency" onAction="#handleAddWallet" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
+                        <Button fx:id="add_wallet_currency" onAction="#handleAddWalletCurrency" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
                             <font><Font name="System Bold" size="27.0" /></font>
                             <HBox.margin><Insets left="50.0" /></HBox.margin>
                         </Button>
-                        <Button fx:id="modify_wallet_currency" onAction="#handleAddWallet" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
+                        <Button fx:id="modify_wallet_currency" onAction="#handleAddWallet" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
+                            <font><Font name="System Bold" size="27.0" /></font>
+                        </Button>
+                        <Button fx:id="delete_wallet_currency" onAction="#handleDeleteWalletCurrency" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
                             <font><Font name="System Bold" size="27.0" /></font>
                             <HBox.margin><Insets /></HBox.margin>
-                        </Button>
-                        <Button fx:id="delete_wallet_currency" onAction="#handleAddWallet" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
                         </Button>
                     </HBox>
 
@@ -164,7 +164,7 @@
 
                     <!-- ScrollPane pour wallets Fiat -->
                     <AnchorPane>
-                        <ScrollPane fx:id="scrollWallets" fitToHeight="true" hbarPolicy="ALWAYS" layoutX="14.0" layoutY="14.0" prefHeight="170.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="14.0">
+                        <ScrollPane fx:id="scrollWallets" fitToHeight="true" hbarPolicy="ALWAYS" layoutX="14.0" layoutY="14.0" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="5.0">
                             <content>
                                 <HBox fx:id="walletContainer" alignment="CENTER_LEFT" spacing="15">
                                     <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
@@ -175,7 +175,7 @@
 
                     <!-- ScrollPane pour wallets Crypto -->
                     <AnchorPane>
-                        <ScrollPane fx:id="scrollWallets1" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="170.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0">
+                        <ScrollPane fx:id="scrollWallets1" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="3.0">
                             <content>
                                 <HBox fx:id="walletContainer1" alignment="CENTER_LEFT" spacing="15">
                                     <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
@@ -186,7 +186,7 @@
 
                     <!-- ScrollPane pour wallets Trading -->
                     <AnchorPane>
-                        <ScrollPane fx:id="scrollWallets2" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="170.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="10.0">
+                        <ScrollPane fx:id="scrollWallets2" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="3.0">
                             <content>
                                 <HBox fx:id="walletContainer2" alignment="CENTER_LEFT" spacing="15">
                                     <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
