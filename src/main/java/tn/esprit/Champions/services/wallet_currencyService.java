@@ -7,11 +7,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class wallet_currencyService implements CRUD <wallet_currency>
 {
-    private Connection cnx;
+    private static Connection cnx;
     public wallet_currencyService()
     {
         cnx = DbConnection.getInstance().getCnx();
@@ -70,4 +71,28 @@ public class wallet_currencyService implements CRUD <wallet_currency>
     public List<wallet_currency> SelectAll() throws SQLException {
         return List.of();
     }
-}
+
+
+    public static List<wallet_currency> getCurrenciesByWallet(int idWallet) throws SQLException {
+        List<wallet_currency> list = new ArrayList<>();
+
+        String query = "SELECT * FROM wallet_currency WHERE id_wallet = ?";
+        PreparedStatement pst = cnx.prepareStatement(query);
+        pst.setInt(1, idWallet);
+
+        ResultSet rs = pst.executeQuery();
+
+        while (rs.next()) {
+            wallet_currency wc = new wallet_currency();
+            wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
+            wc.setId_wallet(rs.getInt("id_wallet"));
+            wc.setId_currency(rs.getInt("id_currency"));
+            wc.setNom_currency(rs.getString("nom_currency"));
+            wc.setSolde(rs.getDouble("solde"));
+
+            list.add(wc);
+        }
+
+        return list;
+    }
+    }
