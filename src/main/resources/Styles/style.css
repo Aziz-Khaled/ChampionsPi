@@ -1,0 +1,182 @@
+/* --- Global & Layout --- */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.main-container {
+    -fx-background-color: #0f172a;
+    /* Ensure the container fills the stage */
+    -fx-min-width: 800;
+    -fx-min-height: 600;
+}
+
+.brand-section {
+    -fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);
+    -fx-padding: 50;
+    /* Use percentage-based width instead of fixed 400 */
+    -fx-pref-width: 400;
+    -fx-max-width: 500;
+}
+
+.logo-box {
+    -fx-background-color: #10b981;
+    -fx-background-radius: 8;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+}
+
+.brand-title {
+    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.brand-headline {
+    -fx-text-fill: white;
+    -fx-font-size: 36px;
+    -fx-font-weight: 800;
+}
+
+.brand-subtext {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 16px;
+}
+
+/* --- Right Side Forms (The Animated Part) --- */
+.form-section {
+    -fx-background-color: white;
+    -fx-background-radius: 40 0 0 40;
+    -fx-padding: 40;
+    /* Centering the child VBox automatically */
+    -fx-alignment: CENTER;
+}
+
+
+/* Responsive grid for the form */
+.form-content-area {
+    -fx-max-width: 500; /* Limits how wide the form gets on huge screens */
+    -fx-pref-width: 500;
+}
+
+/* Ensure images/boxes scale */
+.file-upload-box {
+    -fx-min-width: 150;
+    -fx-pref-width: 200;
+}
+
+
+/* --- Inputs & Interactive Elements --- */
+.text-field, .password-field, .combo-box {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 12 15;
+    -fx-text-fill: #1e293b;
+    -fx-transition: all 0.2s ease-in-out; /* Note: Requires code-side animation or high-end JFX versions */
+}
+
+.text-field:focused, .password-field:focused, .combo-box:focused {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: white;
+    -fx-effect: dropshadow(three-pass-box, rgba(59, 130, 246, 0.1), 8, 0, 0, 0);
+}
+
+.input-label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* --- Buttons --- */
+.button-primary {
+    -fx-background-color: #0f172a;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 12;
+    -fx-padding: 14 30;
+    -fx-cursor: hand;
+}
+
+.button-primary:hover {
+    -fx-background-color: #1e293b;
+    -fx-translate-y: -1; /* Subtle "lift" effect */
+}
+
+.button-primary:pressed {
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+.button-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: #3b82f6;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+}
+
+.button-secondary:hover {
+    -fx-text-fill: #2563eb;
+    -fx-underline: true;
+}
+
+/* --- Step & File Upload Styling --- */
+.prog-active { -fx-background-color: #3b82f6; }
+.prog-inactive { -fx-background-color: #e2e8f0; }
+
+.file-upload-box {
+    -fx-border-color: #cbd5e1;
+    -fx-border-style: dashed;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-background-color: #f8fafc;
+    -fx-cursor: hand;
+}
+
+.file-upload-box:hover {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: #eff6ff;
+}
+
+/* The Container Box */
+.file-upload-box {
+    -fx-border-color: #e2e8f0;
+    -fx-border-style: dashed;
+    -fx-border-width: 2;
+    -fx-border-radius: 16;
+    -fx-background-color: #f8fafc;
+    -fx-padding: 25;
+    -fx-transition: all 0.3s ease-in-out;
+}
+
+.file-upload-box:hover {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: #eff6ff;
+    -fx-cursor: hand;
+}
+
+/* The Upload Button inside the box */
+.button-upload {
+    -fx-background-color: white;
+    -fx-text-fill: #1e293b;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 12;
+}
+
+.button-upload:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #cbd5e1;
+}
+
+/* State when a file is successfully uploaded */
+.upload-success {
+    -fx-border-color: #10b981;
+    -fx-border-style: solid;
+    -fx-background-color: #f0fdf4;
+}

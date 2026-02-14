@@ -122,4 +122,10 @@ public class LoginService {
         }
     }
 
+    @FXML
+    private void openSignUpPage() {
+        // This provides the smooth fade/scale transition back to Signup
+        SceneHelper.transitionTo("/test.fxml", btn_Login.getScene().getRoot(), "Create Account - Champions");
+    }
+
 }

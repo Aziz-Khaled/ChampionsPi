@@ -1,12 +1,18 @@
 package tn.esprit.Champions.gui;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import tn.esprit.Champions.models.Role;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
@@ -19,10 +25,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 
+
+
 public class AuthService {
 
 
-
+    @FXML private VBox step1Container, step2Container;
+    @FXML private Region prog1, prog2;
+    @FXML private Label stepDescription;
 
     @FXML
     private Button Login_Button;
@@ -112,6 +122,47 @@ public class AuthService {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private boolean validateStep1() {
+
+        String nom = TF_Nom.getText().trim();
+        String prenom = TF_Prenom.getText().trim();
+        String email = TF_Email.getText().trim();
+        String telephone = TF_Telephone.getText().trim();
+        String password = TF_Password.getText();
+
+        if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty()
+                || telephone.isEmpty() || password.isEmpty()) {
+
+            showAlert(Alert.AlertType.WARNING,
+                    "Champs obligatoires",
+                    "Veuillez remplir tous les champs.");
+            return false;
+        }
+
+        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Email invalide",
+                    "Veuillez saisir une adresse email valide.");
+            return false;
+        }
+
+        if (!telephone.matches("\\d{8}")) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Numéro invalide",
+                    "Le numéro doit contenir 8 chiffres.");
+            return false;
+        }
+
+        if (password.length() < 6) {
+            showAlert(Alert.AlertType.ERROR,
+                    "Mot de passe faible",
+                    "Minimum 6 caractères.");
+            return false;
+        }
+
+        return true;
     }
     private void signUp() {
 
@@ -211,7 +262,6 @@ public class AuthService {
 
             showAlert(Alert.AlertType.INFORMATION, "Succès", "Demande d'inscription envoyée avec succès.\nEn attente de validation admin.");
 
-
             TF_Nom.clear();
             TF_Prenom.clear();
             TF_Email.clear();
@@ -226,19 +276,59 @@ public class AuthService {
             showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de créer le compte.\n" + e.getMessage());
         }
     }
+    @FXML
     private void openLoginPage() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/LoginPage.fxml"));
-            Parent root = loader.load();
+        // Pass the path, the current root node (Login_Button's scene root), and the title
+        SceneHelper.transitionTo("/LoginPage.fxml", Login_Button.getScene().getRoot(), "Login - Champions");
+    }
 
-            Stage stage = (Stage) Login_Button.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.setTitle("Login Page");
-            stage.show();
+    @FXML
+    private void nextStep() {
+        // Optional: Add validation here before allowing step 2
+        if (!validateStep1()) return;
+        animateStepChange(step1Container, step2Container, true);
+    }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'ouvrir la page de login.");
-        }
+    @FXML
+    private void prevStep() {
+        animateStepChange(step2Container, step1Container, false);
+    }
+
+    private void animateStepChange(VBox out, VBox in, boolean isNext) {
+        // Fade Out
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(250), out);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        fadeOut.setOnFinished(e -> {
+            out.setVisible(false);
+            out.setManaged(false);
+
+            in.setVisible(true);
+            in.setManaged(true);
+            in.setOpacity(0);
+
+            // Update Progress UI
+            if (isNext) {
+                prog2.setStyle("-fx-background-color: #3b82f6;");
+                stepDescription.setText("Step 2: Account Verification");
+            } else {
+                prog2.setStyle("-fx-background-color: #e2e8f0;");
+                stepDescription.setText("Step 1: Personal Details");
+            }
+
+            // Fade In + Slide
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(250), in);
+            fadeIn.setFromValue(0.0);
+            fadeIn.setToValue(1.0);
+
+            TranslateTransition slide = new TranslateTransition(Duration.millis(250), in);
+            slide.setFromX(isNext ? 20 : -20);
+            slide.setToX(0);
+
+            new ParallelTransition(fadeIn, slide).play();
+        });
+
+        fadeOut.play();
     }
 }

@@ -10,7 +10,7 @@ public class Test extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/LandingPage.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/LoginPage.fxml"));
 
         Scene scene = new Scene(loader.load());
         stage.setTitle("Fintech App");
