@@ -1,63 +1,113 @@
 package tn.esprit.Champions.gui;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.TradeService;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class CrudTrade {
 
-    @FXML
-    private TableView<Trade> table;
 
-    @FXML
-    private TableColumn<Trade, TradeType> type;
+    @FXML private Label labelUser;
+    @FXML private Label labelDateTime;
 
-    @FXML
-    private TableColumn<Trade, OrderMode> order;
 
-    @FXML
-    private TableColumn<Trade, Double> price;
+    @FXML private ComboBox<TradeType> boxType;
+    @FXML private ComboBox<OrderMode> boxOrder;
+    @FXML private TextField txtPrice;
+    @FXML private TextField txtQuantity;
+    @FXML private ComboBox<Status> boxStatus;
 
-    @FXML
-    private TableColumn<Trade, Double> quantity;
 
-    @FXML
-    private TableColumn<Trade, Status> status;
+    @FXML private Button btnAdd;
+    @FXML private Button btnUpdate;
+    @FXML private Button btnClear;
+    @FXML private Button btnDelete;
 
-    @FXML
-    private TableColumn<Trade, LocalDateTime> created;
 
-    @FXML
-    private TableColumn<Trade, LocalDateTime> executed;
+    @FXML private TableView<Trade> table;
+    @FXML private TableColumn<Trade, Integer> id_trade;
+    @FXML private TableColumn<Trade, TradeType> type;
+    @FXML private TableColumn<Trade, OrderMode> order;
+    @FXML private TableColumn<Trade, Double> price;
+    @FXML private TableColumn<Trade, Double> quantity;
+    @FXML private TableColumn<Trade, Status> status;
+    @FXML private TableColumn<Trade, LocalDateTime> created;
+    @FXML private TableColumn<Trade, LocalDateTime> executed;
+    @FXML private TableColumn<Trade, Void> colAction;
 
-    @FXML
-    private TableColumn<Trade, Void> actions;
 
-    @FXML
-    private TextField txtSearch;
+    @FXML private TextField txtSearch;
+    @FXML private Button btnClearSearch;
+    @FXML private Label labelStatus;
+    @FXML private Label labelCount;
 
-    @FXML
-    private Label labelSearch;
 
     private TradeService tradeService = new TradeService();
+    private List<Trade> allTrades;
+    private Trade currentTrade = null;
+
+
+    private String currentUsername = "Demo Client";
+    private int currentUserId = 1;
 
     @FXML
     public void initialize() {
-        initColumns();
+
+        initializeHeader();
+
+
+        initializeComboBoxes();
+        initializeTableColumns();
         loadTrades();
         addActionButtons();
-        setupSearch();
+        setupTableRowSelection();
     }
 
-    private void initColumns() {
+
+
+    private void initializeHeader() {
+        // Set user label
+        labelUser.setText("👤 " + currentUsername);
+
+
+        updateDateTime();
+        Timeline timeline = new Timeline(new KeyFrame(
+                javafx.util.Duration.seconds(1),
+                event -> updateDateTime()
+        ));
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    private void updateDateTime() {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        labelDateTime.setText("📅 " + now.format(formatter));
+    }
+
+
+
+    private void initializeComboBoxes() {
+        boxType.getItems().setAll(TradeType.values());
+        boxOrder.getItems().setAll(OrderMode.values());
+        boxStatus.getItems().setAll(Status.values());
+    }
+
+    private void initializeTableColumns() {
+
         type.setCellValueFactory(new PropertyValueFactory<>("tradeType"));
         order.setCellValueFactory(new PropertyValueFactory<>("orderMode"));
         price.setCellValueFactory(new PropertyValueFactory<>("price"));
@@ -69,32 +119,183 @@ public class CrudTrade {
 
     private void loadTrades() {
         try {
-            table.getItems().clear();
-            table.getItems().addAll(tradeService.SelectAll());
+            allTrades = tradeService.SelectAll();
+            refreshTableView();
+            updateStatusLabel();
         } catch (SQLException e) {
-            e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de charger les trades: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to load trades: " + e.getMessage());
         }
     }
 
+
+
+    @FXML
+    private void handleAdd() {
+        try {
+            if (!validateForm()) {
+                return;
+            }
+
+            Trade newTrade = new Trade(
+                    0,
+                    currentUserId,
+                    1003,
+                    boxType.getValue(),
+                    boxOrder.getValue(),
+                    Double.parseDouble(txtPrice.getText()),
+                    Double.parseDouble(txtQuantity.getText()),
+                    boxStatus.getValue(),
+                    LocalDateTime.now(),
+                    null,
+                    2
+            );
+
+            tradeService.insertOne(newTrade);
+            showAlert(Alert.AlertType.INFORMATION, "✅ Success", "Trade order submitted successfully!");
+            loadTrades();
+            clearForm();
+            currentTrade = null;
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Price and Quantity must be valid numbers");
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "❌ Database Error", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleUpdate() {
+        try {
+            if (currentTrade == null) {
+                showAlert(Alert.AlertType.WARNING, "⚠️ Warning", "Please select a trade to update");
+                return;
+            }
+
+            if (!validateForm()) {
+                return;
+            }
+
+            currentTrade.setTradeType(boxType.getValue());
+            currentTrade.setOrderMode(boxOrder.getValue());
+            currentTrade.setPrice(Double.parseDouble(txtPrice.getText()));
+            currentTrade.setQuantity(Double.parseDouble(txtQuantity.getText()));
+            currentTrade.setStatus(boxStatus.getValue());
+            currentTrade.setExecutedAt(LocalDateTime.now());
+
+            tradeService.updateOne(currentTrade);
+            showAlert(Alert.AlertType.INFORMATION, "✅ Success", "Trade order updated successfully!");
+            loadTrades();
+            clearForm();
+            currentTrade = null;
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Price and Quantity must be valid numbers");
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "❌ Database Error", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleDelete() {
+        try {
+            if (currentTrade == null) {
+                showAlert(Alert.AlertType.WARNING, "⚠️ Warning", "Please select a trade to cancel");
+                return;
+            }
+
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Confirm Order Cancellation");
+            confirmAlert.setHeaderText("Cancel Trade Order #" + currentTrade.getId());
+            confirmAlert.setContentText("Are you sure you want to cancel this trade order?");
+
+            if (confirmAlert.showAndWait().get() == ButtonType.OK) {
+                tradeService.deleteOne(currentTrade);
+                showAlert(Alert.AlertType.INFORMATION, "✅ Success", "Trade order cancelled successfully!");
+                loadTrades();
+                clearForm();
+                currentTrade = null;
+            }
+
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "❌ Database Error", e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleClear() {
+        clearForm();
+        currentTrade = null;
+        table.getSelectionModel().clearSelection();
+    }
+
+
+
+    @FXML
+    private void handleSearch() {
+        String searchText = txtSearch.getText().toLowerCase().trim();
+
+        if (searchText.isEmpty()) {
+            refreshTableView();
+        } else {
+            List<Trade> filteredTrades = allTrades.stream()
+                    .filter(trade -> trade.getTradeType().toString().toLowerCase().contains(searchText)
+                            || trade.getOrderMode().toString().toLowerCase().contains(searchText)
+                            || trade.getStatus().toString().toLowerCase().contains(searchText)
+                            || String.valueOf(trade.getPrice()).contains(searchText)
+                            || String.valueOf(trade.getQuantity()).contains(searchText))
+                    .collect(Collectors.toList());
+
+            table.getItems().clear();
+            table.getItems().addAll(filteredTrades);
+        }
+
+        updateStatusLabel();
+    }
+
+    @FXML
+    private void handleClearSearch() {
+        txtSearch.clear();
+        refreshTableView();
+    }
+
+
+
+    private void setupTableRowSelection() {
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                populateFormWithTrade(newVal);
+            }
+        });
+    }
+
+    private void populateFormWithTrade(Trade trade) {
+        currentTrade = trade;
+        boxType.setValue(trade.getTradeType());
+        boxOrder.setValue(trade.getOrderMode());
+        txtPrice.setText(String.valueOf(trade.getPrice()));
+        txtQuantity.setText(String.valueOf(trade.getQuantity()));
+        boxStatus.setValue(trade.getStatus());
+    }
+
     private void addActionButtons() {
-        actions.setCellFactory(param -> new TableCell<>() {
+        colAction.setCellFactory(param -> new TableCell<>() {
 
             private final Button btnEdit = new Button("✏️");
             private final Button btnDelete = new Button("🗑");
 
             {
-                btnEdit.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
-                btnDelete.setStyle("-fx-background-color: #F44336; -fx-text-fill: white;");
+                btnEdit.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-padding: 6 10 6 10; -fx-font-size: 11px;");
+                btnDelete.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-padding: 6 10 6 10; -fx-font-size: 11px;");
 
                 btnEdit.setOnAction(event -> {
                     Trade trade = getTableView().getItems().get(getIndex());
-                    openEditDialog(trade);
+                    table.getSelectionModel().select(trade);
+                    populateFormWithTrade(trade);
                 });
 
                 btnDelete.setOnAction(event -> {
                     Trade trade = getTableView().getItems().get(getIndex());
-                    deleteTrade(trade);
+                    deleteTradeDirectly(trade);
                 });
             }
 
@@ -105,60 +306,88 @@ public class CrudTrade {
                 if (empty) {
                     setGraphic(null);
                 } else {
-                    HBox box = new HBox(10, btnEdit, btnDelete);
+                    HBox box = new HBox(6, btnEdit, btnDelete);
+                    box.setPadding(new Insets(4));
                     setGraphic(box);
                 }
             }
         });
     }
 
-    private void setupSearch() {
-        txtSearch.textProperty().addListener((observable, oldValue, newValue) -> {
-            filterTrades(newValue);
-        });
-    }
-
-    private void filterTrades(String searchText) {
+    private void deleteTradeDirectly(Trade trade) {
         try {
-            table.getItems().clear();
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Confirm Order Cancellation");
+            confirmAlert.setHeaderText("Cancel Trade Order #" + trade.getId());
+            confirmAlert.setContentText("Are you sure?");
 
-            if (searchText == null || searchText.trim().isEmpty()) {
-                // Si la recherche est vide, afficher tous les trades
-                table.getItems().addAll(tradeService.SelectAll());
-            } else {
-                // Filtrer les trades selon le texte de recherche
-                String search = searchText.toLowerCase();
-                tradeService.SelectAll().stream()
-                        .filter(trade ->
-                                trade.getTradeType().name().toLowerCase().contains(search) ||
-                                        trade.getOrderMode().name().toLowerCase().contains(search) ||
-                                        trade.getStatus().name().toLowerCase().contains(search) ||
-                                        String.valueOf(trade.getPrice()).contains(search) ||
-                                        String.valueOf(trade.getQuantity()).contains(search)
-                        )
-                        .forEach(table.getItems()::add);
+            if (confirmAlert.showAndWait().get() == ButtonType.OK) {
+                tradeService.deleteOne(trade);
+                showAlert(Alert.AlertType.INFORMATION, "✅ Success", "Trade order cancelled successfully!");
+                loadTrades();
+                if (currentTrade != null && currentTrade.getId() == trade.getId()) {
+                    clearForm();
+                    currentTrade = null;
+                }
             }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "❌ Database Error", e.getMessage());
         }
     }
 
-    private void deleteTrade(Trade trade) {
-        try {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirmation");
-            alert.setHeaderText(null);
-            alert.setContentText("Supprimer ce trade ?");
 
-            if (alert.showAndWait().get() == ButtonType.OK) {
-                tradeService.deleteOne(trade);
-                table.getItems().remove(trade);
-                showAlert(Alert.AlertType.INFORMATION, "Succès", "Trade supprimé avec succès");
-            }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
+    private boolean validateForm() {
+        if (txtPrice.getText().trim().isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Price is required");
+            return false;
+        }
+
+        if (txtQuantity.getText().trim().isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Quantity is required");
+            return false;
+        }
+
+        if (boxType.getValue() == null) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Trade Type is required");
+            return false;
+        }
+
+        if (boxOrder.getValue() == null) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Order Mode is required");
+            return false;
+        }
+
+        if (boxStatus.getValue() == null) {
+            showAlert(Alert.AlertType.ERROR, "❌ Validation Error", "Status is required");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void clearForm() {
+        txtPrice.clear();
+        txtQuantity.clear();
+        boxType.setValue(null);
+        boxOrder.setValue(null);
+        boxStatus.setValue(null);
+    }
+
+    private void refreshTableView() {
+        table.getItems().clear();
+        table.getItems().addAll(allTrades);
+    }
+
+    private void updateStatusLabel() {
+        int displayed = table.getItems().size();
+        int total = allTrades.size();
+
+        if (total == 0) {
+            labelStatus.setText("📈 No trades yet");
+        } else {
+            labelStatus.setText("📈 Showing " + displayed + " of " + total);
         }
     }
 
@@ -170,69 +399,12 @@ public class CrudTrade {
         alert.showAndWait();
     }
 
-    private void openEditDialog(Trade trade) {
-        Dialog<Trade> dialog = new Dialog<>();
-        dialog.setTitle("Modifier Trade");
-        dialog.setHeaderText("Modifier les informations du trade");
 
-        ButtonType okButtonType = new ButtonType("Modifier", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        TextField txtPrice = new TextField(String.valueOf(trade.getPrice()));
-        TextField txtQuantity = new TextField(String.valueOf(trade.getQuantity()));
-
-        ComboBox<TradeType> boxType = new ComboBox<>();
-        boxType.getItems().setAll(TradeType.values());
-        boxType.setValue(trade.getTradeType());
-
-        ComboBox<OrderMode> boxOrder = new ComboBox<>();
-        boxOrder.getItems().setAll(OrderMode.values());
-        boxOrder.setValue(trade.getOrderMode());
-
-        ComboBox<Status> boxStatus = new ComboBox<>();
-        boxStatus.getItems().setAll(Status.values());
-        boxStatus.setValue(trade.getStatus());
-
-        grid.add(new Label("Trade Type:"), 0, 0);
-        grid.add(boxType, 1, 0);
-        grid.add(new Label("Order Mode:"), 0, 1);
-        grid.add(boxOrder, 1, 1);
-        grid.add(new Label("Price:"), 0, 2);
-        grid.add(txtPrice, 1, 2);
-        grid.add(new Label("Quantity:"), 0, 3);
-        grid.add(txtQuantity, 1, 3);
-        grid.add(new Label("Status:"), 0, 4);
-        grid.add(boxStatus, 1, 4);
-
-        dialog.getDialogPane().setContent(grid);
-
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == okButtonType) {
-                trade.setTradeType(boxType.getValue());
-                trade.setOrderMode(boxOrder.getValue());
-                trade.setPrice(Double.parseDouble(txtPrice.getText()));
-                trade.setQuantity(Double.parseDouble(txtQuantity.getText()));
-                trade.setStatus(boxStatus.getValue());
-                trade.setExecutedAt(LocalDateTime.now());
-                return trade;
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(updatedTrade -> {
-            try {
-                tradeService.updateOne(updatedTrade);
-                table.refresh();
-                showAlert(Alert.AlertType.INFORMATION, "Succès", "Trade modifié avec succès");
-            } catch (Exception e) {
-                e.printStackTrace();
-                showAlert(Alert.AlertType.ERROR, "Erreur", e.getMessage());
-            }
-        });
+    public void setCurrentUser(String username, int userId) {
+        this.currentUsername = username;
+        this.currentUserId = userId;
+        if (labelUser != null) {
+            labelUser.setText("👤 " + username);
+        }
     }
 }

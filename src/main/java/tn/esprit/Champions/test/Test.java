@@ -24,7 +24,7 @@ public class Test extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/CrudAsset.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/CrudTrade.fxml"));
 
         Scene scene = new Scene(loader.load());
         stage.setTitle("Fintech App");
