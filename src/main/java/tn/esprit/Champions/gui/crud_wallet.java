@@ -3,9 +3,11 @@ package tn.esprit.Champions.gui;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -22,6 +24,7 @@ import tn.esprit.Champions.services.TransactionService;
 import tn.esprit.Champions.services.WalletService;
 import tn.esprit.Champions.services.wallet_currencyService;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,7 +72,8 @@ public class crud_wallet {
     @FXML private ComboBox<String> statusTransactionBox; // retrait / recharge
     @FXML private ComboBox<String> currencyTransactionBox; // currency sélectionnée pour la transaction
     @FXML private Button addTransactionBtn; // bouton "+"
-
+    @FXML
+    private Button btnSignOut;
 
 
 
@@ -98,22 +102,48 @@ public class crud_wallet {
 
     @FXML
     public void initialize() {
-        // ComboBox initialisation
+        // Initialisation des ComboBox
         boxType.getItems().addAll("fiat", "crypto", "trading");
         boxStatus.getItems().addAll("actif", "bloque");
 
-
+        // Initialisation des services
         walletService = new WalletService();
         walletCurrencyService = new wallet_currencyService();
         currencyService = new CurrencyService();
 
-
+        // Charger les wallets
         loadWallets();
 
-        if (searchField != null) searchField.setOnKeyReleased(this::handleSearch);
-        if (clearSearchButton != null) clearSearchButton.setOnAction(e -> handleClearSearch());
-        if (modify_wallet != null) modify_wallet.setOnAction(e -> handleModifyWallet());
-        if (delete_wallet != null) delete_wallet.setOnAction(e -> handleDeleteWallet());
+        // Gestion de la recherche
+        if (searchField != null) {
+            searchField.setOnKeyReleased(this::handleSearch);
+        }
+        if (clearSearchButton != null) {
+            clearSearchButton.setOnAction(e -> handleClearSearch());
+        }
+
+        // Boutons modifier/supprimer wallet
+        if (modify_wallet != null) {
+            modify_wallet.setOnAction(e -> handleModifyWallet());
+        }
+        if (delete_wallet != null) {
+            delete_wallet.setOnAction(e -> handleDeleteWallet());
+        }
+
+        // Bouton Sign Out → bascule vers DashboardAdminWallet
+        if (btnSignOut != null) {
+            btnSignOut.setOnAction(event -> {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardAdminWallet.fxml"));
+                    Parent root = loader.load();
+                    Stage stage = (Stage) btnSignOut.getScene().getWindow();
+                    stage.setScene(new Scene(root));
+                    stage.show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
 
         // Listener global pour cliquer **en dehors d'une carte**
         Platform.runLater(() -> {
@@ -121,15 +151,13 @@ public class crud_wallet {
             if (scene != null) {
                 scene.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
                     Node target = (Node) event.getTarget();
-                    if (!isWalletCard(target) && !isWalletForm(target)) { // <-- ajouter la vérif formulaire
+                    if (!isWalletCard(target) && !isWalletForm(target)) { // Vérifie formulaire
                         clearWalletSelection();
                         clearTransactionForm();
                     }
                 });
             }
         });
-
-
     }
     private boolean isWalletForm(Node node) {
         while (node != null) {

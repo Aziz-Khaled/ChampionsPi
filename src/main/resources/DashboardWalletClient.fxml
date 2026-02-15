@@ -20,7 +20,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet" >
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet">
 
     <BorderPane>
 
@@ -51,7 +51,7 @@
                 <!-- Sign Out -->
                 <VBox alignment="BOTTOM_CENTER" prefHeight="80.0" prefWidth="214.0" spacing="10.0" style="-fx-padding: 15;">
                     <Separator prefWidth="200.0" />
-                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0; -fx-cursor: hand;" text="🚪 Sign Out" textAlignment="CENTER" />
+                    <Button fx:id="btnSignOut" maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0; -fx-cursor: hand;" text="🚪 Sign Out" textAlignment="CENTER" />
                 </VBox>
 
             </VBox>
@@ -184,10 +184,7 @@
                         </VBox>
 
                         <!-- ================= TRANSACTION FORM ================= -->
-                        <VBox fx:id="transactionForm" spacing="10"
-                              style="-fx-padding: 30; -fx-background-color: white;"
-                              styleClass="card" visible="false"
-                              alignment="TOP_CENTER" prefWidth="308" prefHeight="605">
+                        <VBox fx:id="transactionForm" alignment="TOP_CENTER" prefHeight="605" prefWidth="308" spacing="10" style="-fx-padding: 30; -fx-background-color: white;" styleClass="card" visible="false">
 
                             <!-- Flèche pour revenir au wallet -->
                             <HBox alignment="CENTER_LEFT">
@@ -195,58 +192,54 @@
                             </HBox>
 
                             <!-- Titre Transaction Form -->
-                            <Label prefHeight="25.0" prefWidth="200.0"
-                                   style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;"
-                                   text="Transaction Form"
-                                   alignment="CENTER">
-                                <VBox.margin><Insets top="10.0" bottom="20.0"/></VBox.margin>
+                            <Label alignment="CENTER" prefHeight="25.0" prefWidth="200.0" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Transaction Form">
+                                <VBox.margin><Insets bottom="20.0" top="10.0" /></VBox.margin>
                             </Label>
 
                             <!-- GridPane Transaction Fields -->
                             <GridPane hgap="10.0" vgap="12.0">
                                 <padding>
-                                    <Insets top="10.0" right="0.0" bottom="10.0" left="0.0"/>
+                                    <Insets bottom="10.0" left="0.0" right="0.0" top="10.0" />
                                 </padding>
                                 <columnConstraints>
-                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0"/>
-                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0"/>
+                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
+                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
                                 </columnConstraints>
                                 <rowConstraints>
-                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
-                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
-                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
-                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
-                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" />
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" />
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" />
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" />
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" />
                                 </rowConstraints>
 
-                                <Label styleClass="label-header" text="Source Wallet"/>
-                                <TextField fx:id="sourceWalletField" promptText="id source" styleClass="text-field" GridPane.columnIndex="1" editable="false"/>
+                                <Label styleClass="label-header" text="Source Wallet" />
+                                <TextField fx:id="sourceWalletField" editable="false" promptText="id source" styleClass="text-field" GridPane.columnIndex="1" />
 
-                                <Label styleClass="label-header" text="Destination" GridPane.rowIndex="1"/>
-                                <TextField fx:id="destinationWalletField" promptText="id destination" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                <Label styleClass="label-header" text="Destination" GridPane.rowIndex="1" />
+                                <TextField fx:id="destinationWalletField" promptText="id destination" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                                <Label styleClass="label-header" text="Amount" GridPane.rowIndex="2"/>
-                                <TextField fx:id="amountField" promptText="montant" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                <Label styleClass="label-header" text="Amount" GridPane.rowIndex="2" />
+                                <TextField fx:id="amountField" promptText="montant" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
                                 <!-- Nouveau ComboBox Currency -->
-                                <Label styleClass="label-header" text="Currency" GridPane.rowIndex="3"/>
-                                <ComboBox fx:id="currencyTransactionBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box"
-                                          GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                <Label styleClass="label-header" text="Currency" GridPane.rowIndex="3" />
+                                <ComboBox fx:id="currencyTransactionBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
 
 
                             </GridPane>
 
                             <!-- Transaction Buttons -->
-                            <HBox spacing="8.0" style="-fx-padding: 30 0 0 0;" alignment="CENTER">
-                                <Button fx:id="addTransactionBtn" onAction="#handleAddTransaction" styleClass="plus_btn" prefHeight="57.0" prefWidth="57.0" text="+" textFill="#c1c1c1">
-                                    <font><Font name="System Bold" size="27.0"/></font>
+                            <HBox alignment="CENTER" spacing="8.0" style="-fx-padding: 30 0 0 0;">
+                                <Button fx:id="addTransactionBtn" onAction="#handleAddTransaction" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0" /></font>
                                 </Button>
-                                <Button fx:id="modifyTransactionBtn" styleClass="plus_btn" prefHeight="57.0" prefWidth="57.0" text="✏" textFill="#c1c1c1">
-                                    <font><Font name="System Bold" size="27.0"/></font>
+                                <Button fx:id="modifyTransactionBtn" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0" /></font>
                                 </Button>
-                                <Button fx:id="deleteTransactionBtn" styleClass="plus_btn" prefHeight="57.0" prefWidth="57.0" text="🗑" textFill="#c1c1c1">
-                                    <font><Font name="System Bold" size="27.0"/></font>
+                                <Button fx:id="deleteTransactionBtn" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0" /></font>
                                 </Button>
                             </HBox>
 

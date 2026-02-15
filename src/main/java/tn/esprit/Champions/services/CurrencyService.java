@@ -25,24 +25,29 @@ public class CurrencyService implements CRUD<currency>
 //currency unique
     @Override
     public void insertOne(currency currency) throws SQLException {
-        String checkQuery = "SELECT id_currency FROM currency WHERE nom = ?";
+        // Vérifier si la currency existe déjà par code ou nom
+        String checkQuery = "SELECT id_currency FROM currency WHERE code = ? OR nom = ?";
         PreparedStatement checkStmt = cnx.prepareStatement(checkQuery);
-        checkStmt.setString(1, currency.getNom());
+        checkStmt.setString(1, currency.getCode());
+        checkStmt.setString(2, currency.getNom());
         ResultSet rs = checkStmt.executeQuery();
 
         if (rs.next()) {
-            throw new SQLException("Cette currency existe déjà : " + currency.getNom());
+            throw new SQLException("Cette currency existe déjà : " + currency.getNom() + " ou code : " + currency.getCode());
         }
 
-        String query = "INSERT INTO `currency`(`nom`, `type_currency`) VALUES (?,?)";
+        // Insertion dans la table
+        String query = "INSERT INTO currency(code, nom, type_currency, is_trading) VALUES (?, ?, ?, ?)";
         PreparedStatement pst = cnx.prepareStatement(query);
-        pst.setString(1, currency.getNom());
-        pst.setString(2, currency.getType_currency().name());
+        pst.setString(1, currency.getCode());
+        pst.setString(2, currency.getNom());
+        pst.setString(3, currency.getType_currency().name().toLowerCase()); // fiat ou crypto
+        pst.setBoolean(4, currency.isIs_trading());
+
         pst.executeUpdate();
 
-        System.out.println("Currency ajoutée : " + currency.getNom());
+        System.out.println("Currency ajoutée : " + currency.getNom() + " (" + currency.getCode() + ")");
     }
-
 
 
     @Override

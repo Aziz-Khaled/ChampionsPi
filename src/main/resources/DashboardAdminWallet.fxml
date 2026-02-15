@@ -2,111 +2,62 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="700.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.CrudAsset" stylesheets="@/css/styleAsset.css">
+<BorderPane prefHeight="700.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.admin_wallet_controller">
 
-
+    <!-- Sidebar Left -->
     <left>
         <VBox prefHeight="700.0" prefWidth="220.0" spacing="0.0" style="-fx-background-color: #2c3e50;">
-
-
             <VBox alignment="CENTER" spacing="15.0" style="-fx-padding: 25 15 20 15; -fx-background-color: #34495e;">
-
-
                 <Circle fill="#ecf0f1" radius="40.0" stroke="#1abc9c" strokeWidth="3.0" />
-
-
-                <Label text="Admin User" textAlignment="CENTER" textFill="WHITE" style="-fx-font-size: 14; -fx-font-weight: bold;" />
-
-
-                <Label text="Back Office" textAlignment="CENTER" textFill="#95a5a6" style="-fx-font-size: 11;" />
-
-
+                <Label style="-fx-font-size: 14; -fx-font-weight: bold;" text="Admin User" textAlignment="CENTER" textFill="WHITE" />
+                <Label style="-fx-font-size: 11;" text="Back Office" textAlignment="CENTER" textFill="#95a5a6" />
                 <Separator prefWidth="200.0" style="-fx-padding: 0;" />
             </VBox>
 
-
             <VBox spacing="0.0" style="-fx-padding: 15 0 0 0;" VBox.vgrow="ALWAYS">
-
-
-                <Button mnemonicParsing="false" text="📊 Dashboard" textAlignment="LEFT"
-                        style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;"
-                        maxWidth="Infinity" />
-
-
-                <Button mnemonicParsing="false" text="💰 Assets" textAlignment="LEFT"
-                        style="-fx-text-fill: #1abc9c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #34495e; -fx-padding: 12 20 12 20; -fx-cursor: hand; -fx-border-color: #1abc9c; -fx-border-width: 0 0 0 3;"
-                        maxWidth="Infinity" />
-
-
-                <Button mnemonicParsing="false" text="📈 Trades" textAlignment="LEFT"
-                        style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;"
-                        maxWidth="Infinity" />
-
-
-                <Button mnemonicParsing="false" text="👥 Users" textAlignment="LEFT"
-                        style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;"
-                        maxWidth="Infinity" />
-
-
-                <Button mnemonicParsing="false" text="📋 Reports" textAlignment="LEFT"
-                        style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;"
-                        maxWidth="Infinity" />
-
-
-                <Button mnemonicParsing="false" text="⚙️ Settings" textAlignment="LEFT"
-                        style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;"
-                        maxWidth="Infinity" />
+                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;" text="📊 Dashboard" textAlignment="LEFT" />
+                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #1abc9c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #34495e; -fx-padding: 12 20 12 20; -fx-cursor: hand; -fx-border-color: #1abc9c; -fx-border-width: 0 0 0 3;" text="💰 Currency" textAlignment="LEFT" />
             </VBox>
-
 
             <VBox alignment="BOTTOM_CENTER" spacing="10.0" style="-fx-padding: 15;">
                 <Separator prefWidth="200.0" />
-                <Button mnemonicParsing="false" text="🚪 Sign Out" textAlignment="CENTER"
-                        style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0 10 0; -fx-cursor: hand;"
-                        maxWidth="Infinity" />
+                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0 10 0; -fx-cursor: hand;" text="🚪 Sign Out" textAlignment="CENTER" />
             </VBox>
         </VBox>
     </left>
 
-
+    <!-- Center Content -->
     <center>
         <VBox spacing="0.0" style="-fx-background-color: #ecf0f1;">
-
-
-            <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: white; -fx-padding: 15 20 15 20; -fx-border-color: #bdc3c7; -fx-border-width: 0 0 1 0;">
-                <Label text="Asset Management" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+            <HBox alignment="CENTER_LEFT" prefHeight="61.0" prefWidth="1055.0" spacing="15.0" style="-fx-background-color: white; -fx-padding: 15 20 15 20; -fx-border-color: #bdc3c7; -fx-border-width: 0 0 1 0;">
+                <Label style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Currency Management" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Label text="Welcome, Admin!" style="-fx-font-size: 12; -fx-text-fill: #7f8c8d;" />
+                <Label style="-fx-font-size: 12; -fx-text-fill: #7f8c8d;" text="Welcome, Admin!" />
             </HBox>
 
-
             <HBox spacing="15.0" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
-
-
-                <VBox prefHeight="600.0" prefWidth="360.0" spacing="10.0" styleClass="card" style="-fx-padding: 20; -fx-background-color: white;">
-
-
-                    <Label text="Asset Form" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" />
-
+                <!-- Formulaire -->
+                <VBox prefHeight="609.0" prefWidth="269.0" spacing="10.0" style="-fx-padding: 20; -fx-background-color: white;" styleClass="card">
+                    <Label prefHeight="25.0" prefWidth="135.0" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Currency Form">
+                  <VBox.margin>
+                     <Insets bottom="50.0" left="80.0" top="20.0" />
+                  </VBox.margin></Label>
 
                     <GridPane hgap="10.0" vgap="12.0">
                         <columnConstraints>
@@ -118,82 +69,82 @@
                             <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
                             <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
                             <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
                         </rowConstraints>
 
+                        <!-- Code -->
+                        <Label styleClass="label-header" text="Code" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                        <ComboBox fx:id="boxCode" onAction="#handleCodeSelection" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-                        <Label text="Symbol" styleClass="label-header" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                        <TextField fx:id="txtSymbol" promptText="e.g., AAPL" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                        <!-- Name -->
+                        <Label styleClass="label-header" text="Name" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                        <!-- Type -->
+                        <Label styleClass="label-header" text="Type" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                        <ComboBox fx:id="boxType" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-
-                        <Label text="Name" styleClass="label-header" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                        <TextField fx:id="txtName" promptText="Asset name" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-
-
-                        <Label text="Type" styleClass="label-header" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                        <ComboBox fx:id="boxType" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-
-
-                        <Label text="Market" styleClass="label-header" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                        <ComboBox fx:id="boxMarket" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-
-
-                        <Label text="Price" styleClass="label-header" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-                        <TextField fx:id="txtCurrentPrice" promptText="0.00" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-
-
-                        <Label text="Status" styleClass="label-header" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-                        <ComboBox fx:id="boxStatus" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                    </GridPane>
-
-
-                    <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
-                        <Button fx:id="btnAdd" text="➕ Add" styleClass="button-primary" minWidth="75.0" onAction="#handleAdd" />
-                        <Button fx:id="btnUpdate" text="✏️ Update" styleClass="button-success" minWidth="75.0" onAction="#handleUpdate" />
-                        <Button fx:id="btnClear" text="🗑 Clear" styleClass="button-secondary" minWidth="75.0" onAction="#handleClear" />
-                    </HBox>
-
-
-                    <Button fx:id="btnDelete" text="❌ Delete Selected" styleClass="button-danger" minWidth="240.0" onAction="#handleDelete" />
-
-
-                    <Region VBox.vgrow="ALWAYS" />
+                        <!-- Is Trading -->
+                        <Label styleClass="label-header" text="Is Trading" GridPane.rowIndex="3" />
+                        <CheckBox fx:id="chkIsTrading" alignment="CENTER_RIGHT" contentDisplay="RIGHT" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <Label fx:id="lblName" styleClass="label-header" text="Name" GridPane.columnIndex="1" GridPane.rowIndex="1" />                    </GridPane>
+               <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
+                  <children>
+                     <Button fx:id="add_currency" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
+                        <font>
+                           <Font name="System Bold" size="27.0" />
+                        </font>
+                        <HBox.margin>
+                           <Insets left="50.0" />
+                        </HBox.margin>
+                     </Button>
+                     <Button fx:id="modify_currency" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
+                        <font>
+                           <Font name="System Bold" size="27.0" />
+                        </font>
+                     </Button>
+                     <Button fx:id="delete_currency" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
+                        <font>
+                           <Font name="System Bold" size="27.0" />
+                        </font>
+                        <HBox.margin>
+                           <Insets />
+                        </HBox.margin>
+                     </Button>
+                  </children>
+                  <VBox.margin>
+                     <Insets top="30.0" />
+                  </VBox.margin>
+               </HBox>
                 </VBox>
 
-
-                <VBox prefHeight="600.0" prefWidth="1" spacing="10.0" HBox.hgrow="ALWAYS">
-
-
-                    <HBox spacing="10.0" styleClass="card" style="-fx-padding: 12; -fx-background-color: white;">
-                        <Label text="Asset List" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" />
-                        <Region prefWidth="1" HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="txtSearch" promptText="Search..." styleClass="text-field" prefWidth="180.0" onKeyReleased="#handleSearch" />
-                        <Button fx:id="btnClearSearch" text="Clear" styleClass="button-secondary" minWidth="60.0" onAction="#handleClearSearch" />
+                
+                <!-- Tableau -->
+                <VBox prefHeight="600.0" prefWidth="1" spacing="10.0" HBox.hgrow="ALWAYS" alignment="CENTER">
+                    <!-- Titre du tableau -->
+                    <HBox spacing="10.0" style="-fx-padding: 12; -fx-background-color: white;" styleClass="card">
+                        <Label prefHeight="20.0" prefWidth="128.0"
+                               style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;"
+                               text="Currency List" />
                     </HBox>
 
+                    <!-- TableView -->
+                    <TableView fx:id="table"
+                               prefHeight="554.0"
+                               prefWidth="700.0"
+                               maxWidth="700.0"
+                               style="-fx-background-color: white;
+                      -fx-border-color: #bdc3c7;
+                      -fx-border-width: 1;
+                      -fx-table-cell-border-color: #ecf0f1;
+                      -fx-selection-bar: #1abc9c;
+                      -fx-selection-bar-non-focused: #16a085;"
+                               VBox.vgrow="ALWAYS">
 
-                    <TableView fx:id="table" prefHeight="500.0" prefWidth="1" style="-fx-background-color: white;" VBox.vgrow="ALWAYS">
                         <columns>
-                            <TableColumn fx:id="id_asset" prefWidth="40.0" text="ID" />
-                            <TableColumn fx:id="symbol" prefWidth="70.0" text="Symbol" />
-                            <TableColumn fx:id="name" prefWidth="100.0" text="Name" />
-                            <TableColumn fx:id="type" prefWidth="80.0" text="Type" />
-                            <TableColumn fx:id="market" prefWidth="80.0" text="Market" />
-                            <TableColumn fx:id="price" prefWidth="75.0" text="Price" />
-                            <TableColumn fx:id="status" prefWidth="70.0" text="Status" />
-                            <TableColumn fx:id="created" prefWidth="95.0" text="Created" />
-                            <TableColumn fx:id="updated" prefWidth="95.0" text="Updated" />
-                            <TableColumn fx:id="colAction" prefWidth="70.0" text="Actions" />
+                            <TableColumn fx:id="colCode" prefWidth="80.0" text="Code" />
+                            <TableColumn fx:id="colName" prefWidth="180.0" text="Name" />
+                            <TableColumn fx:id="colType" prefWidth="100.0" text="Type" />
+                            <TableColumn fx:id="colIsTrading" prefWidth="80.0" text="Trading" />
                         </columns>
                     </TableView>
-
-
-                    <HBox spacing="10.0" styleClass="card" style="-fx-padding: 10; -fx-background-color: white;">
-                        <Label fx:id="labelStatus" text="Ready" styleClass="label-header" />
-                        <Region prefWidth="1" HBox.hgrow="ALWAYS" />
-                        <Label fx:id="labelCount" text="Total: 0" styleClass="label-header" />
-                    </HBox>
                 </VBox>
             </HBox>
         </VBox>
