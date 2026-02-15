@@ -16,11 +16,6 @@ import java.util.stream.Collectors;
 
 public class CrudAsset {
 
-
-
-
-
-
     @FXML private TextField txtSymbol;
     @FXML private TextField txtName;
     @FXML private ComboBox<AssetType> boxType;
@@ -76,7 +71,7 @@ public class CrudAsset {
     }
 
     private void initializeTableColumns() {
-        id_asset.setCellValueFactory(new PropertyValueFactory<>("id"));
+
         symbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
         name.setCellValueFactory(new PropertyValueFactory<>("name"));
         type.setCellValueFactory(new PropertyValueFactory<>("type"));

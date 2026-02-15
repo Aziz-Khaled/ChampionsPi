@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="1400.0" prefWidth="1600.0" style="-fx-background-color: #0f172a;"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="tn.esprit.Champions.gui.TradingDashboard">
+
+    <children>
+        <VBox prefHeight="1400.0" prefWidth="1600.0" spacing="12.0" style="-fx-padding: 15;">
+            <!-- HEADER -->
+            <HBox prefHeight="70.0" spacing="20.0" style="-fx-background-color: #1e2a47; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #2d3e5f; -fx-border-width: 1;">
+                <Label text="📈 TRADING DASHBOARD PRO" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;" />
+                <Pane HBox.hgrow="ALWAYS" />
+                <VBox spacing="5.0" style="-fx-alignment: CENTER-RIGHT;">
+                    <Label fx:id="labelStatus" text="✓ Prêt" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;" />
+                    <Label fx:id="labelUser" text="Utilisateur: Admin" style="-fx-text-fill: #bdc3c7; -fx-font-size: 11;" />
+                    <Label fx:id="labelDateTime" text="00/00/0000 00:00:00" style="-fx-text-fill: #00ff00; -fx-font-size: 14; -fx-font-family: 'Courier New'; -fx-font-weight: bold;" />
+                </VBox>
+            </HBox>
+
+            <!-- STATISTICS CARDS -->
+            <GridPane hgap="15.0" vgap="15.0">
+                <columnConstraints>
+                    <ColumnConstraints prefWidth="200.0"/>
+                    <ColumnConstraints prefWidth="200.0"/>
+                    <ColumnConstraints prefWidth="200.0"/>
+                    <ColumnConstraints prefWidth="200.0"/>
+                </columnConstraints>
+                <children>
+                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="0">
+                        <Label text="📊 Total Assets" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
+                        <Label fx:id="labelTotalAssets" text="0" style="-fx-text-fill: #3498db; -fx-font-size: 24; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="1">
+                        <Label text="✓ Assets Actifs" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
+                        <Label fx:id="labelActiveAssets" text="0" style="-fx-text-fill: #27ae60; -fx-font-size: 24; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="2">
+                        <Label text="📝 Total Trades" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
+                        <Label fx:id="labelTotalTrades" text="0" style="-fx-text-fill: #9b59b6; -fx-font-size: 24; -fx-font-weight: bold;"/>
+                    </VBox>
+                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="3">
+                        <Label text="⏳ En Attente" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
+                        <Label fx:id="labelActiveTrades" text="0" style="-fx-text-fill: #f39c12; -fx-font-size: 24; -fx-font-weight: bold;"/>
+                    </VBox>
+                </children>
+            </GridPane>
+
+            <!-- TABS -->
+            <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS">
+                <tabs>
+                    <!-- ASSETS TAB -->
+                    <Tab text="📊 ASSETS" closable="false">
+                        <VBox spacing="12.0" style="-fx-padding: 15;">
+                            <TableView fx:id="assetsTable" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colSymbol" text="Symbol"/>
+                                    <TableColumn fx:id="colName" text="Nom"/>
+                                    <TableColumn fx:id="colType" text="Type"/>
+                                    <TableColumn fx:id="colPrice" text="Prix"/>
+                                    <TableColumn fx:id="colMarket" text="Marché"/>
+                                    <TableColumn fx:id="colStatus" text="Statut"/>
+                                    <TableColumn fx:id="colUpdatedAt" text="Mis à jour"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </Tab>
+
+                    <!-- TRADES TAB -->
+                    <Tab text="📝 TRADES" closable="false">
+                        <VBox spacing="12.0" style="-fx-padding: 15;">
+                            <TableView fx:id="tradesTable" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="colTradeID" text="ID"/>
+                                    <TableColumn fx:id="colTradeUser" text="User"/>
+                                    <TableColumn fx:id="colTradeAsset" text="Asset"/>
+                                    <TableColumn fx:id="colTradeType" text="Type"/>
+                                    <TableColumn fx:id="colOrderMode" text="Mode"/>
+                                    <TableColumn fx:id="colTradePrice" text="Prix"/>
+                                    <TableColumn fx:id="colTradeQty" text="Quantité"/>
+                                    <TableColumn fx:id="colTradeTotal" text="Total"/>
+                                    <TableColumn fx:id="colTradeStatus" text="Statut"/>
+                                    <TableColumn fx:id="colTradeCreated" text="Date"/>
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </Tab>
+
+                    <!-- CHARTS TAB -->
+                    <Tab text="📈 GRAPHIQUES" closable="false">
+                        <VBox spacing="12.0" style="-fx-padding: 15;">
+                            <Label text="Tendance des prix (24h)" style="-fx-text-fill: white; -fx-font-size: 14;"/>
+                            <LineChart fx:id="trendChart" prefHeight="300.0">
+                                <xAxis>
+                                    <NumberAxis label="Heures"/>
+                                </xAxis>
+                                <yAxis>
+                                    <NumberAxis label="Prix (USD)"/>
+                                </yAxis>
+                            </LineChart>
+
+                            <Label text="Évolution des prix (30 jours)" style="-fx-text-fill: white; -fx-font-size: 14;"/>
+                            <LineChart fx:id="priceChart" prefHeight="300.0">
+                                <xAxis>
+                                    <NumberAxis label="Jours"/>
+                                </xAxis>
+                                <yAxis>
+                                    <NumberAxis label="Prix (USD)"/>
+                                </yAxis>
+                            </LineChart>
+
+                            <Label text="Statistiques" style="-fx-text-fill: white; -fx-font-size: 14;"/>
+                            <BarChart fx:id="statsChart" prefHeight="300.0">
+                                <xAxis>
+                                    <CategoryAxis label="Catégories"/>
+                                </xAxis>
+                                <yAxis>
+                                    <NumberAxis label="Valeurs"/>
+                                </yAxis>
+                            </BarChart>
+                        </VBox>
+                    </Tab>
+                </tabs>
+            </TabPane>
+
+        </VBox>
+    </children>
+</AnchorPane>
