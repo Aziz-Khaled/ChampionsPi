@@ -180,18 +180,23 @@ public class AfficherProjetsController implements Initializable {
         projet selected = tableProjets.getSelectionModel().getSelectedItem();
         if (selected == null) return;
 
+        // Utilisation de OK et CANCEL (Standard JavaFX pour CONFIRMATION)
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Suppression");
-        alert.setHeaderText("Confirmation");
+        alert.setHeaderText("Confirmation de suppression");
         alert.setContentText("Voulez-vous vraiment supprimer le projet : " + selected.getTitle() + " ?");
 
+        // On attend la réponse
         alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.YES) {
+            // ✅ CORRECTION : Vérifier ButtonType.OK au lieu de YES
+            if (response == ButtonType.OK) {
                 try {
                     ps.deleteOne(selected);
+                    // Rafraîchir la liste après suppression
                     chargerDonnees();
                 } catch (Exception e) {
-                    afficherErreur("Impossible de supprimer le projet.");
+                    afficherErreur("Impossible de supprimer le projet : " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
         });

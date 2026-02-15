@@ -82,13 +82,23 @@ public class MainDashboardController {
         });
     }
 
+
     private void mettreAJourStyleBouton(Button actif) {
         List<Button> btns = List.of(btnDashboard, btnProjets, btnCredits, btnNegociations);
+
         for (Button b : btns) {
+            b.getStyleClass().remove("sidebar-btn-active");
+            b.getStyleClass().add("sidebar-btn");
+
             if (b == actif) {
-                b.setStyle("-fx-background-color: #34495e; -fx-text-fill: #3498db; -fx-font-weight: bold; -fx-alignment: CENTER_LEFT; -fx-padding: 0 0 0 20; -fx-border-color: #3498db; -fx-border-width: 0 0 0 5;");
-            } else {
-                b.setStyle("-fx-background-color: transparent; -fx-text-fill: #bdc3c7; -fx-alignment: CENTER_LEFT; -fx-padding: 0 0 0 20; -fx-border-width: 0;");
+                b.getStyleClass().add("sidebar-btn-active");
+                // Animation d'échelle pour le bouton cliqué
+                javafx.animation.ScaleTransition st = new javafx.animation.ScaleTransition(javafx.util.Duration.millis(200), b);
+                st.setFromX(1.0); st.setFromY(1.0);
+                st.setToX(1.05); st.setToY(1.05);
+                st.setAutoReverse(true);
+                st.setCycleCount(2);
+                st.play();
             }
         }
     }

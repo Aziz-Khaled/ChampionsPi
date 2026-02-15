@@ -2,6 +2,7 @@ package tn.esprit.Champions.test;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -10,14 +11,18 @@ public class TestFX {
 
     // 2. On crée une classe interne qui, elle, gère l'application
     public static class ActualApp extends Application {
-        @Override
-        public void start(Stage primaryStage) throws Exception {
-            // Ton code de chargement FXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/MainDashboard.fxml"));            Scene scene = new Scene(loader.load());
 
-            primaryStage.setTitle("Fintech - Gestion des Crédits");
-            primaryStage.setScene(scene);
-            primaryStage.show();
+        @Override
+        public void start(Stage stage) throws Exception {
+            Parent root = FXMLLoader.load(getClass().getResource("/invest/Marketplace.fxml"));
+            Scene scene = new Scene(root);
+
+            // ✅ Charger le CSS une seule fois pour toute la scène
+            String css = getClass().getResource("/css/style.css").toExternalForm();
+            scene.getStylesheets().add(css);
+
+            stage.setScene(scene);
+            stage.show();
         }
     }
 
