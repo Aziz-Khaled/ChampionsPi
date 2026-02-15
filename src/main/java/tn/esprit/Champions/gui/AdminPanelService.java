@@ -71,32 +71,77 @@ public class AdminPanelService {
         mainContent.getChildren().clear();
         mainContent.setSpacing(15);
 
-        // 1. Create a modern search bar
+        // 1. Search Bar (Text)
         TextField searchField = new TextField();
         searchField.setPromptText("Search by name or email...");
-        searchField.setMaxWidth(350);
-        searchField.getStyleClass().add("search-field"); // Link this in your CSS
+        searchField.setPrefWidth(300);
+        searchField.getStyleClass().add("search-field");
 
-        // 2. Setup Real-time Filter Logic
+        // 2. Role Filter
+        ComboBox<Object> roleFilter = new ComboBox<>();
+        roleFilter.setPromptText("Filter by Role");
+        roleFilter.getStyleClass().add("filter-combo");
+        roleFilter.setPrefWidth(160);
+        roleFilter.getItems().add("All Roles");
+        roleFilter.getItems().addAll((Object[]) tn.esprit.Champions.models.Role.values());
+        roleFilter.getSelectionModel().selectFirst();
+
+        // 3. Status Filter (EXCLUDING PENDING)
+        ComboBox<Object> statusFilter = new ComboBox<>();
+        statusFilter.setPromptText("Filter by Status");
+        statusFilter.getStyleClass().add("filter-combo");
+        statusFilter.setPrefWidth(160);
+
+        statusFilter.getItems().add("All Statuses");
+
+        // Use Java Streams to filter out the PENDING status
+        java.util.Arrays.stream(tn.esprit.Champions.models.Status.values())
+                .filter(s -> s != tn.esprit.Champions.models.Status.PENDING)
+                .forEach(statusFilter.getItems()::add);
+
+        statusFilter.getSelectionModel().selectFirst();
+
+        // Layout for filters - Added statusFilter here
+        HBox filterBar = new HBox(15, searchField, roleFilter, statusFilter);
+        filterBar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        // 4. Setup Combined Filter Logic
         ObservableList<Utilisateur> masterData = table.getItems();
         FilteredList<Utilisateur> filteredData = new FilteredList<>(masterData, p -> true);
 
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+        // Unified Update Logic
+        Runnable updateFilter = () -> {
+            String searchText = (searchField.getText() == null) ? "" : searchField.getText().toLowerCase();
+            Object selectedRole = roleFilter.getValue();
+            Object selectedStatus = statusFilter.getValue();
+
             filteredData.setPredicate(user -> {
-                if (newVal == null || newVal.isEmpty()) return true;
-                String lowerCaseFilter = newVal.toLowerCase();
+                // Text Match
                 String fullName = (user.getNom() + " " + user.getPrenom()).toLowerCase();
+                boolean matchesText = fullName.contains(searchText) ||
+                        user.getEmail().toLowerCase().contains(searchText);
 
-                return fullName.contains(lowerCaseFilter) ||
-                        user.getEmail().toLowerCase().contains(lowerCaseFilter);
+                // Role Match
+                boolean matchesRole = (selectedRole == null || selectedRole.equals("All Roles")) ||
+                        user.getRole().equals(selectedRole);
+
+                // Status Match (NEW)
+                boolean matchesStatus = (selectedStatus == null || selectedStatus.equals("All Statuses")) ||
+                        user.getStatut().equals(selectedStatus);
+
+                // The user must match ALL selected filters
+                return matchesText && matchesRole && matchesStatus;
             });
-        });
+        };
 
-        // 3. Connect filtered data back to the table
+        // Listeners for all three inputs
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
+        roleFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
+        statusFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
+
+        // 5. Connect and Display
         table.setItems(filteredData);
-
-        // 4. Add components to the VBox
-        mainContent.getChildren().addAll(searchField, table);
+        mainContent.getChildren().addAll(filterBar, table);
         VBox.setVgrow(table, Priority.ALWAYS);
     }
 
@@ -260,26 +305,48 @@ public class AdminPanelService {
     private void updateUser(Utilisateur user) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Update User");
-        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
+        // 1. Get the DialogPane and set its width
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.setPrefWidth(500); // Set this to your desired width (e.g., 500 or 600)
+
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialogPane.getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // 2. Make input fields expand to fill the wider dialog
         TextField tfNom = new TextField(user.getNom());
+        tfNom.setMaxWidth(Double.MAX_VALUE);
+
         TextField tfPrenom = new TextField(user.getPrenom());
+        tfPrenom.setMaxWidth(Double.MAX_VALUE);
+
         TextField tfEmail = new TextField(user.getEmail());
-        ComboBox<String> cbRole = new ComboBox<>(FXCollections.observableArrayList("ADMIN", "USER"));
-        cbRole.setValue(user.getRole().name());
+        tfEmail.setMaxWidth(Double.MAX_VALUE);
+
+        ComboBox<tn.esprit.Champions.models.Role> cbRole = new ComboBox<>(FXCollections.observableArrayList(tn.esprit.Champions.models.Role.values()));
+        cbRole.setValue(user.getRole());
+        cbRole.getStyleClass().add("filter-combo");
+        cbRole.setMaxWidth(Double.MAX_VALUE);
+
         ComboBox<String> cbStatus = new ComboBox<>(FXCollections.observableArrayList("PENDING", "ACTIVE", "DESACTIVE"));
         cbStatus.setValue(user.getStatut().name());
+        cbStatus.getStyleClass().add("filter-combo");
+        cbStatus.setMaxWidth(Double.MAX_VALUE);
 
-        VBox content = new VBox(10,
+        // 3. Create content and ensure it expands
+        VBox content = new VBox(12,
                 new Label("Nom"), tfNom,
                 new Label("Prenom"), tfPrenom,
                 new Label("Email"), tfEmail,
                 new Label("Role"), cbRole,
                 new Label("Status"), cbStatus
         );
-        content.setStyle("-fx-padding: 20;");
-        dialog.getDialogPane().setContent(content);
+
+        // Add styling for better padding and font consistency
+        content.setStyle("-fx-padding: 25; -fx-font-size: 14px;");
+        content.setFillWidth(true); // Ensures children stretch to fill the VBox width
+
+        dialogPane.setContent(content);
 
         dialog.showAndWait().ifPresent(response -> {
             if (response == saveButtonType) {
@@ -287,11 +354,13 @@ public class AdminPanelService {
                     user.setNom(tfNom.getText());
                     user.setPrenom(tfPrenom.getText());
                     user.setEmail(tfEmail.getText());
-                    user.setRole(tn.esprit.Champions.models.Role.valueOf(cbRole.getValue()));
+                    user.setRole(cbRole.getValue());
                     user.setStatut(Status.valueOf(cbStatus.getValue()));
                     userService.updateOne(user);
                     showAllUsers();
-                } catch (SQLException e) { e.printStackTrace(); }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }

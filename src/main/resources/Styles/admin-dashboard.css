@@ -1,6 +1,8 @@
 .root {
-    -fx-font-family: 'Inter', 'Segoe UI', sans-serif;
-    -fx-background-color: #f8fafc;
+    /* Increased base font size from 12px to 14px */
+        -fx-font-family: 'Inter', 'Segoe UI', sans-serif;
+        -fx-font-size: 14px;
+        -fx-background-color: #f8fafc;
 }
 
 .sidebar {
@@ -89,4 +91,73 @@
 /* Optional: Add an icon style if you want to add a logout icon later */
 .logout-button .text {
     -fx-padding: 0 0 0 10;
+}
+
+
+/* Styling for the Search Field */
+.search-field {
+    -fx-background-color: white;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8 12;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1e293b;
+}
+
+.search-field:focused {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: white;
+}
+
+/* Styling for the Filter ComboBox */
+.filter-combo {
+    -fx-background-color: white;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 5 8;
+    -fx-cursor: hand;
+}
+
+.filter-combo:hover {
+    -fx-border-color: #cbd5e1;
+}
+
+.filter-combo:focused {
+    -fx-border-color: #3b82f6;
+}
+
+/* Styling the arrow inside the ComboBox */
+.filter-combo .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.filter-combo .arrow {
+    -fx-background-color: #64748b;
+}
+
+/* Styling the popup list items */
+.filter-combo .list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);
+}
+
+.filter-combo .list-cell {
+    -fx-padding: 8 12;
+    -fx-text-fill: #475569;
+}
+
+.filter-combo .list-cell:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #1e293b;
+}
+
+.filter-combo .list-cell:selected {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #3b82f6;
+    -fx-font-weight: bold;
 }

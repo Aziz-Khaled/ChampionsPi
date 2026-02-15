@@ -1,6 +1,8 @@
 /* --- Global & Layout --- */
 .root {
     -fx-font-family: "Inter", "Segoe UI", sans-serif;
+
+     -fx-font-size: 14px;
 }
 
 .main-container {
