@@ -16,199 +16,295 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="700.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet">
+<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet" >
 
-    <!-- LEFT SIDEBAR -->
-    <left>
-        <VBox prefHeight="700.0" prefWidth="220.0" spacing="0.0" style="-fx-background-color: #2c3e50;">
+    <BorderPane>
 
-            <!-- Logo Section -->
-            <VBox alignment="CENTER" prefHeight="177.0" prefWidth="216.0" spacing="15.0" style="-fx-padding: 25 15 20 15; -fx-background-color: #34495e;">
-                <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
-                    <image>
-                        <Image url="@logo%20.png" />
-                    </image>
-                </ImageView>
-                <Separator prefWidth="200.0" style="-fx-padding: 0;" />
-            </VBox>
+        <!-- LEFT SIDEBAR -->
+        <left>
+            <VBox prefHeight="700.0" prefWidth="220.0" spacing="0.0" style="-fx-background-color: #2c3e50;">
 
-            <!-- Menu Buttons -->
-            <VBox spacing="0.0" style="-fx-padding: 15 0 0 0;" VBox.vgrow="ALWAYS">
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;" text="🧑‍💼Mon Profile" textAlignment="LEFT" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #1abc9c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #34495e; -fx-padding: 12 20 12 20; -fx-cursor: hand; -fx-border-color: #1abc9c; -fx-border-width: 0 0 0 3;" text="💰 Mes Wallets" textAlignment="LEFT" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;" text="📈 Trades" textAlignment="LEFT" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;" text="🎓Formation" textAlignment="LEFT" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;" text="🛒Marketplace" textAlignment="LEFT" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20 12 20; -fx-cursor: hand;" text="💳Crédit" textAlignment="LEFT" />
-            </VBox>
-
-            <!-- Sign Out -->
-            <VBox alignment="BOTTOM_CENTER" prefHeight="80.0" prefWidth="214.0" spacing="10.0" style="-fx-padding: 15;">
-                <Separator prefWidth="200.0" />
-                <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0 10 0; -fx-cursor: hand;" text="🚪 Sign Out" textAlignment="CENTER" />
-            </VBox>
-
-        </VBox>
-    </left>
-
-    <!-- CENTER CONTENT -->
-    <center>
-        <VBox prefHeight="668.0" prefWidth="1126.0" spacing="0.0" style="-fx-background-color: #ecf0f1;">
-
-            <!-- Header -->
-            <HBox alignment="CENTER_LEFT" prefHeight="61.0" prefWidth="1137.0" spacing="15.0" style="-fx-background-color: white; -fx-padding: 15 20 15 20; -fx-border-color: #bdc3c7; -fx-border-width: 0 0 1 0;">
-                <Label prefHeight="30.0" prefWidth="219.0" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Wallet Management" />
-                <Region prefHeight="30.0" prefWidth="787.0" HBox.hgrow="ALWAYS" />
-            </HBox>
-
-            <!-- Main Content -->
-            <HBox prefHeight="617.0" prefWidth="1135.0" spacing="15.0" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
-
-                <!-- Wallet Form -->
-                <VBox prefHeight="605.0" prefWidth="308.0" spacing="10.0" style="-fx-padding: 20; -fx-background-color: white;" styleClass="card">
-
-                    <Label prefHeight="25.0" prefWidth="150.0" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Form">
-                        <VBox.margin>
-                            <Insets left="90.0" />
-                        </VBox.margin>
-                    </Label>
-
-                    <Label prefHeight="20.0" prefWidth="67.0" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="wallet">
-                        <padding>
-                            <Insets left="10.0" />
-                        </padding>
-                  <VBox.margin>
-                     <Insets bottom="20.0" top="30.0" />
-                  </VBox.margin>
-                    </Label>
-
-                    <!-- GridPane Wallet Type/Status -->
-                    <GridPane hgap="10.0" vgap="12.0">
-                        <columnConstraints>
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
-                            <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
-                        </columnConstraints>
-                        <rowConstraints>
-                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                        </rowConstraints>
-                        <Label styleClass="label-header" text="Type" />
-                        <ComboBox fx:id="boxType" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" />
-                        <Label styleClass="label-header" text="Status" GridPane.rowIndex="1" />
-                        <ComboBox fx:id="boxStatus" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                    </GridPane>
-
-                    <!-- Wallet Buttons -->
-                    <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
-                        <Button fx:id="add_wallet" onAction="#handleAddWallet" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
-                            <HBox.margin><Insets left="50.0" /></HBox.margin>
-                        </Button>
-                        <Button fx:id="modify_wallet" onAction="#handleAddWallet" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
-                        </Button>
-                        <Button fx:id="delete_wallet" onAction="#handleAddWallet" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
-                            <HBox.margin><Insets /></HBox.margin>
-                        </Button>
-                  <VBox.margin>
-                     <Insets top="20.0" />
-                  </VBox.margin>
-                    </HBox>
-
-                    <!-- Wallet Currency Section -->
-                    <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="wallet_currency">
-                        <padding><Insets left="10.0" /></padding>
-                  <VBox.margin>
-                     <Insets bottom="20.0" top="50.0" />
-                  </VBox.margin>
-                    </Label>
-
-                    <!-- GridPane Wallet Currency -->
-                    <GridPane hgap="10.0" vgap="12.0">
-                        <columnConstraints>
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
-                            <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
-                        </columnConstraints>
-                        <rowConstraints>
-                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                        </rowConstraints>
-                        <Label styleClass="label-header" text="Id" GridPane.columnIndex="0" />
-                        <TextField fx:id="walletIdField" promptText="wallet id" styleClass="text-field" GridPane.columnIndex="1" />
-                        <ComboBox fx:id="currencyComboBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                        <Label styleClass="label-header" text="currency" GridPane.rowIndex="1" />
-                    </GridPane>
-
-                    <!-- Wallet Currency Buttons -->
-                    <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
-                        <Button fx:id="add_wallet_currency" onAction="#handleAddWalletCurrency" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
-                            <HBox.margin><Insets left="50.0" /></HBox.margin>
-                        </Button>
-                        <Button fx:id="modify_wallet_currency" onAction="#handleAddWallet" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
-                        </Button>
-                        <Button fx:id="delete_wallet_currency" onAction="#handleDeleteWalletCurrency" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
-                            <font><Font name="System Bold" size="27.0" /></font>
-                            <HBox.margin><Insets /></HBox.margin>
-                        </Button>
-                  <VBox.margin>
-                     <Insets top="20.0" />
-                  </VBox.margin>
-                    </HBox>
-
+                <!-- Logo Section -->
+                <VBox alignment="CENTER" prefHeight="177.0" prefWidth="216.0" spacing="15.0" style="-fx-padding: 25 15 20 15; -fx-background-color: #34495e;">
+                    <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@logo%20.png" />
+                        </image>
+                    </ImageView>
+                    <Separator prefWidth="200.0" />
                 </VBox>
 
-                <!-- Right wallet list -->
-                <VBox spacing="10" HBox.hgrow="ALWAYS">
-                    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 12; -fx-background-color: white;">
-                        <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet List">
-                     <HBox.margin>
-                        <Insets right="300.0" />
-                     </HBox.margin></Label>
-                        <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" promptText="Search..." />
-                        <Button fx:id="btnClearSearch" onAction="#handleClearSearch" text="Clear" />
-                    </HBox>
-
-                    <!-- ScrollPane pour wallets Fiat -->
-                    <AnchorPane>
-                        <ScrollPane fx:id="scrollWallets" fitToHeight="true" hbarPolicy="ALWAYS" layoutX="14.0" layoutY="14.0" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="5.0">
-                            <content>
-                                <HBox fx:id="walletContainer" alignment="CENTER_LEFT" spacing="15">
-                                    <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
-                                </HBox>
-                            </content>
-                        </ScrollPane>
-                    </AnchorPane>
-
-                    <!-- ScrollPane pour wallets Crypto -->
-                    <AnchorPane>
-                        <ScrollPane fx:id="scrollWallets1" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="3.0">
-                            <content>
-                                <HBox fx:id="walletContainer1" alignment="CENTER_LEFT" spacing="15">
-                                    <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
-                                </HBox>
-                            </content>
-                        </ScrollPane>
-                    </AnchorPane>
-
-                    <!-- ScrollPane pour wallets Trading -->
-                    <AnchorPane>
-                        <ScrollPane fx:id="scrollWallets2" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="3.0">
-                            <content>
-                                <HBox fx:id="walletContainer2" alignment="CENTER_LEFT" spacing="15">
-                                    <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
-                                </HBox>
-                            </content>
-                        </ScrollPane>
-                    </AnchorPane>
-
+                <!-- Menu Buttons -->
+                <VBox spacing="0.0" style="-fx-padding: 15 0 0 0;" VBox.vgrow="ALWAYS">
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="🧑‍💼Mon Profile" textAlignment="LEFT" />
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #1abc9c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #34495e; -fx-padding: 12 20; -fx-cursor: hand; -fx-border-color: #1abc9c; -fx-border-width: 0 0 0 3;" text="💰 Mes Wallets" textAlignment="LEFT" />
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="📈 Trades" textAlignment="LEFT" />
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="🎓Formation" textAlignment="LEFT" />
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="🛒Marketplace" textAlignment="LEFT" />
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="💳Crédit" textAlignment="LEFT" />
                 </VBox>
-            </HBox>
-        </VBox>
-    </center>
-</BorderPane>
+
+                <!-- Sign Out -->
+                <VBox alignment="BOTTOM_CENTER" prefHeight="80.0" prefWidth="214.0" spacing="10.0" style="-fx-padding: 15;">
+                    <Separator prefWidth="200.0" />
+                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0; -fx-cursor: hand;" text="🚪 Sign Out" textAlignment="CENTER" />
+                </VBox>
+
+            </VBox>
+        </left>
+
+        <!-- CENTER CONTENT -->
+        <center>
+            <VBox prefHeight="668.0" prefWidth="1126.0" spacing="0.0" style="-fx-background-color: #ecf0f1;">
+
+                <!-- Header -->
+                <HBox alignment="CENTER_LEFT" prefHeight="61.0" prefWidth="1137.0" spacing="15.0" style="-fx-background-color: white; -fx-padding: 15 20; -fx-border-color: #bdc3c7; -fx-border-width: 0 0 1 0;">
+                    <Label prefHeight="30.0" prefWidth="219.0" style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Wallet Management" />
+                    <Region prefHeight="30.0" prefWidth="787.0" HBox.hgrow="ALWAYS" />
+                </HBox>
+
+                <!-- Main Content -->
+                <HBox prefHeight="617.0" prefWidth="1135.0" spacing="15.0" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
+
+                    <!-- Container flip -->
+                    <StackPane fx:id="flipContainer" prefHeight="620.0" prefWidth="320.0">
+
+                        <!-- ================= WALLET FORM ================= -->
+                        <VBox fx:id="walletForm" prefHeight="605.0" prefWidth="308.0" spacing="10.0" style="-fx-padding: 20; -fx-background-color: white;" styleClass="card">
+
+                            <!-- Flèche pour basculer -->
+                            <HBox alignment="CENTER_RIGHT">
+                                <Button onAction="#flipToTransaction" style="-fx-background-color: transparent; -fx-font-size:16;" text="➜" />
+                            </HBox>
+
+                            <!-- Titre Wallet Form -->
+                            <Label prefHeight="25.0" prefWidth="150.0" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Form">
+                                <VBox.margin>
+                                    <Insets left="90.0" />
+                                </VBox.margin>
+                            </Label>
+
+                            <!-- Label Wallet -->
+                            <Label prefHeight="20.0" prefWidth="67.0" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet">
+                                <padding>
+                                    <Insets left="10.0" />
+                                </padding>
+                                <VBox.margin>
+                                    <Insets bottom="20.0" />
+                                </VBox.margin>
+                            </Label>
+
+                            <!-- GridPane Wallet Type/Status -->
+                            <GridPane hgap="10.0" vgap="12.0">
+                                <columnConstraints>
+                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
+                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
+                                </columnConstraints>
+                                <rowConstraints>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                </rowConstraints>
+                                <Label styleClass="label-header" text="Type" />
+                                <ComboBox fx:id="boxType" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" />
+                                <Label styleClass="label-header" text="Status" GridPane.rowIndex="1" />
+                                <ComboBox fx:id="boxStatus" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                            </GridPane>
+
+                            <!-- Wallet Buttons -->
+                            <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
+                                <Button fx:id="add_wallet" onAction="#handleAddWallet" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0" /></font>
+                                    <HBox.margin><Insets left="50.0" /></HBox.margin>
+                                </Button>
+                                <Button fx:id="modify_wallet" onAction="#handleModifyWallet" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0" /></font>
+                                </Button>
+                                <Button fx:id="delete_wallet" onAction="#handleDeleteWallet" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0" /></font>
+                                    <HBox.margin><Insets /></HBox.margin>
+                                </Button>
+                                <VBox.margin>
+                                    <Insets top="20.0" />
+                                </VBox.margin>
+                            </HBox>
+
+                            <!-- Wallet Currency Section -->
+                            <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Currency">
+                                <padding><Insets left="10.0" /></padding>
+                                <VBox.margin>
+                                    <Insets bottom="20.0" top="20.0" />
+                                </VBox.margin>
+                            </Label>
+
+                            <!-- GridPane Wallet Currency -->
+                            <GridPane hgap="10.0" vgap="12.0">
+                                <columnConstraints>
+                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
+                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
+                                </columnConstraints>
+                                <rowConstraints>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                </rowConstraints>
+                                <Label styleClass="label-header" text="Wallet ID" GridPane.columnIndex="0" />
+                                <TextField fx:id="walletIdField" promptText="wallet id" styleClass="text-field" GridPane.columnIndex="1" />
+                                <Label styleClass="label-header" text="Currency" GridPane.rowIndex="1" />
+                                <ComboBox fx:id="currencyComboBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                            </GridPane>
+                     <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
+                        <children>
+                           <Button fx:id="add_wallet_currency" onAction="#handleAddWalletCurrency" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
+                              <font>
+                                 <Font name="System Bold" size="27.0" />
+                              </font>
+                              <HBox.margin>
+                                 <Insets left="50.0" />
+                              </HBox.margin>
+                           </Button>
+                           <Button fx:id="modify_wallet_currency" onAction="#handleAddWallet" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
+                              <font>
+                                 <Font name="System Bold" size="27.0" />
+                              </font>
+                           </Button>
+                           <Button fx:id="delete_wallet_currency" onAction="#handleDeleteWalletCurrency" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
+                              <font>
+                                 <Font name="System Bold" size="27.0" />
+                              </font>
+                              <HBox.margin>
+                                 <Insets />
+                              </HBox.margin>
+                           </Button>
+                        </children>
+                     </HBox>
+
+                        </VBox>
+
+                        <!-- ================= TRANSACTION FORM ================= -->
+                        <VBox fx:id="transactionForm" spacing="10"
+                              style="-fx-padding: 30; -fx-background-color: white;"
+                              styleClass="card" visible="false"
+                              alignment="TOP_CENTER" prefWidth="308" prefHeight="605">
+
+                            <!-- Flèche pour revenir au wallet -->
+                            <HBox alignment="CENTER_LEFT">
+                                <Button onAction="#flipToWallet" style="-fx-background-color: transparent; -fx-font-size:16;" text="⬅" />
+                            </HBox>
+
+                            <!-- Titre Transaction Form -->
+                            <Label prefHeight="25.0" prefWidth="200.0"
+                                   style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;"
+                                   text="Transaction Form"
+                                   alignment="CENTER">
+                                <VBox.margin><Insets top="10.0" bottom="20.0"/></VBox.margin>
+                            </Label>
+
+                            <!-- GridPane Transaction Fields -->
+                            <GridPane hgap="10.0" vgap="12.0">
+                                <padding>
+                                    <Insets top="10.0" right="0.0" bottom="10.0" left="0.0"/>
+                                </padding>
+                                <columnConstraints>
+                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0"/>
+                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0"/>
+                                </columnConstraints>
+                                <rowConstraints>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
+                                    <RowConstraints minHeight="30.0" prefHeight="30.0"/>
+                                </rowConstraints>
+
+                                <Label styleClass="label-header" text="Source Wallet"/>
+                                <TextField fx:id="sourceWalletField" promptText="id source" styleClass="text-field" GridPane.columnIndex="1" editable="false"/>
+
+                                <Label styleClass="label-header" text="Destination" GridPane.rowIndex="1"/>
+                                <TextField fx:id="destinationWalletField" promptText="id destination" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                                <Label styleClass="label-header" text="Amount" GridPane.rowIndex="2"/>
+                                <TextField fx:id="amountField" promptText="montant" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                                <!-- Nouveau ComboBox Currency -->
+                                <Label styleClass="label-header" text="Currency" GridPane.rowIndex="3"/>
+                                <ComboBox fx:id="currencyTransactionBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box"
+                                          GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+
+
+                            </GridPane>
+
+                            <!-- Transaction Buttons -->
+                            <HBox spacing="8.0" style="-fx-padding: 30 0 0 0;" alignment="CENTER">
+                                <Button fx:id="addTransactionBtn" onAction="#handleAddTransaction" styleClass="plus_btn" prefHeight="57.0" prefWidth="57.0" text="+" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0"/></font>
+                                </Button>
+                                <Button fx:id="modifyTransactionBtn" styleClass="plus_btn" prefHeight="57.0" prefWidth="57.0" text="✏" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0"/></font>
+                                </Button>
+                                <Button fx:id="deleteTransactionBtn" styleClass="plus_btn" prefHeight="57.0" prefWidth="57.0" text="🗑" textFill="#c1c1c1">
+                                    <font><Font name="System Bold" size="27.0"/></font>
+                                </Button>
+                            </HBox>
+
+                        </VBox>
+
+                    </StackPane>
+
+                   
+                    <!-- Right wallet list -->
+                    <VBox spacing="10" HBox.hgrow="ALWAYS">
+                        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 12; -fx-background-color: white;">
+                            <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet List">
+                                <HBox.margin>
+                                    <Insets right="300.0" />
+                                </HBox.margin></Label>
+                            <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" promptText="Search..." />
+                            <Button fx:id="btnClearSearch" onAction="#handleClearSearch" text="Clear" />
+                        </HBox>
+
+                        <!-- ScrollPane pour wallets Fiat -->
+                        <AnchorPane>
+                            <ScrollPane fx:id="scrollWallets" fitToHeight="true" hbarPolicy="ALWAYS" layoutX="14.0" layoutY="14.0" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="5.0">
+                                <content>
+                                    <HBox fx:id="walletContainer" alignment="CENTER_LEFT" spacing="15">
+                                        <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                                    </HBox>
+                                </content>
+                            </ScrollPane>
+                        </AnchorPane>
+
+                        <!-- ScrollPane pour wallets Crypto -->
+                        <AnchorPane>
+                            <ScrollPane fx:id="scrollWallets1" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="3.0">
+                                <content>
+                                    <HBox fx:id="walletContainer1" alignment="CENTER_LEFT" spacing="15">
+                                        <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                                    </HBox>
+                                </content>
+                            </ScrollPane>
+                        </AnchorPane>
+
+                        <!-- ScrollPane pour wallets Trading -->
+                        <AnchorPane>
+                            <ScrollPane fx:id="scrollWallets2" fitToHeight="true" hbarPolicy="ALWAYS" prefHeight="200.0" prefWidth="608.0" vbarPolicy="NEVER" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="3.0">
+                                <content>
+                                    <HBox fx:id="walletContainer2" alignment="CENTER_LEFT" spacing="15">
+                                        <padding><Insets bottom="15" left="15" right="15" top="15" /></padding>
+                                    </HBox>
+                                </content>
+                            </ScrollPane>
+                        </AnchorPane>
+
+                    </VBox>
+
+                </HBox>
+            </VBox>
+        </center>
+
+    </BorderPane>
+
+</StackPane>

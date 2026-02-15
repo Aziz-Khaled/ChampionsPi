@@ -11,8 +11,9 @@ public class transaction {
     private int idWalletDestination;
     private double montant;
     private typeTransaction type;
-    private Status statut;
+    private StatutTransaction statut;
     private LocalDateTime dateTransaction;
+    private int CurrencyId;
 
 
     public transaction() {
@@ -20,7 +21,7 @@ public class transaction {
 
 
     public transaction(int idTransaction, int idWalletSource, int idWalletDestination,
-                       double montant, typeTransaction type, Status statut,
+                       double montant, typeTransaction type, StatutTransaction statut,
                        LocalDateTime dateTransaction) {
         this.idTransaction = idTransaction;
         this.idWalletSource = idWalletSource;
@@ -73,11 +74,11 @@ public class transaction {
         this.type = type;
     }
 
-    public Status getStatut() {
+    public StatutTransaction getStatut() {
         return statut;
     }
 
-    public void setStatut(Status statut) {
+    public void setStatut(StatutTransaction statut) {
         this.statut = statut;
     }
 
@@ -89,7 +90,13 @@ public class transaction {
         this.dateTransaction = dateTransaction;
     }
 
+    public int getCurrencyId() {
+        return CurrencyId;
+    }
 
+    public void setCurrencyId(int currencyId) {
+        CurrencyId = currencyId;
+    }
 
     @Override
     public boolean equals(Object o) {

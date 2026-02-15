@@ -61,8 +61,14 @@ public class wallet_currencyService implements CRUD <wallet_currency>
     }
 
     @Override
-    public void updateOne(wallet_currency walletCurrency) throws SQLException {
-
+    public void updateOne(wallet_currency wc) throws SQLException {
+        String query = "UPDATE wallet_currency SET solde = ? WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(query)) {
+            pst.setDouble(1, wc.getSolde());
+            pst.setInt(2, wc.getId_wallet());
+            pst.setInt(3, wc.getId_currency());
+            pst.executeUpdate();
+        }
     }
 
     @Override
@@ -122,5 +128,24 @@ public class wallet_currencyService implements CRUD <wallet_currency>
         }
 
         return list;
+    }
+    public wallet_currency getWalletCurrencyByWalletAndId(int idWallet, int idCurrency) throws SQLException {
+        String query = "SELECT * FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(query)) {
+            pst.setInt(1, idWallet);
+            pst.setInt(2, idCurrency);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                wallet_currency wc = new wallet_currency();
+                wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
+                wc.setId_wallet(rs.getInt("id_wallet"));
+                wc.setId_currency(rs.getInt("id_currency"));
+                wc.setNom_currency(rs.getString("nom_currency"));
+                wc.setSolde(rs.getDouble("solde"));
+                return wc;
+            }
+        }
+        return null; // si la currency n'existe pas dans ce wallet
     }
     }

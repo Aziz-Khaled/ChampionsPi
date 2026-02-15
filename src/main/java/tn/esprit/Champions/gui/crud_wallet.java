@@ -1,18 +1,23 @@
 package tn.esprit.Champions.gui;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.CurrencyService;
+import tn.esprit.Champions.services.TransactionService;
 import tn.esprit.Champions.services.WalletService;
 import tn.esprit.Champions.services.wallet_currencyService;
 
@@ -46,26 +51,56 @@ public class crud_wallet {
     private TextField walletIdField;
     @FXML
     private ComboBox<currency> currencyComboBox;
+    @FXML private VBox walletForm;
+    @FXML private VBox transactionForm;
+    @FXML private StackPane flipContainer;
+
+
+    @FXML private TextField sourceWalletField;
+    @FXML private TextField destinationWalletField;
+    @FXML private TextField amountField;
+    @FXML private ComboBox<String> typeTransactionBox;  // transaction_interne / transaction_externe
+    @FXML private ComboBox<String> statusTransactionBox; // retrait / recharge
+    @FXML private ComboBox<String> currencyTransactionBox; // currency sélectionnée pour la transaction
+    @FXML private Button addTransactionBtn; // bouton "+"
+
+
+
+
+    private VBox selectedCard = null;
+
+    @FXML
+    private void flipToTransaction() {
+        walletForm.setVisible(false);
+        transactionForm.setVisible(true);
+    }
+
+    @FXML
+    private void flipToWallet() {
+        transactionForm.setVisible(false);
+        walletForm.setVisible(true);
+    }
 
     private WalletService walletService;
     private wallet_currencyService walletCurrencyService;
     private CurrencyService currencyService;
 
     private wallet selectedWallet; // wallet sélectionné
-    private VBox selectedCard; // carte sélectionnée
+
     private final int DEFAULT_USER_ID = 1;
+
 
     @FXML
     public void initialize() {
-        // Remplir les ComboBox
+        // ComboBox initialisation
         boxType.getItems().addAll("fiat", "crypto", "trading");
         boxStatus.getItems().addAll("actif", "bloque");
-
         boxType.setDisable(true);
 
         walletService = new WalletService();
         walletCurrencyService = new wallet_currencyService();
         currencyService = new CurrencyService();
+
 
         loadWallets();
 
@@ -73,6 +108,54 @@ public class crud_wallet {
         if (clearSearchButton != null) clearSearchButton.setOnAction(e -> handleClearSearch());
         if (modify_wallet != null) modify_wallet.setOnAction(e -> handleModifyWallet());
         if (delete_wallet != null) delete_wallet.setOnAction(e -> handleDeleteWallet());
+
+        // Listener global pour cliquer **en dehors d'une carte**
+        Platform.runLater(() -> {
+            Scene scene = walletContainer.getScene();
+            if (scene != null) {
+                scene.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+                    Node target = (Node) event.getTarget();
+                    if (!isWalletCard(target) && !isWalletForm(target)) { // <-- ajouter la vérif formulaire
+                        clearWalletSelection();
+                        clearTransactionForm();
+                    }
+                });
+            }
+        });
+
+
+    }
+    private boolean isWalletForm(Node node) {
+        while (node != null) {
+            if (node == walletForm || node == transactionForm) return true;
+            node = node.getParent();
+        }
+        return false;
+    }
+    private void clearTransactionForm() {
+        if (sourceWalletField != null) sourceWalletField.clear();
+        if (destinationWalletField != null) destinationWalletField.clear();
+        if (amountField != null) amountField.clear();
+        if (typeTransactionBox != null) typeTransactionBox.getSelectionModel().clearSelection();
+        if (statusTransactionBox != null) statusTransactionBox.getSelectionModel().clearSelection();
+        if (currencyTransactionBox != null) currencyTransactionBox.getSelectionModel().clearSelection();
+    }
+    private void clearWalletSelection() {
+        if (selectedCard != null) {
+            // Remet le style initial
+            selectedCard.setStyle(
+                    "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
+                            "-fx-background-radius: 20;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);"
+            );
+            selectedCard = null;
+        }
+
+        // Vider le formulaire
+        walletIdField.clear();
+        boxType.getSelectionModel().clearSelection();
+        boxStatus.getSelectionModel().clearSelection();
+        currencyComboBox.getSelectionModel().clearSelection();
     }
 
     // Ajouter un wallet
@@ -105,6 +188,7 @@ public class crud_wallet {
 
 
 
+
     // Modifier le statut d’un wallet sélectionné
     @FXML
     private void handleModifyWallet() {
@@ -132,6 +216,7 @@ public class crud_wallet {
     }
 
     // Supprimer un wallet sélectionné
+    @FXML
     private void handleDeleteWallet() {
         if (selectedWallet == null) {
             new Alert(Alert.AlertType.WARNING, "Veuillez sélectionner un wallet à supprimer !").show();
@@ -237,11 +322,161 @@ public class crud_wallet {
         }
     }
 
+    @FXML
+    private void handleAddTransaction() {
+        try {
+            // 1️⃣ Récupérer les valeurs du formulaire
+            int idWalletSource = Integer.parseInt(sourceWalletField.getText().trim());
+            int idWalletDest = Integer.parseInt(destinationWalletField.getText().trim());
+            String currencyName = currencyTransactionBox.getValue();
+            double montant = Double.parseDouble(amountField.getText().trim());
+
+            if (currencyName == null || currencyName.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Veuillez sélectionner une currency !").show();
+                return;
+            }
+
+            if (montant <= 0) {
+                new Alert(Alert.AlertType.WARNING, "Le montant doit être supérieur à 0 !").show();
+                return;
+            }
+
+            // 2️⃣ Récupérer les wallets
+            wallet sourceWallet = walletService.SelectById(idWalletSource);
+            wallet destWallet = walletService.SelectById(idWalletDest);
+
+            if (sourceWallet == null || destWallet == null) {
+                new Alert(Alert.AlertType.ERROR, "Wallet introuvable !").show();
+                return;
+            }
+
+            // 3️⃣ Vérifications
+            if (sourceWallet.getIdWallet() == destWallet.getIdWallet()) {
+                new Alert(Alert.AlertType.WARNING, "Le wallet source et destination doivent être différents !").show();
+                return;
+            }
+
+            if (sourceWallet.getStatut() == statutWallet.bloque) {
+                new Alert(Alert.AlertType.WARNING, "Le wallet source est bloqué !").show();
+                return;
+            }
+
+            if (sourceWallet.getTypeWallet() == typeWallet.fiat && destWallet.getTypeWallet() != typeWallet.fiat) {
+                new Alert(Alert.AlertType.WARNING, "Wallet fiat ne peut envoyer qu'à un wallet fiat !").show();
+                return;
+            }
+
+            // 4️⃣ Récupérer l'id_currency depuis le nom
+            int idCurrency = walletCurrencyService.getCurrencyIdByName(currencyName);
+            if (idCurrency == 0) {
+                new Alert(Alert.AlertType.ERROR, "Currency introuvable !").show();
+                return;
+            }
+
+            // 5️⃣ Vérifier le solde du wallet source
+            wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
+                    sourceWallet.getIdWallet(), idCurrency
+            );
+
+            if (sourceCurrency == null || sourceCurrency.getSolde() < montant) {
+                new Alert(Alert.AlertType.WARNING, "Solde insuffisant dans le wallet source !").show();
+                return;
+            }
+
+            // 6️⃣ Mettre à jour le solde du wallet source
+
+
+
+            // 7️⃣ Mettre à jour le solde du wallet destinataire
+            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
+                    destWallet.getIdWallet(), idCurrency
+            );
+
+            if (destCurrency == null) {
+                destCurrency = new wallet_currency();
+                destCurrency.setId_wallet(destWallet.getIdWallet());
+                destCurrency.setId_currency(idCurrency);
+                destCurrency.setNom_currency(currencyName);
+                destCurrency.setSolde(montant);
+                walletCurrencyService.insertOne(destCurrency);
+            } else {
+
+
+
+            }
+
+            // 8️⃣ Créer et enregistrer la transaction
+            transaction t = new transaction();
+            t.setIdWalletSource(idWalletSource);
+            t.setIdWalletDestination(idWalletDest);
+            t.setMontant(montant);
+            t.setCurrencyId(idCurrency); // on utilise l'ID
+            t.setDateTransaction(java.time.LocalDateTime.now());
+            t.setType(typeTransaction.TRANSFERT);       // toujours TRANSFERT
+            t.setStatut(StatutTransaction.Completed);   // toujours Completed
+
+            TransactionService transactionService = new TransactionService();
+            transactionService.insertOne(t);
+            loadWallets();
+
+            // 9️⃣ Confirmation
+            new Alert(Alert.AlertType.INFORMATION, "Transaction effectuée avec succès !").show();
+
+            //  🔟 Vider le formulaire
+            sourceWalletField.clear();
+            destinationWalletField.clear();
+            amountField.clear();
+            currencyTransactionBox.getSelectionModel().clearSelection();
+
+        } catch (NumberFormatException e) {
+            new Alert(Alert.AlertType.WARNING, "Veuillez entrer des valeurs valides pour les champs numériques !").show();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Erreur lors de la transaction : " + e.getMessage()).show();
+        }
+    }
+
+    private void updateWalletBalanceDisplay(int walletId) {
+        List<wallet_currency> currencies;
+        try {
+            currencies = walletCurrencyService.getCurrenciesByWallet(walletId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // Parcours tous les containers
+        for (HBox container : List.of(walletContainer, walletContainer1, walletContainer2)) {
+            for (Node node : container.getChildren()) {
+                if (node instanceof VBox card) {
+                    Label lblName = (Label) card.getChildren().get(0); // "Wallet #id"
+                    if (lblName.getText().contains(String.valueOf(walletId))) {
+                        VBox currencyBox = (VBox) card.getChildren().get(2); // currencyBox
+                        // Mettre à jour les soldes dans chaque ligne HBox
+                        for (Node lineNode : currencyBox.getChildren()) {
+                            if (lineNode instanceof HBox line) {
+                                if (line.getChildren().size() < 2) continue; // ignore "View all" button
+                                Label nameLabel = (Label) line.getChildren().get(0);
+                                Label soldeLabel = (Label) line.getChildren().get(1);
+
+                                String currencyName = nameLabel.getText();
+                                currencies.stream()
+                                        .filter(wc -> wc.getNom_currency().equals(currencyName))
+                                        .findFirst()
+                                        .ifPresent(wc -> soldeLabel.setText(String.format("%.2f", wc.getSolde())));
+                            }
+                        }
+                        return; // carte trouvée et mise à jour
+                    }
+                }
+            }
+        }
+    }
 
     private void showWalletDetails(wallet w, VBox card) {
         selectedWallet = w;
 
-
+        // Remettre l'ancienne carte à son style initial
         if (selectedCard != null) {
             selectedCard.setStyle(
                     "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
@@ -262,12 +497,12 @@ public class crud_wallet {
         if (w.getTypeWallet() != null) boxType.setValue(w.getTypeWallet().name());
         if (w.getStatut() != null) boxStatus.setValue(w.getStatut().name());
 
-
+        // Remplir l'ID du wallet dans le formulaire Wallet
         if (walletIdField != null) {
             walletIdField.setText(String.valueOf(w.getIdWallet()));
         }
 
-        // Charger les currencies correspondant au type du wallet
+        // Charger les currencies correspondant au type du wallet (formulaire Wallet)
         if (currencyComboBox != null) {
             try {
                 List<currency> allCurrencies = currencyService.SelectAll();
@@ -297,6 +532,29 @@ public class crud_wallet {
             } catch (SQLException e) {
                 e.printStackTrace();
                 new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement des currencies !").show();
+            }
+        }
+
+        // -------------------- Remplir le formulaire Transaction --------------------
+        if (sourceWalletField != null) {
+            sourceWalletField.setText(String.valueOf(w.getIdWallet())); // ID wallet source
+            sourceWalletField.setEditable(false); // empêcher modification
+        }
+
+        if (currencyTransactionBox != null) {
+            try {
+                // Récupérer toutes les currencies du wallet sélectionné
+                List<wallet_currency> currencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
+                List<String> currencyNames = currencies.stream()
+                        .map(wallet_currency::getNom_currency)
+                        .toList();
+
+                currencyTransactionBox.getItems().clear();
+                currencyTransactionBox.getItems().addAll(currencyNames);
+                currencyTransactionBox.setPromptText("Sélectionner currency");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement des currencies pour la transaction !").show();
             }
         }
     }
@@ -437,12 +695,17 @@ public class crud_wallet {
         card.setPrefHeight(170);
         card.setPadding(new Insets(15));
         card.setAlignment(Pos.CENTER);
+        card.getStyleClass().add("wallet-card"); // Pour identifier les cartes
 
-        card.setStyle(
-                "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
-                        "-fx-background-radius: 20;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);"
-        );
+        // Styles
+        String styleInitial = "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
+                "-fx-background-radius: 20;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);";
+        String styleSelected = "-fx-background-color: #d3d3d3;" + // gris un peu foncé pour sélection
+                "-fx-background-radius: 20;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10,0,0,5);";
+
+        card.setStyle(styleInitial);
 
         // ----------- Titre Wallet -----------
         Label lblName = new Label("Wallet #" + w.getIdWallet());
@@ -454,33 +717,28 @@ public class crud_wallet {
         String typeText = (w.getTypeWallet() != null ? w.getTypeWallet().name() : "");
         String statutText = (w.getStatut() != null ? w.getStatut().name() : "");
         Label lblInfo = new Label(typeText + " • " + statutText);
-
         if ("bloque".equalsIgnoreCase(statutText))
             lblInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px;");
         else if ("actif".equalsIgnoreCase(statutText))
             lblInfo.setStyle("-fx-text-fill: green; -fx-font-size: 13px;");
         else
             lblInfo.setStyle("-fx-text-fill: #6e6e6e; -fx-font-size: 13px;");
-
         lblInfo.setAlignment(Pos.CENTER);
         lblInfo.setMaxWidth(Double.MAX_VALUE);
 
-        // ----------- Box des currencies -----------
+        // ----------- Box des currencies (compact) -----------
         VBox currencyBox = new VBox();
         currencyBox.setSpacing(4);
         currencyBox.setAlignment(Pos.CENTER);
 
         try {
-            List<wallet_currency> currencies =
-                    walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
+            List<wallet_currency> currencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
 
             if (currencies.isEmpty()) {
                 Label empty = new Label("No currencies");
                 empty.setStyle("-fx-text-fill: #a0a0a0;");
                 currencyBox.getChildren().add(empty);
             } else {
-
-                // Afficher seulement les 2 premières currencies
                 for (int i = 0; i < Math.min(2, currencies.size()); i++) {
                     wallet_currency wc = currencies.get(i);
 
@@ -498,15 +756,9 @@ public class crud_wallet {
                     currencyBox.getChildren().add(line);
                 }
 
-                // Bouton View all si plus de 2 currencies
                 if (currencies.size() > 2) {
                     Button viewAll = new Button("View all");
-                    viewAll.setStyle(
-                            "-fx-background-color: transparent;" +
-                                    "-fx-text-fill: #1a5f7a;" +
-                                    "-fx-font-weight: bold;"
-                    );
-
+                    viewAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #1a5f7a; -fx-font-weight: bold;");
                     viewAll.setOnAction(e -> showExpandedWallet(w, currencies));
                     currencyBox.getChildren().add(viewAll);
                 }
@@ -516,12 +768,33 @@ public class crud_wallet {
             e.printStackTrace();
         }
 
-        // ----------- Sélection du wallet -----------
-        card.setOnMouseClicked(e -> showWalletDetails(w, card));
+        // ----------- Clic sur la carte -----------
+        card.setOnMouseClicked(e -> {
+            // Remet l'ancienne carte sélectionnée à son style initial si différente
+            if (selectedCard != null && selectedCard != card) {
+                selectedCard.setStyle(styleInitial);
+            }
 
-        // ----------- Ajout des éléments -----------
+            selectedCard = card;
+            card.setStyle(styleSelected);
+            showWalletDetails(w, card);
+            e.consume(); // empêcher propagation au parent
+        });
+
         card.getChildren().addAll(lblName, lblInfo, currencyBox);
+
+
+
 
         return card;
     }
+    private boolean isWalletCard(Node node) {
+        while (node != null) {
+            if (node.getStyleClass().contains("wallet-card")) return true;
+            node = node.getParent();
+        }
+        return false;
+    }
+
+
 }
