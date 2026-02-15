@@ -42,20 +42,20 @@ public class LoginService {
         }
 
         try {
-            // 1. Fetch user by email only
+
             Utilisateur user = getUserByEmail(email);
 
-            // 2. Use BCrypt.checkpw to verify the plain-text password against the hash
+
             if (user != null && BCrypt.checkpw(password, user.getMot_de_passe())) {
 
-                // Check if user is pending
+
                 if (user.getStatut() == tn.esprit.Champions.models.Status.PENDING) {
                     showAlert(Alert.AlertType.WARNING, "Compte en attente",
                             "Votre compte est en attente de validation par l'administrateur.");
                     return;
                 }
 
-                // Check if account is disabled
+
                 if (user.getStatut() == tn.esprit.Champions.models.Status.DESACTIVE) {
                     showAlert(Alert.AlertType.ERROR, "Compte désactivé", "Votre compte a été suspendu.");
                     return;
@@ -72,7 +72,7 @@ public class LoginService {
                 }
 
             } else {
-                // This error covers both "user not found" and "wrong password" for better security
+
                 showAlert(Alert.AlertType.ERROR, "Erreur", "Email ou mot de passe incorrect.");
             }
 
@@ -82,7 +82,7 @@ public class LoginService {
         }
     }
 
-    // Updated method to find user by email ONLY
+
     private Utilisateur getUserByEmail(String email) throws SQLException {
         String query = "SELECT * FROM utilisateur WHERE email = ?";
         try (PreparedStatement ps = tn.esprit.Champions.utils.DbConnection.getInstance().getCnx().prepareStatement(query)) {
@@ -95,7 +95,7 @@ public class LoginService {
                         rs.getString("nom"),
                         rs.getString("prenom"),
                         rs.getString("email"),
-                        rs.getString("mot_de_passe"), // This will be the hashed string
+                        rs.getString("mot_de_passe"),
                         rs.getString("telephone"),
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),

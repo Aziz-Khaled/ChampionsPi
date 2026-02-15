@@ -163,7 +163,7 @@ public class AuthService {
         return true;
     }
     private void signUp() {
-        // 1. Get values from fields
+
         String nom = TF_Nom.getText().trim();
         String prenom = TF_Prenom.getText().trim();
         String email = TF_Email.getText().trim();
@@ -171,7 +171,7 @@ public class AuthService {
         String password = TF_Password.getText();
         Role selectedRole = combobox_role.getValue();
 
-        // 2. Comprehensive Validation
+
         if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() ||
                 telephone.isEmpty() || password.isEmpty() || selectedRole == null) {
 
@@ -200,17 +200,16 @@ public class AuthService {
             return;
         }
 
-        // 3. SECURITY: Hash the password before creating the object
-        //
+
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
 
-        // 4. Create the User Object with the HASHED password
+
         Utilisateur newUser = new Utilisateur(
-                0, // Auto-generated ID
+                0,
                 nom,
                 prenom,
                 email,
-                hashedPassword, // Encrypted string, not plain text
+                hashedPassword,
                 telephone,
                 identityFile.getName(),
                 personalImageFile.getName(),
@@ -218,7 +217,7 @@ public class AuthService {
                 selectedRole
         );
 
-        // 5. Database Operation
+
         try {
             UtilisateurService userService = new UtilisateurService();
             userService.insertOne(newUser);
@@ -226,7 +225,7 @@ public class AuthService {
             showAlert(Alert.AlertType.INFORMATION, "Succès",
                     "Demande d'inscription envoyée avec succès.\nEn attente de validation admin.");
 
-            // 6. Clear Form
+
             clearForm();
 
         } catch (SQLException e) {
@@ -235,9 +234,7 @@ public class AuthService {
         }
     }
 
-    /**
-     * Helper to clear fields after success
-     */
+
     private void clearForm() {
         TF_Nom.clear();
         TF_Prenom.clear();
@@ -250,13 +247,13 @@ public class AuthService {
     }
     @FXML
     private void openLoginPage() {
-        // Pass the path, the current root node (Login_Button's scene root), and the title
+
         SceneHelper.transitionTo("/LoginPage.fxml", Login_Button.getScene().getRoot(), "Login - Champions");
     }
 
     @FXML
     private void nextStep() {
-        // Optional: Add validation here before allowing step 2
+
         if (!validateStep1()) return;
         animateStepChange(step1Container, step2Container, true);
     }
@@ -267,7 +264,7 @@ public class AuthService {
     }
 
     private void animateStepChange(VBox out, VBox in, boolean isNext) {
-        // Fade Out
+
         FadeTransition fadeOut = new FadeTransition(Duration.millis(250), out);
         fadeOut.setFromValue(1.0);
         fadeOut.setToValue(0.0);
@@ -280,7 +277,7 @@ public class AuthService {
             in.setManaged(true);
             in.setOpacity(0);
 
-            // Update Progress UI
+
             if (isNext) {
                 prog2.setStyle("-fx-background-color: #3b82f6;");
                 stepDescription.setText("Step 2: Account Verification");
@@ -289,7 +286,7 @@ public class AuthService {
                 stepDescription.setText("Step 1: Personal Details");
             }
 
-            // Fade In + Slide
+
             FadeTransition fadeIn = new FadeTransition(Duration.millis(250), in);
             fadeIn.setFromValue(0.0);
             fadeIn.setToValue(1.0);

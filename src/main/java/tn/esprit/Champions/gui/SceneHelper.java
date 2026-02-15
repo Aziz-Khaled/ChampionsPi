@@ -20,11 +20,11 @@ public class SceneHelper {
             FXMLLoader loader = new FXMLLoader(SceneHelper.class.getResource(fxmlPath));
             Parent nextRoot = loader.load();
 
-            // 1. Start the new root as invisible and slightly shifted
-            nextRoot.setOpacity(0);
-            nextRoot.setTranslateX(15); // Subtle slide-in from the right
 
-            // 2. Swap the scene root
+            nextRoot.setOpacity(0);
+            nextRoot.setTranslateX(15);
+
+
             Scene scene = stage.getScene();
             if (scene == null) {
                 scene = new Scene(nextRoot);
@@ -34,7 +34,7 @@ public class SceneHelper {
             }
             stage.setTitle(title);
 
-            // 3. Coordinate the "In" animation
+
             FadeTransition fadeIn = new FadeTransition(Duration.millis(400), nextRoot);
             fadeIn.setFromValue(0);
             fadeIn.setToValue(1);

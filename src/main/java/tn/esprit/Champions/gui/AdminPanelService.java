@@ -64,20 +64,18 @@ public class AdminPanelService {
         activeBtn.getStyleClass().add("nav-button-active");
     }
 
-    /**
-     * The "Engine" of your UI: Renders the search bar and the table properly.
-     */
+
     private void renderTable(TableView<Utilisateur> table) {
         mainContent.getChildren().clear();
         mainContent.setSpacing(15);
 
-        // 1. Search Bar (Text)
+
         TextField searchField = new TextField();
         searchField.setPromptText("Search by name or email...");
         searchField.setPrefWidth(300);
         searchField.getStyleClass().add("search-field");
 
-        // 2. Role Filter
+
         ComboBox<Object> roleFilter = new ComboBox<>();
         roleFilter.setPromptText("Filter by Role");
         roleFilter.getStyleClass().add("filter-combo");
@@ -86,7 +84,7 @@ public class AdminPanelService {
         roleFilter.getItems().addAll((Object[]) tn.esprit.Champions.models.Role.values());
         roleFilter.getSelectionModel().selectFirst();
 
-        // 3. Status Filter (EXCLUDING PENDING)
+
         ComboBox<Object> statusFilter = new ComboBox<>();
         statusFilter.setPromptText("Filter by Status");
         statusFilter.getStyleClass().add("filter-combo");
@@ -94,60 +92,57 @@ public class AdminPanelService {
 
         statusFilter.getItems().add("All Statuses");
 
-        // Use Java Streams to filter out the PENDING status
+
         java.util.Arrays.stream(tn.esprit.Champions.models.Status.values())
                 .filter(s -> s != tn.esprit.Champions.models.Status.PENDING)
                 .forEach(statusFilter.getItems()::add);
 
         statusFilter.getSelectionModel().selectFirst();
 
-        // Layout for filters - Added statusFilter here
+
         HBox filterBar = new HBox(15, searchField, roleFilter, statusFilter);
         filterBar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        // 4. Setup Combined Filter Logic
+
         ObservableList<Utilisateur> masterData = table.getItems();
         FilteredList<Utilisateur> filteredData = new FilteredList<>(masterData, p -> true);
 
-        // Unified Update Logic
+
         Runnable updateFilter = () -> {
             String searchText = (searchField.getText() == null) ? "" : searchField.getText().toLowerCase();
             Object selectedRole = roleFilter.getValue();
             Object selectedStatus = statusFilter.getValue();
 
             filteredData.setPredicate(user -> {
-                // Text Match
+
                 String fullName = (user.getNom() + " " + user.getPrenom()).toLowerCase();
                 boolean matchesText = fullName.contains(searchText) ||
                         user.getEmail().toLowerCase().contains(searchText);
 
-                // Role Match
+
                 boolean matchesRole = (selectedRole == null || selectedRole.equals("All Roles")) ||
                         user.getRole().equals(selectedRole);
 
-                // Status Match (NEW)
+
                 boolean matchesStatus = (selectedStatus == null || selectedStatus.equals("All Statuses")) ||
                         user.getStatut().equals(selectedStatus);
 
-                // The user must match ALL selected filters
+
                 return matchesText && matchesRole && matchesStatus;
             });
         };
 
-        // Listeners for all three inputs
+
         searchField.textProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
         roleFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
         statusFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
 
-        // 5. Connect and Display
+
         table.setItems(filteredData);
         mainContent.getChildren().addAll(filterBar, table);
         VBox.setVgrow(table, Priority.ALWAYS);
     }
 
-    /* =====================================================
-       =============== GESTION USERS (PENDING) =============
-       ===================================================== */
 
     private void showGestionUsers() {
         setActiveButton(btnGestionUsers);
@@ -198,15 +193,13 @@ public class AdminPanelService {
 
             table.getColumns().addAll(colName, colEmail, colIdentity, colActions);
 
-            // Critical: Call the helper and STOP. Do not clear mainContent here.
+
             renderTable(table);
 
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    /* =====================================================
-       ============== LISTE DES UTILISATEURS ===============
-       ===================================================== */
+
 
     private void showAllUsers() {
         setActiveButton(btnListeUsers);
@@ -248,15 +241,12 @@ public class AdminPanelService {
 
             table.getColumns().addAll(colName, colEmail, colRole, colStatus, colActions);
 
-            // Critical: Call the helper and STOP.
             renderTable(table);
 
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
-    /* =====================================================
-       =================== UTILITY METHODS =================
-       ===================================================== */
+
 
     private void confirmAndUpdate(Utilisateur user, Status status) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
@@ -306,14 +296,14 @@ public class AdminPanelService {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Update User");
 
-        // 1. Get the DialogPane and set its width
+
         DialogPane dialogPane = dialog.getDialogPane();
-        dialogPane.setPrefWidth(500); // Set this to your desired width (e.g., 500 or 600)
+        dialogPane.setPrefWidth(500);
 
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dialogPane.getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
-        // 2. Make input fields expand to fill the wider dialog
+
         TextField tfNom = new TextField(user.getNom());
         tfNom.setMaxWidth(Double.MAX_VALUE);
 
@@ -333,7 +323,7 @@ public class AdminPanelService {
         cbStatus.getStyleClass().add("filter-combo");
         cbStatus.setMaxWidth(Double.MAX_VALUE);
 
-        // 3. Create content and ensure it expands
+
         VBox content = new VBox(12,
                 new Label("Nom"), tfNom,
                 new Label("Prenom"), tfPrenom,
@@ -342,9 +332,9 @@ public class AdminPanelService {
                 new Label("Status"), cbStatus
         );
 
-        // Add styling for better padding and font consistency
+
         content.setStyle("-fx-padding: 25; -fx-font-size: 14px;");
-        content.setFillWidth(true); // Ensures children stretch to fill the VBox width
+        content.setFillWidth(true);
 
         dialogPane.setContent(content);
 
