@@ -335,7 +335,6 @@ public class crud_wallet {
     @FXML
     private void handleAddTransaction() {
         try {
-            // 1️⃣ Récupérer les valeurs du formulaire
             int idWalletSource = Integer.parseInt(sourceWalletField.getText().trim());
             int idWalletDest = Integer.parseInt(destinationWalletField.getText().trim());
             String currencyName = currencyTransactionBox.getValue();
@@ -345,95 +344,37 @@ public class crud_wallet {
                 new Alert(Alert.AlertType.WARNING, "Veuillez sélectionner une currency !").show();
                 return;
             }
-
             if (montant <= 0) {
                 new Alert(Alert.AlertType.WARNING, "Le montant doit être supérieur à 0 !").show();
                 return;
             }
 
-            // 2️⃣ Récupérer les wallets
-            wallet sourceWallet = walletService.SelectById(idWalletSource);
-            wallet destWallet = walletService.SelectById(idWalletDest);
-
-            if (sourceWallet == null || destWallet == null) {
-                new Alert(Alert.AlertType.ERROR, "Wallet introuvable !").show();
-                return;
-            }
-
-            // 3️⃣ Vérifications
-            if (sourceWallet.getIdWallet() == destWallet.getIdWallet()) {
-                new Alert(Alert.AlertType.WARNING, "Le wallet source et destination doivent être différents !").show();
-                return;
-            }
-
-            if (sourceWallet.getStatut() == statutWallet.bloque) {
-                new Alert(Alert.AlertType.WARNING, "Le wallet source est bloqué !").show();
-                return;
-            }
-
-            if (sourceWallet.getTypeWallet() == typeWallet.fiat && destWallet.getTypeWallet() != typeWallet.fiat) {
-                new Alert(Alert.AlertType.WARNING, "Wallet fiat ne peut envoyer qu'à un wallet fiat !").show();
-                return;
-            }
-
-            // 4️⃣ Récupérer l'id_currency depuis le nom
             int idCurrency = walletCurrencyService.getCurrencyIdByName(currencyName);
             if (idCurrency == 0) {
                 new Alert(Alert.AlertType.ERROR, "Currency introuvable !").show();
                 return;
             }
 
-            // 5️⃣ Vérifier le solde du wallet source
-            wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
-                    sourceWallet.getIdWallet(), idCurrency
-            );
-
-            if (sourceCurrency == null || sourceCurrency.getSolde() < montant) {
-                new Alert(Alert.AlertType.WARNING, "Solde insuffisant dans le wallet source !").show();
-                return;
-            }
-
-            // 6️⃣ Mettre à jour le solde du wallet source
-
-
-
-            // 7️⃣ Mettre à jour le solde du wallet destinataire
-            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
-                    destWallet.getIdWallet(), idCurrency
-            );
-
-            if (destCurrency == null) {
-                destCurrency = new wallet_currency();
-                destCurrency.setId_wallet(destWallet.getIdWallet());
-                destCurrency.setId_currency(idCurrency);
-                destCurrency.setNom_currency(currencyName);
-                destCurrency.setSolde(montant);
-                walletCurrencyService.insertOne(destCurrency);
-            } else {
-
-
-
-            }
-
-            // 8️⃣ Créer et enregistrer la transaction
+            // Créer la transaction
             transaction t = new transaction();
             t.setIdWalletSource(idWalletSource);
             t.setIdWalletDestination(idWalletDest);
             t.setMontant(montant);
-            t.setCurrencyId(idCurrency); // on utilise l'ID
+            t.setCurrencyId(idCurrency);
             t.setDateTransaction(java.time.LocalDateTime.now());
-            t.setType(typeTransaction.TRANSFERT);       // toujours TRANSFERT
-            t.setStatut(StatutTransaction.Completed);   // toujours Completed
+            t.setType(typeTransaction.TRANSFERT);
+            t.setStatut(StatutTransaction.Completed);
 
+            // Appeler insertOne pour tout le contrôle et la mise à jour
             TransactionService transactionService = new TransactionService();
             transactionService.insertOne(t);
-            loadWallets();
 
-            // 9️⃣ Confirmation
+            loadWallets();
+            updateWalletBalanceDisplay(idWalletSource);
+            updateWalletBalanceDisplay(idWalletDest);
+
             new Alert(Alert.AlertType.INFORMATION, "Transaction effectuée avec succès !").show();
-            loadWallets();
 
-            //  🔟 Vider le formulaire
             sourceWalletField.clear();
             destinationWalletField.clear();
             amountField.clear();
