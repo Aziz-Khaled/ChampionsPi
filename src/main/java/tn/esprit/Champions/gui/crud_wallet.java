@@ -8,6 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
@@ -22,6 +23,7 @@ import tn.esprit.Champions.services.WalletService;
 import tn.esprit.Champions.services.wallet_currencyService;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,7 +97,7 @@ public class crud_wallet {
         // ComboBox initialisation
         boxType.getItems().addAll("fiat", "crypto", "trading");
         boxStatus.getItems().addAll("actif", "bloque");
-        boxType.setDisable(true);
+
 
         walletService = new WalletService();
         walletCurrencyService = new wallet_currencyService();
@@ -139,6 +141,7 @@ public class crud_wallet {
         if (typeTransactionBox != null) typeTransactionBox.getSelectionModel().clearSelection();
         if (statusTransactionBox != null) statusTransactionBox.getSelectionModel().clearSelection();
         if (currencyTransactionBox != null) currencyTransactionBox.getSelectionModel().clearSelection();
+
     }
     private void clearWalletSelection() {
         if (selectedCard != null) {
@@ -149,13 +152,16 @@ public class crud_wallet {
                             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);"
             );
             selectedCard = null;
+
         }
 
         // Vider le formulaire
+        boxType.setDisable(false);
         walletIdField.clear();
         boxType.getSelectionModel().clearSelection();
         boxStatus.getSelectionModel().clearSelection();
         currencyComboBox.getSelectionModel().clearSelection();
+
     }
 
     // Ajouter un wallet
@@ -421,6 +427,7 @@ public class crud_wallet {
 
             // 9️⃣ Confirmation
             new Alert(Alert.AlertType.INFORMATION, "Transaction effectuée avec succès !").show();
+            loadWallets();
 
             //  🔟 Vider le formulaire
             sourceWalletField.clear();
@@ -478,6 +485,7 @@ public class crud_wallet {
 
         // Remettre l'ancienne carte à son style initial
         if (selectedCard != null) {
+            boxType.setDisable(true);
             selectedCard.setStyle(
                     "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
                             "-fx-background-radius: 20;" +
@@ -496,6 +504,8 @@ public class crud_wallet {
         // Remplir le type et le statut du wallet
         if (w.getTypeWallet() != null) boxType.setValue(w.getTypeWallet().name());
         if (w.getStatut() != null) boxStatus.setValue(w.getStatut().name());
+        boxType.setDisable(true);
+
 
         // Remplir l'ID du wallet dans le formulaire Wallet
         if (walletIdField != null) {
@@ -689,23 +699,36 @@ public class crud_wallet {
     }
 
     private VBox createWalletCard(wallet w) {
+
         VBox card = new VBox();
         card.setSpacing(12);
         card.setPrefWidth(280);
         card.setPrefHeight(170);
         card.setPadding(new Insets(15));
         card.setAlignment(Pos.CENTER);
-        card.getStyleClass().add("wallet-card"); // Pour identifier les cartes
+        card.getStyleClass().add("wallet-card");
 
-        // Styles
         String styleInitial = "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
                 "-fx-background-radius: 20;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);";
-        String styleSelected = "-fx-background-color: #d3d3d3;" + // gris un peu foncé pour sélection
+        String styleSelected = "-fx-background-color: #d3d3d3;" +
                 "-fx-background-radius: 20;" +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10,0,0,5);";
 
         card.setStyle(styleInitial);
+
+        // ----------- Label emoji transactions en haut à droite -----------
+        Label lblTransactions = new Label("💸");
+        lblTransactions.setStyle("-fx-font-size: 16px; -fx-text-fill: black; -fx-cursor: hand;");
+
+// HBox pour positionner en haut à gauche, légèrement décalé pour éviter le scroll
+        HBox topBar = new HBox(lblTransactions);
+        topBar.setAlignment(Pos.TOP_LEFT);
+        topBar.setPadding(new Insets(0, 0, 0, 0)); // ← 8px depuis le haut et la gauche
+        topBar.setMaxWidth(Double.MAX_VALUE);
+
+
+
 
         // ----------- Titre Wallet -----------
         Label lblName = new Label("Wallet #" + w.getIdWallet());
@@ -730,7 +753,6 @@ public class crud_wallet {
         VBox currencyBox = new VBox();
         currencyBox.setSpacing(4);
         currencyBox.setAlignment(Pos.CENTER);
-
         try {
             List<wallet_currency> currencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
 
@@ -768,23 +790,93 @@ public class crud_wallet {
             e.printStackTrace();
         }
 
+        // ----------- Clic sur l'emoji transactions pour ouvrir le tableau -----------
+
+        lblTransactions.setOnMouseClicked(e -> {
+            try {
+                TransactionService transactionService = new TransactionService();
+                List<transaction> transactions = transactionService.getTransactionsByWallet(w.getIdWallet());
+                int walletId = w.getIdWallet();
+
+                TableView<transaction> transactionTable = new TableView<>();
+                transactionTable.setPrefHeight(300);
+
+                TableColumn<transaction, Integer> sourceCol = new TableColumn<>("Source");
+                sourceCol.setCellValueFactory(new PropertyValueFactory<>("idWalletSource"));
+
+                TableColumn<transaction, Integer> destCol = new TableColumn<>("Destination");
+                destCol.setCellValueFactory(new PropertyValueFactory<>("idWalletDestination"));
+
+                TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
+                montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
+
+                TableColumn<transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
+                dateCol.setCellValueFactory(new PropertyValueFactory<>("dateTransaction"));
+
+                // Colonne poubelle
+                TableColumn<transaction, Void> deleteCol = new TableColumn<>("Delete");
+                deleteCol.setCellFactory(col -> new TableCell<>() {
+                    private final Label trash = new Label("🗑");
+                    {
+                        trash.setStyle("-fx-text-fill: red; -fx-cursor: hand;");
+                        trash.setOnMouseClicked(ev -> {
+                            transaction t = getTableView().getItems().get(getIndex());
+                            //deleteTransaction(t); // Méthode pour supprimer la transaction
+                            getTableView().getItems().remove(t);
+                        });
+                    }
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) setGraphic(null);
+                        else setGraphic(trash);
+                    }
+                });
+
+                transactionTable.getColumns().addAll(sourceCol, destCol, montantCol, dateCol, deleteCol);
+
+                // Coloration rouge/vert selon wallet
+                transactionTable.setRowFactory(tv -> new TableRow<transaction>() {
+                    @Override
+                    protected void updateItem(transaction item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item == null || empty) setStyle("");
+                        else if (item.getIdWalletSource() == walletId) setStyle("-fx-background-color: #ffcccc;");
+                        else if (item.getIdWalletDestination() == walletId) setStyle("-fx-background-color: #ccffcc;");
+                        else setStyle("");
+                    }
+                });
+
+                transactionTable.setItems(FXCollections.observableArrayList(transactions));
+
+                // Nouvelle fenêtre
+                Stage stage = new Stage();
+                VBox root = new VBox(transactionTable);
+                root.setPadding(new Insets(10));
+                Scene scene = new Scene(root);
+                stage.setScene(scene);
+                stage.setTitle("Transactions Wallet #" + walletId);
+                stage.show();
+
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+
         // ----------- Clic sur la carte -----------
         card.setOnMouseClicked(e -> {
-            // Remet l'ancienne carte sélectionnée à son style initial si différente
             if (selectedCard != null && selectedCard != card) {
                 selectedCard.setStyle(styleInitial);
             }
-
             selectedCard = card;
             card.setStyle(styleSelected);
             showWalletDetails(w, card);
-            e.consume(); // empêcher propagation au parent
+            e.consume();
         });
 
-        card.getChildren().addAll(lblName, lblInfo, currencyBox);
 
 
-
+        card.getChildren().addAll(topBar, lblName, lblInfo, currencyBox);
 
         return card;
     }

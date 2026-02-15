@@ -4,6 +4,7 @@ import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.utils.DbConnection;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionService implements CRUD<transaction> {
@@ -93,12 +94,47 @@ public class TransactionService implements CRUD<transaction> {
     }
 
     @Override
-    public void deleteOne(transaction transaction) throws SQLException {
-        // À implémenter
+    public void deleteOne(transaction t) throws SQLException {
+//        String sql = "DELETE FROM transaction WHERE id_transaction = ?";
+//
+//        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+//            ps.setInt(1, t.getIdTransaction());
+//            ps.executeUpdate();
+//        }
     }
 
     @Override
     public List<transaction> SelectAll() throws SQLException {
         return List.of();
+    }
+    public List<transaction> getTransactionsByWallet(int walletId) throws SQLException {
+        List<transaction> transactions = new ArrayList<>();
+
+        String query = "SELECT * FROM transaction WHERE id_wallet_source = ? OR id_wallet_destination = ?";
+        PreparedStatement ps = cnx.prepareStatement(query);
+        ps.setInt(1, walletId);
+        ps.setInt(2, walletId);
+
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            transaction t = new transaction();
+            t.setIdTransaction(rs.getInt("id_transaction"));
+            t.setIdWalletSource(rs.getInt("id_wallet_source"));
+            t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+            t.setMontant(rs.getDouble("montant"));
+
+            // Conversion String -> enum
+            String typeStr = rs.getString("type").trim(); // supprimer espaces éventuels
+            t.setType(typeTransaction.valueOf(typeStr));
+
+            String statutStr = rs.getString("statut").trim();
+            t.setStatut(StatutTransaction.valueOf(statutStr));
+
+            t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
+            t.setCurrencyId(rs.getInt("id_currency"));
+            transactions.add(t);
+        }
+        return transactions;
     }
 }
