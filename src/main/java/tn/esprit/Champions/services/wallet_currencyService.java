@@ -34,11 +34,40 @@ public class wallet_currencyService implements CRUD <wallet_currency>
     @Override
     public void insertOne(wallet_currency walletCurrency) throws SQLException {
 
-        // Récupérer l'id de la currency selon son nom
+        // 1️⃣ Récupérer l'id de la currency
         int idCurrency = getCurrencyIdByName(walletCurrency.getNom_currency());
         walletCurrency.setId_currency(idCurrency);
 
-        // Vérifier si la currency existe déjà pour ce wallet
+        // 2️⃣ Vérifier le type du wallet
+        String walletTypeQuery = "SELECT type_wallet FROM wallet WHERE id_wallet = ?";
+        String walletType = "";
+
+        try (PreparedStatement stmt = cnx.prepareStatement(walletTypeQuery)) {
+            stmt.setInt(1, walletCurrency.getId_wallet());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                walletType = rs.getString("type_wallet");
+            }
+        }
+
+        // 3️⃣ Vérifier si la currency est trading
+        String currencyTradingQuery = "SELECT is_trading FROM currency WHERE id_currency = ?";
+        boolean isTradingCurrency = false;
+
+        try (PreparedStatement stmt = cnx.prepareStatement(currencyTradingQuery)) {
+            stmt.setInt(1, walletCurrency.getId_currency());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                isTradingCurrency = rs.getBoolean("is_trading");
+            }
+        }
+
+        // 4️⃣ Règle métier
+        if (walletType.equalsIgnoreCase("TRADING") && !isTradingCurrency) {
+            throw new SQLException("Cette currency n'est pas autorisée dans un wallet de type TRADING.");
+        }
+
+        // 5️⃣ Vérifier si la currency existe déjà pour ce wallet
         String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
         try (PreparedStatement checkStmt = cnx.prepareStatement(checkQuery)) {
             checkStmt.setInt(1, walletCurrency.getId_wallet());
@@ -49,7 +78,7 @@ public class wallet_currencyService implements CRUD <wallet_currency>
             }
         }
 
-        // Si pas existante, INSERT
+        // 6️⃣ INSERT
         String insertQuery = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency) VALUES (?,?,?)";
         try (PreparedStatement pst = cnx.prepareStatement(insertQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());

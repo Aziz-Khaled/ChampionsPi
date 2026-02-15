@@ -1,6 +1,7 @@
 package tn.esprit.Champions.services;
 
 import tn.esprit.Champions.models.currency;
+import tn.esprit.Champions.models.typeCurrency;
 import tn.esprit.Champions.models.typeWallet;
 import tn.esprit.Champions.utils.DbConnection;
 
@@ -85,20 +86,22 @@ public class CurrencyService implements CRUD<currency>
 
     @Override
     public List<currency> SelectAll() throws SQLException {
-        List<currency> currencies = new ArrayList<>();
-        String query = "SELECT * FROM `currency`";
-        PreparedStatement pst = cnx.prepareStatement(query);
-        ResultSet rs = pst.executeQuery();
+        List<currency> list = new ArrayList<>();
+        String query = "SELECT * FROM currency";
+        Connection cnx = DbConnection.getInstance().getCnx();
+        PreparedStatement ps = cnx.prepareStatement(query);
+        ResultSet rs = ps.executeQuery();
 
         while (rs.next()) {
-            currency currency = new currency();
-            currency.setId_currency(rs.getInt("id_currency"));
-            currency.setNom(rs.getString("nom"));
-            currency.setType_currency(typeWallet.valueOf(rs.getString("type_currency")));
-            currencies.add(currency);
+            currency c = new currency();
+            c.setId_currency(rs.getInt("id_currency"));
+            c.setCode(rs.getString("code"));
+            c.setNom(rs.getString("nom"));
+            c.setType_currency(typeCurrency.valueOf(rs.getString("type_currency"))); // enum
+            c.setIs_trading(rs.getInt("is_trading") == 1); // ✅ conversion 0/1 -> boolean
+            list.add(c);
         }
-
-        return currencies;
+        return list;
     }
 }
 

@@ -25,9 +25,13 @@ import tn.esprit.Champions.services.wallet_currencyService;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+
+
 public class crud_wallet {
+
 
     @FXML
     private ComboBox<String> boxType; // type du wallet (lecture seule)
@@ -483,7 +487,7 @@ public class crud_wallet {
     private void showWalletDetails(wallet w, VBox card) {
         selectedWallet = w;
 
-        // Remettre l'ancienne carte à son style initial
+        // -------------------- Remettre l'ancienne carte à son style initial --------------------
         if (selectedCard != null) {
             boxType.setDisable(true);
             selectedCard.setStyle(
@@ -493,7 +497,7 @@ public class crud_wallet {
             );
         }
 
-        // Style de la carte sélectionnée
+        // -------------------- Style de la carte sélectionnée --------------------
         selectedCard = card;
         selectedCard.setStyle(
                 "-fx-background-color: #d3d3d3;" + // gris clair
@@ -501,29 +505,39 @@ public class crud_wallet {
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);"
         );
 
-        // Remplir le type et le statut du wallet
+        // -------------------- Remplir type et statut du wallet --------------------
         if (w.getTypeWallet() != null) boxType.setValue(w.getTypeWallet().name());
         if (w.getStatut() != null) boxStatus.setValue(w.getStatut().name());
         boxType.setDisable(true);
 
-
-        // Remplir l'ID du wallet dans le formulaire Wallet
+        // -------------------- Remplir ID du wallet dans le formulaire --------------------
         if (walletIdField != null) {
             walletIdField.setText(String.valueOf(w.getIdWallet()));
         }
 
-        // Charger les currencies correspondant au type du wallet (formulaire Wallet)
+        // -------------------- Charger les currencies pour le formulaire Wallet --------------------
         if (currencyComboBox != null) {
             try {
                 List<currency> allCurrencies = currencyService.SelectAll();
-                List<currency> filtered = allCurrencies.stream()
-                        .filter(c -> c.getType_currency() == w.getTypeWallet())
+
+                // Filtrer selon le type de wallet et is_trading
+                List<currency> filteredCurrencies = allCurrencies.stream()
+                        .filter(c -> {
+                            if (w.getTypeWallet() == typeWallet.trading) {
+                                return c.getType_currency() == typeCurrency.crypto && c.isIs_trading();
+                            } else if (w.getTypeWallet() == typeWallet.crypto) {
+                                return c.getType_currency() == typeCurrency.crypto;
+                            } else if (w.getTypeWallet() == typeWallet.fiat) {
+                                return c.getType_currency() == typeCurrency.fiat;
+                            }
+                            return false;
+                        })
                         .collect(Collectors.toList());
 
-                currencyComboBox.setItems(FXCollections.observableArrayList(filtered));
+                currencyComboBox.setItems(FXCollections.observableArrayList(filteredCurrencies));
                 currencyComboBox.setPromptText("Sélectionner currency");
 
-                // Afficher le nom de la currency dans le ComboBox
+                // Afficher le nom de la currency dans la liste déroulante
                 currencyComboBox.setCellFactory(c -> new ListCell<>() {
                     @Override
                     protected void updateItem(currency item, boolean empty) {
@@ -531,6 +545,8 @@ public class crud_wallet {
                         setText(empty || item == null ? "" : item.getNom());
                     }
                 });
+
+                // Afficher le nom de la currency sélectionnée dans le bouton
                 currencyComboBox.setButtonCell(new ListCell<>() {
                     @Override
                     protected void updateItem(currency item, boolean empty) {
@@ -548,20 +564,36 @@ public class crud_wallet {
         // -------------------- Remplir le formulaire Transaction --------------------
         if (sourceWalletField != null) {
             sourceWalletField.setText(String.valueOf(w.getIdWallet())); // ID wallet source
-            sourceWalletField.setEditable(false); // empêcher modification
+            sourceWalletField.setEditable(false);
         }
 
         if (currencyTransactionBox != null) {
             try {
                 // Récupérer toutes les currencies du wallet sélectionné
-                List<wallet_currency> currencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
-                List<String> currencyNames = currencies.stream()
+                List<wallet_currency> walletCurrencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
+                List<currency> allCurrencies = currencyService.SelectAll();
+
+                // Créer un map pour accès rapide aux currencies
+                Map<String, currency> currencyMap = allCurrencies.stream()
+                        .collect(Collectors.toMap(currency::getNom, c -> c));
+
+                // Filtrer selon is_trading si wallet trading
+                walletCurrencies = walletCurrencies.stream()
+                        .filter(wc -> {
+                            currency c = currencyMap.get(wc.getNom_currency());
+                            return c != null && (w.getTypeWallet() != typeWallet.trading || c.isIs_trading());
+                        })
+                        .toList();
+
+                // Extraire les noms pour le ComboBox
+                List<String> currencyNames = walletCurrencies.stream()
                         .map(wallet_currency::getNom_currency)
                         .toList();
 
                 currencyTransactionBox.getItems().clear();
                 currencyTransactionBox.getItems().addAll(currencyNames);
                 currencyTransactionBox.setPromptText("Sélectionner currency");
+
             } catch (SQLException e) {
                 e.printStackTrace();
                 new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement des currencies pour la transaction !").show();

@@ -43,6 +43,26 @@ public class TransactionService implements CRUD<transaction> {
                 destWallet.getTypeWallet() == typeWallet.fiat)
             throw new SQLException("Crypto/Trading ne peut pas envoyer vers un wallet fiat !");
 
+        // 🔴 Nouvelle vérification : crypto → trading
+        if (sourceWallet.getTypeWallet() == typeWallet.crypto &&
+                destWallet.getTypeWallet() == typeWallet.trading) {
+
+            String query = "SELECT is_trading FROM currency WHERE id_currency = ?";
+            boolean isTradingCurrency = false;
+
+            try (PreparedStatement stmt = cnx.prepareStatement(query)) {
+                stmt.setInt(1, t.getCurrencyId());
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    isTradingCurrency = rs.getBoolean("is_trading");
+                }
+            }
+
+            if (!isTradingCurrency) {
+                throw new SQLException("Cette currency n'est pas autorisée pour un wallet TRADING !");
+            }
+        }
+
         // Utiliser l'id_currency directement
         wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
                 sourceWallet.getIdWallet(), t.getCurrencyId()
