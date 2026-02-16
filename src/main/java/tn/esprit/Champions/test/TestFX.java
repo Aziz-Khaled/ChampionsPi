@@ -14,7 +14,7 @@ public class TestFX {
 
         @Override
         public void start(Stage stage) throws Exception {
-            Parent root = FXMLLoader.load(getClass().getResource("/invest/Marketplace.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("/MainDashboard.fxml"));
             Scene scene = new Scene(root);
 
             // ✅ Charger le CSS une seule fois pour toute la scène

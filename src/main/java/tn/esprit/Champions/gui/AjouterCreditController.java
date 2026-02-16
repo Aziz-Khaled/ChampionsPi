@@ -30,11 +30,14 @@ public class AjouterCreditController implements Initializable {
         configurerComboBoxProjet();
         configurerComboBoxDevise();
         chargerDonneesProjets();
+        appliquerControlesSaisieTempsReel();
     }
 
     public void setConnectedUserId(int id) {
         this.connectedUserId = id;
     }
+
+    // --- CONFIGURATION DES UI ---
 
     private void configurerComboBoxProjet() {
         comboProjet.setCellFactory(lv -> new ListCell<projet>() {
@@ -54,7 +57,7 @@ public class AjouterCreditController implements Initializable {
     }
 
     private void configurerComboBoxDevise() {
-        comboDevise.getItems().addAll("TND", "EUR", "USD");
+        comboDevise.getItems().setAll("TND", "EUR", "USD");
         comboDevise.getSelectionModel().selectFirst();
     }
 
@@ -66,47 +69,101 @@ public class AjouterCreditController implements Initializable {
         }
     }
 
+    // --- CONTROLE DE SAISIE EN TEMPS RÉEL (UX) ---
+
+    private void appliquerControlesSaisieTempsReel() {
+        // Bloquer tout ce qui n'est pas chiffre ou point (Montant et Taux)
+        txtMontant.textProperty().addListener((obs, old, newVal) -> {
+            if (!newVal.matches("\\d*(\\.\\d*)?")) txtMontant.setText(old);
+        });
+
+        txtTaux.textProperty().addListener((obs, old, newVal) -> {
+            if (!newVal.matches("\\d*(\\.\\d*)?")) txtTaux.setText(old);
+        });
+
+        // Bloquer tout ce qui n'est pas un chiffre entier (Durée)
+        txtDuree.textProperty().addListener((obs, old, newVal) -> {
+            if (!newVal.matches("\\d*")) txtDuree.setText(old);
+        });
+    }
+
+    // --- LOGIQUE D'ENREGISTREMENT ET VALIDATION ---
+
     @FXML
     private void enregistrer() {
-        projet pSelected = comboProjet.getValue();
-        String deviseSelected = comboDevise.getValue();
+        if (estSaisieValide()) {
+            try {
+                projet pSelected = comboProjet.getValue();
+                credit nouveauCredit = new credit();
 
-        // Validation stricte
-        if (pSelected == null || txtMontant.getText().trim().isEmpty() || deviseSelected == null
-                || txtTaux.getText().trim().isEmpty() || txtDuree.getText().trim().isEmpty()) {
-            afficherAlerte("Champs manquants", "Veuillez remplir toutes les informations du formulaire.");
-            return;
+                nouveauCredit.setProject_id(pSelected.getId_project());
+                nouveauCredit.setBorrower_id(this.connectedUserId);
+                nouveauCredit.setMontant(Double.parseDouble(txtMontant.getText()));
+                nouveauCredit.setDevise(comboDevise.getValue());
+                nouveauCredit.setTaux(Double.parseDouble(txtTaux.getText()));
+                nouveauCredit.setDuree(Integer.parseInt(txtDuree.getText()));
+                nouveauCredit.setDescription(txtDescription.getText().trim());
+                nouveauCredit.setStatus(CreditStatus.OPEN);
+
+                cs.insertOne(nouveauCredit);
+
+                afficherAlerte(Alert.AlertType.INFORMATION, "Succès", "Le crédit a été ajouté avec succès !");
+                annuler();
+
+            } catch (Exception e) {
+                afficherAlerte(Alert.AlertType.ERROR, "Erreur Système", "Impossible d'enregistrer : " + e.getMessage());
+            }
+        }
+    }
+
+    private boolean estSaisieValide() {
+        StringBuilder erreurs = new StringBuilder();
+
+        // 1. Vérification Projet
+        if (comboProjet.getValue() == null) {
+            erreurs.append("- Veuillez sélectionner un projet cible.\n");
         }
 
-        try {
-            credit nouveauCredit = new credit();
-
-            // 1. Liaison des IDs
-            nouveauCredit.setProject_id(pSelected.getId_project());
-            nouveauCredit.setBorrower_id(this.connectedUserId);
-
-            // 2. Données saisies (Parsing)
-            nouveauCredit.setMontant(Double.parseDouble(txtMontant.getText()));
-            nouveauCredit.setDevise(deviseSelected);
-            nouveauCredit.setTaux(Double.parseDouble(txtTaux.getText()));
-            nouveauCredit.setDuree(Integer.parseInt(txtDuree.getText()));
-            nouveauCredit.setDescription(txtDescription.getText());
-
-            // 3. Statut initial (doit correspondre à ton Enum CreditStatus)
-            nouveauCredit.setStatus(CreditStatus.OPEN);
-
-            // Appel au service (ta nouvelle méthode insertOne avec 9 paramètres)
-            cs.insertOne(nouveauCredit);
-
-            annuler();
-
-        } catch (NumberFormatException e) {
-            afficherAlerte("Erreur de saisie", "Le montant, le taux et la durée doivent être des nombres valides.");
-        } catch (Exception e) {
-            e.printStackTrace();
-            // Affiche l'erreur réelle pour faciliter le débogage
-            afficherAlerte("Erreur", "Impossible d'enregistrer : " + e.getMessage());
+        // 2. Vérification Montant
+        if (txtMontant.getText().trim().isEmpty()) {
+            erreurs.append("- Le montant est obligatoire.\n");
+        } else {
+            double m = Double.parseDouble(txtMontant.getText());
+            if (m <= 0) {
+                erreurs.append("- Le montant doit être strictement positif.\n");
+            } else if (comboProjet.getValue() != null && m > comboProjet.getValue().getTarget_amount()) {
+                erreurs.append("- Le montant demandé ne peut pas dépasser le budget du projet (")
+                        .append(comboProjet.getValue().getTarget_amount()).append(").\n");
+            }
         }
+
+        // 3. Vérification Taux
+        if (txtTaux.getText().trim().isEmpty()) {
+            erreurs.append("- Le taux d'intérêt est obligatoire.\n");
+        } else {
+            double t = Double.parseDouble(txtTaux.getText());
+            if (t < 0 || t > 30) {
+                erreurs.append("- Le taux doit être compris entre 0% et 30%.\n");
+            }
+        }
+
+        // 4. Vérification Durée
+        if (txtDuree.getText().trim().isEmpty()) {
+            erreurs.append("- La durée du crédit est obligatoire.\n");
+        } else {
+            int d = Integer.parseInt(txtDuree.getText());
+            if (d < 1 || d > 360) {
+                erreurs.append("- La durée doit être comprise entre 1 et 360 mois.\n");
+            }
+        }
+
+        // Affichage des erreurs
+        if (erreurs.length() > 0) {
+            afficherAlerte(Alert.AlertType.WARNING, "Erreur de saisie", erreurs.toString());
+            return false;
+        }
+
+        return true;
     }
 
     @FXML
@@ -115,8 +172,8 @@ public class AjouterCreditController implements Initializable {
         stage.close();
     }
 
-    private void afficherAlerte(String titre, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
+    private void afficherAlerte(Alert.AlertType type, String titre, String message) {
+        Alert alert = new Alert(type);
         alert.setTitle(titre);
         alert.setHeaderText(null);
         alert.setContentText(message);
