@@ -12,6 +12,8 @@ public class participations {
     private  StatutParticipation statut;
     private boolean presence;
     private Float note;
+    // --- AJOUT : Champ pour le titre ---
+    private String titreFormation;
 
     public participations(){}
 
@@ -25,61 +27,24 @@ public class participations {
         this.note = note;
     }
 
-    public int getIdParticipation() {
-        return idParticipation;
-    }
+    // --- NOUVEAUX GETTER / SETTER ---
+    public String getTitreFormation() { return titreFormation; }
+    public void setTitreFormation(String titreFormation) { this.titreFormation = titreFormation; }
 
-    public void setIdParticipation(int idParticipation) {
-        this.idParticipation = idParticipation;
-    }
-
-    public int getIdFormation() {
-        return idFormation;
-    }
-
-    public void setIdFormation(int idFormation) {
-        this.idFormation = idFormation;
-    }
-
-    public int getIdUtilisateur() {
-        return idUtilisateur;
-    }
-
-    public void setIdUtilisateur(int idUtilisateur) {
-        this.idUtilisateur = idUtilisateur;
-    }
-
-    public LocalDateTime getDateInscription() {
-        return dateInscription;
-    }
-
-    public void setDateInscription(LocalDateTime dateInscription) {
-        this.dateInscription = dateInscription;
-    }
-
-    public StatutParticipation getStatut() {
-        return statut;
-    }
-
-    public void setStatut(StatutParticipation statut) {
-        this.statut = statut;
-    }
-
-    public boolean isPresence() {
-        return presence;
-    }
-
-    public void setPresence(boolean presence) {
-        this.presence = presence;
-    }
-
-    public Float getNote() {
-        return note;
-    }
-
-    public void setNote(Float note) {
-        this.note = note;
-    }
+    public int getIdParticipation() { return idParticipation; }
+    public void setIdParticipation(int idParticipation) { this.idParticipation = idParticipation; }
+    public int getIdFormation() { return idFormation; }
+    public void setIdFormation(int idFormation) { this.idFormation = idFormation; }
+    public int getIdUtilisateur() { return idUtilisateur; }
+    public void setIdUtilisateur(int idUtilisateur) { this.idUtilisateur = idUtilisateur; }
+    public LocalDateTime getDateInscription() { return dateInscription; }
+    public void setDateInscription(LocalDateTime dateInscription) { this.dateInscription = dateInscription; }
+    public StatutParticipation getStatut() { return statut; }
+    public void setStatut(StatutParticipation statut) { this.statut = statut; }
+    public boolean isPresence() { return presence; }
+    public void setPresence(boolean presence) { this.presence = presence; }
+    public Float getNote() { return note; }
+    public void setNote(Float note) { this.note = note; }
 
     @Override
     public String toString() {
@@ -91,6 +56,7 @@ public class participations {
                 ", statut='" + statut + '\'' +
                 ", presence=" + presence +
                 ", note=" + note +
+                ", titreFormation='" + titreFormation + '\'' + // Ajouté au toString
                 '}';
     }
 

@@ -1,5 +1,6 @@
 package tn.esprit.Champions.gui;
 
+import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -13,18 +14,21 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import tn.esprit.Champions.models.participations;
 import tn.esprit.Champions.models.StatutParticipation;
 import tn.esprit.Champions.services.ParticipationService;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ParticipationController {
 
     @FXML private TextField searchField;
     @FXML private TableView<participations> participationTable;
-    @FXML private TableColumn<participations, Integer> colId, colFormation, colUtilisateur;
+    @FXML private TableColumn<participations, Integer> colId, colUtilisateur;
+    @FXML private TableColumn<participations, String> colFormation;
     @FXML private TableColumn<participations, LocalDateTime> colDate;
     @FXML private TableColumn<participations, StatutParticipation> colStatut;
     @FXML private TableColumn<participations, Boolean> colPresence;
@@ -36,26 +40,75 @@ public class ParticipationController {
 
     @FXML
     public void initialize() {
+        // Appliquer l'animation d'entrée au tableau
+        applyFadeAnimation(participationTable);
+
         initTable();
         setupSearch();
         loadData();
     }
 
+    /**
+     * Animation créative : Apparition progressive du tableau
+     */
+    private void applyFadeAnimation(Node node) {
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(800), node);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+        fadeIn.play();
+    }
+
     private void initTable() {
-        // --- MASQUER L'ID TECHNIQUE ---
         colId.setVisible(false);
 
-        colFormation.setCellValueFactory(new PropertyValueFactory<>("idFormation"));
+        // Configuration des colonnes avec les propriétés du modèle
+        colFormation.setCellValueFactory(new PropertyValueFactory<>("titreFormation"));
         colUtilisateur.setCellValueFactory(new PropertyValueFactory<>("idUtilisateur"));
         colDate.setCellValueFactory(new PropertyValueFactory<>("dateInscription"));
         colStatut.setCellValueFactory(new PropertyValueFactory<>("statut"));
         colPresence.setCellValueFactory(new PropertyValueFactory<>("presence"));
         colNote.setCellValueFactory(new PropertyValueFactory<>("note"));
+
+        // Formatage créatif de la date
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+        colDate.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.format(formatter));
+            }
+        });
+
+        // Cell Factory pour les badges de statut (Indigo/Ambre)
+        colStatut.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(StatutParticipation item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    getStyleClass().removeAll("status-paid", "status-pending");
+                } else {
+                    setText(item.name());
+                    getStyleClass().removeAll("status-paid", "status-pending");
+                    if (item == StatutParticipation.PAYEE) {
+                        getStyleClass().add("status-paid");
+                    } else {
+                        getStyleClass().add("status-pending");
+                    }
+                }
+            }
+        });
+
         setupActionButtons();
     }
 
     private void loadData() {
-        try { masterData.setAll(ps.SelectAll()); } catch (SQLException e) { e.printStackTrace(); }
+        try {
+            masterData.setAll(ps.SelectAll());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupSearch() {
@@ -64,7 +117,9 @@ public class ParticipationController {
             filteredData.setPredicate(p -> {
                 if (newVal == null || newVal.isEmpty()) return true;
                 String f = newVal.toLowerCase();
-                return String.valueOf(p.getIdUtilisateur()).contains(f) || p.getStatut().name().toLowerCase().contains(f);
+                return String.valueOf(p.getIdUtilisateur()).contains(f) ||
+                        p.getStatut().name().toLowerCase().contains(f) ||
+                        (p.getTitreFormation() != null && p.getTitreFormation().toLowerCase().contains(f));
             });
         });
         SortedList<participations> sortedData = new SortedList<>(filteredData);
@@ -80,28 +135,22 @@ public class ParticipationController {
             private final HBox pane = new HBox(editBtn, deleteBtn, certBtn);
 
             {
-                pane.setSpacing(8); pane.setAlignment(Pos.CENTER);
+                pane.setSpacing(10);
+                pane.setAlignment(Pos.CENTER);
 
-                // Styles de base
-                editBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
-                deleteBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
-                certBtn.setStyle("-fx-background-color: #f1c40f; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
-
-                // --- ANIMATIONS HOVER ---
-                applyHoverEffect(editBtn, "#2980b9");
-                applyHoverEffect(deleteBtn, "#c0392b");
-                applyHoverEffect(certBtn, "#f39c12");
+                // Application des classes CSS créatives
+                editBtn.getStyleClass().add("button-primary");
+                deleteBtn.getStyleClass().add("button-delete");
+                certBtn.getStyleClass().add("button-cert");
 
                 editBtn.setOnAction(e -> showForm(getTableView().getItems().get(getIndex()), null));
                 deleteBtn.setOnAction(e -> handleDelete(getTableView().getItems().get(getIndex())));
-
-                // Action pour générer un certificat
                 certBtn.setOnAction(e -> {
                     participations p = getTableView().getItems().get(getIndex());
                     if (p.getNote() >= 10) {
                         new CertificatController().showCertForm(null, (long) p.getIdParticipation());
                     } else {
-                        showError("Condition non remplie", "L'élève doit avoir une note >= 10 pour être certifié.");
+                        showError("Note insuffisante", "L'élève doit avoir au moins 10/20.");
                     }
                 });
             }
@@ -113,20 +162,15 @@ public class ParticipationController {
         });
     }
 
-    private void applyHoverEffect(Button b, String hoverColor) {
-        String originalColor = b.getStyle().split(";")[0]; // Récupère le bg color actuel
-        b.setOnMouseEntered(e -> {
-            b.setStyle(originalColor.replace(originalColor.split(":")[1].trim(), hoverColor) + "; -fx-text-fill: white; -fx-background-radius: 5; -fx-scale-x: 1.05; -fx-scale-y: 1.05;");
-        });
-        b.setOnMouseExited(e -> {
-            b.setStyle(originalColor + "; -fx-text-fill: white; -fx-background-radius: 5; -fx-scale-x: 1; -fx-scale-y: 1;");
-        });
-    }
-
     @FXML private void handleAdding() { showForm(null, null); }
 
     private void handleDelete(participations p) {
-        if (new Alert(Alert.AlertType.CONFIRMATION, "Supprimer l'inscription ?").showAndWait().get() == ButtonType.OK) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Voulez-vous vraiment supprimer cette inscription ?");
+        // Application du CSS à l'alerte
+        if (alert.getDialogPane().getStylesheets() != null) {
+            alert.getDialogPane().getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        }
+        if (alert.showAndWait().get() == ButtonType.OK) {
             try { ps.deleteOne(p); loadData(); } catch (SQLException e) { e.printStackTrace(); }
         }
     }
@@ -134,56 +178,54 @@ public class ParticipationController {
     public void showForm(participations existing, Integer defaultFormationId) {
         boolean isEdit = (existing != null);
         Dialog<participations> dialog = new Dialog<>();
-        dialog.setTitle(isEdit ? "Modifier Participation" : "Nouvelle Inscription");
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("custom-dialog");
+
+        dialog.setTitle(isEdit ? "Mise à jour" : "Nouvelle inscription");
 
         DialogPane dp = dialog.getDialogPane();
-        ButtonType saveType = new ButtonType("Enregistrer", ButtonBar.ButtonData.OK_DONE);
+        ButtonType saveType = new ButtonType("Valider", ButtonBar.ButtonData.OK_DONE);
         dp.getButtonTypes().addAll(saveType, ButtonType.CANCEL);
 
         VBox header = new VBox();
-        header.setStyle("-fx-background-color: #1a2a3a; -fx-padding: 20;");
-        Label title = new Label(isEdit ? "ÉDITION PARTICIPATION" : "INSCRIPTION ÉLÈVE");
-        title.setStyle("-fx-text-fill: #00d4ff; -fx-font-size: 18; -fx-font-weight: bold;");
+        header.getStyleClass().add("dialog-header");
+        Label title = new Label(isEdit ? "MODIFIER LA PARTICIPATION" : "AJOUTER UN PARTICIPANT");
+        title.getStyleClass().add("dialog-title");
         header.getChildren().add(title);
         dp.setHeader(header);
 
         GridPane grid = new GridPane();
-        grid.setHgap(15); grid.setVgap(10); grid.setPadding(new Insets(20));
+        grid.setHgap(20); grid.setVgap(15); grid.setPadding(new Insets(25));
 
         TextField txtFormation = new TextField();
-        if (isEdit) txtFormation.setText(String.valueOf(existing.getIdFormation()));
-        else if (defaultFormationId != null) {
-            txtFormation.setText(String.valueOf(defaultFormationId));
-            txtFormation.setEditable(false);
-            txtFormation.setStyle("-fx-background-color: #ecf0f1;");
-        }
-
         TextField txtUtilisateur = new TextField();
-        Label errFormation = new Label(); errFormation.setStyle("-fx-text-fill: red; -fx-font-size: 10;");
-        Label errUtilisateur = new Label(); errUtilisateur.setStyle("-fx-text-fill: red; -fx-font-size: 10;");
         TextField txtNote = new TextField();
-        Label errNote = new Label(); errNote.setStyle("-fx-text-fill: red; -fx-font-size: 10;");
         ComboBox<StatutParticipation> cbStatut = new ComboBox<>(FXCollections.observableArrayList(StatutParticipation.values()));
-        CheckBox chkPresence = new CheckBox("Présent à la formation");
+        CheckBox chkPresence = new CheckBox("Présence confirmée");
+
+        Label errFormation = new Label(); errFormation.getStyleClass().add("error-label");
+        Label errUtilisateur = new Label(); errUtilisateur.getStyleClass().add("error-label");
+        Label errNote = new Label(); errNote.getStyleClass().add("error-label");
 
         if (isEdit) {
+            txtFormation.setText(String.valueOf(existing.getIdFormation()));
             txtUtilisateur.setText(String.valueOf(existing.getIdUtilisateur()));
             txtNote.setText(String.valueOf(existing.getNote()));
             cbStatut.setValue(existing.getStatut());
             chkPresence.setSelected(existing.isPresence());
         } else {
+            if (defaultFormationId != null) txtFormation.setText(String.valueOf(defaultFormationId));
             cbStatut.setValue(StatutParticipation.PAYEE);
         }
 
-        grid.add(new Label("ID Formation *"), 0, 0); grid.add(txtFormation, 0, 1); grid.add(errFormation, 0, 2);
-        grid.add(new Label("ID Utilisateur *"), 1, 0); grid.add(txtUtilisateur, 1, 1); grid.add(errUtilisateur, 1, 2);
-        grid.add(new Label("Note finale (/20)"), 0, 3); grid.add(txtNote, 0, 4); grid.add(errNote, 0, 5);
+        grid.add(new Label("ID Formation"), 0, 0); grid.add(txtFormation, 0, 1); grid.add(errFormation, 0, 2);
+        grid.add(new Label("ID Utilisateur"), 1, 0); grid.add(txtUtilisateur, 1, 1); grid.add(errUtilisateur, 1, 2);
+        grid.add(new Label("Note finale"), 0, 3); grid.add(txtNote, 0, 4); grid.add(errNote, 0, 5);
         grid.add(new Label("Statut"), 1, 3); grid.add(cbStatut, 1, 4);
         grid.add(chkPresence, 0, 6, 2, 1);
 
         dp.setContent(grid);
         Node saveBtn = dp.lookupButton(saveType);
-
         saveBtn.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
             if (!(validateInt(txtFormation, errFormation) && validateInt(txtUtilisateur, errUtilisateur) && validateNote(txtNote, errNote))) {
                 event.consume();
@@ -208,17 +250,19 @@ public class ParticipationController {
             try {
                 if (isEdit) ps.updateOne(p); else ps.insertOne(p);
                 loadData();
-            } catch (SQLException e) { showError("Erreur", "Vérifiez que les IDs existent."); }
+            } catch (SQLException e) { showError("Erreur SQL", "Veuillez vérifier les IDs saisis."); }
         });
     }
 
     private boolean validateInt(TextField t, Label l) {
         try {
             Integer.parseInt(t.getText());
-            t.setStyle("-fx-border-color: green;"); l.setText("");
+            t.getStyleClass().remove("field-error");
+            l.setText("");
             return true;
         } catch (Exception e) {
-            t.setStyle("-fx-border-color: red;"); l.setText("ID invalide");
+            if (!t.getStyleClass().contains("field-error")) t.getStyleClass().add("field-error");
+            l.setText("Format numérique requis");
             return false;
         }
     }
@@ -228,13 +272,21 @@ public class ParticipationController {
         try {
             float n = Float.parseFloat(t.getText());
             if (n < 0 || n > 20) throw new Exception();
-            t.setStyle("-fx-border-color: green;"); l.setText("");
+            t.getStyleClass().remove("field-error");
+            l.setText("");
             return true;
         } catch (Exception e) {
-            t.setStyle("-fx-border-color: red;"); l.setText("Note entre 0 et 20");
+            if (!t.getStyleClass().contains("field-error")) t.getStyleClass().add("field-error");
+            l.setText("Note entre 0 et 20");
             return false;
         }
     }
 
-    private void showError(String t, String c) { new Alert(Alert.AlertType.ERROR, c).showAndWait(); }
+    private void showError(String t, String c) {
+        Alert a = new Alert(Alert.AlertType.ERROR, c);
+        if (a.getDialogPane().getStylesheets() != null) {
+            a.getDialogPane().getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        }
+        a.showAndWait();
+    }
 }

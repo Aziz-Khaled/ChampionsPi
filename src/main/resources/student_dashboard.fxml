@@ -1,32 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.shape.*?>
 
-<VBox prefHeight="700.0" prefWidth="1000.0" style="-fx-background-color: #F9FAFB;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.StudentDashboardController">
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
 
-    <HBox alignment="CENTER_LEFT" prefHeight="75.0" spacing="30.0" style="-fx-background-color: white; -fx-border-color: #EEEEEE; -fx-border-width: 0 0 1 0;">
-        <padding><Insets left="40.0" right="40.0" /></padding>
+<VBox prefHeight="700.0" prefWidth="1000.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.StudentDashboardController">
 
-        <Label text="CHAMPIONS" style="-fx-font-size: 24; -fx-font-weight: 900; -fx-text-fill: #FE4A49;" /> <Region HBox.hgrow="ALWAYS" />
+    <HBox prefHeight="80.0" spacing="20.0" styleClass="header-bar">
+        <padding>
+            <Insets left="40.0" right="40.0" />
+        </padding>
 
-        <HBox spacing="25.0" alignment="CENTER">
-            <Button text="Tableau de bord" style="-fx-background-color: transparent; -fx-text-fill: #2D3436; -fx-font-weight: bold; -fx-cursor: hand;" />
-            <Button text="Mes Certificats" onAction="#handleGoToCertifs" style="-fx-background-color: transparent; -fx-text-fill: #636E72; -fx-cursor: hand;" />
+        <Label styleClass="logo-text" text="CHAMPIONS" />
+
+        <Region HBox.hgrow="ALWAYS" />
+
+        <HBox alignment="CENTER" spacing="10.0" styleClass="search-container">
+            <Label text="🔍" style="-fx-opacity: 0.5;" />
+            <TextField fx:id="searchField" prefWidth="300.0" promptText="Rechercher une formation..." styleClass="search-field-header" />
+        </HBox>
+
+        <Region HBox.hgrow="ALWAYS" />
+
+        <HBox alignment="CENTER" spacing="25.0">
+            <Button styleClass="nav-link-active" text="Tableau de bord" />
+            <Button onAction="#handleGoToCertifs" styleClass="nav-link" text="Mes Certificats" />
+
             <Separator orientation="VERTICAL" prefHeight="30.0" />
-            <Label text="Mon Profil" style="-fx-text-fill: #2D3436;" />
-            <Circle fill="#DFE6E9" radius="18.0" />
+
+            <HBox alignment="CENTER" spacing="10.0">
+                <Label style="-fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Mon Profil" />
+                <Circle fx:id="profileCircle" fill="#DFE6E9" radius="18.0" styleClass="profile-circle" />
+            </HBox>
         </HBox>
     </HBox>
 
-    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F9FAFB;">
+    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #f8fafc;">
         <VBox spacing="35.0">
-            <padding><Insets bottom="40.0" left="50.0" right="50.0" top="35.0" /></padding>
+            <padding>
+                <Insets bottom="40.0" left="50.0" right="50.0" top="35.0" />
+            </padding>
 
             <VBox spacing="8.0">
-                <Label text="Bienvenue dans votre espace ! 🚀" style="-fx-font-size: 30; -fx-font-weight: bold; -fx-text-fill: #2D3436;" />
-                <Label text="Continuez là où vous vous êtes arrêté." style="-fx-text-fill: #636E72; -fx-font-size: 16;" />
+                <Label style="-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Bienvenue dans votre espace ! 🚀" />
+                <Label style="-fx-text-fill: #64748b; -fx-font-size: 16;" text="Découvrez nos nouvelles formations et boostez vos compétences." />
             </VBox>
 
             <FlowPane fx:id="coursesGrid" hgap="30.0" vgap="30.0">

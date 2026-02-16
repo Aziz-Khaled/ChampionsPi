@@ -10,7 +10,7 @@
         <VBox spacing="15" prefWidth="250" style="-fx-background-color: #1a2a3a;">
             <padding><Insets top="40" left="20" right="20"/></padding>
 
-            <Label text="FINTECH PRO" style="-fx-text-fill: #00d4ff; -fx-font-size: 26; -fx-font-weight: bold;">
+            <Label text="Champions" style="-fx-text-fill: #00d4ff; -fx-font-size: 26; -fx-font-weight: bold;">
                 <VBox.margin><Insets bottom="20"/></VBox.margin>
             </Label>
 

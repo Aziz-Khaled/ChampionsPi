@@ -16,7 +16,6 @@ public class ParticipationService implements CRUD<participations> {
         cnx = DbConnection.getInstance().getCnx();
     }
 
-    // ================= INSERT =================
     @Override
     public void insertOne(participations p) throws SQLException {
         String sql = "INSERT INTO participations " +
@@ -33,14 +32,12 @@ public class ParticipationService implements CRUD<participations> {
 
         ps.executeUpdate();
 
-        // Récupérer l'ID généré
         ResultSet rs = ps.getGeneratedKeys();
         if (rs.next()) {
             p.setIdParticipation(rs.getInt(1));
         }
     }
 
-    // ================= UPDATE =================
     @Override
     public void updateOne(participations p) throws SQLException {
         String sql = "UPDATE participations SET " +
@@ -59,7 +56,6 @@ public class ParticipationService implements CRUD<participations> {
         ps.executeUpdate();
     }
 
-    // ================= DELETE =================
     @Override
     public void deleteOne(participations p) throws SQLException {
         String sql = "DELETE FROM participations WHERE idParticipation=?";
@@ -68,12 +64,17 @@ public class ParticipationService implements CRUD<participations> {
         ps.executeUpdate();
     }
 
-    // ================= SELECT ALL =================
     @Override
     public List<participations> SelectAll() throws SQLException {
         List<participations> list = new ArrayList<>();
 
-        String sql = "SELECT * FROM participations";
+        // --- ANCIEN CODE ---
+        // String sql = "SELECT * FROM participations";
+
+        // --- NOUVEAU CODE (JOINTURE) ---
+        String sql = "SELECT p.*, f.titre FROM participations p " +
+                "JOIN formations f ON p.idFormation = f.idFormation";
+
         Statement st = cnx.createStatement();
         ResultSet rs = st.executeQuery(sql);
 
@@ -86,6 +87,9 @@ public class ParticipationService implements CRUD<participations> {
             p.setStatut(StatutParticipation.valueOf(rs.getString("statut")));
             p.setPresence(rs.getBoolean("presence"));
             p.setNote(rs.getFloat("note"));
+
+            // --- AJOUT : Récupération du titre ---
+            p.setTitreFormation(rs.getString("titre"));
 
             list.add(p);
         }

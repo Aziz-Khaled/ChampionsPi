@@ -152,7 +152,7 @@ public class CertificatController {
         Document doc = new Document(pdf);
 
         doc.add(new Paragraph("CERTIFICAT DE RÉUSSITE").setBold().setFontSize(24).setTextAlignment(TextAlignment.CENTER));
-        doc.add(new Paragraph("FinTech Pro Academy").setItalic().setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph("Champions Academy").setItalic().setTextAlignment(TextAlignment.CENTER));
         doc.add(new Paragraph("\n\nCe document atteste que l'étudiant lié à la participation n°" + c.getIdParticipation()));
         doc.add(new Paragraph("a validé sa formation avec la mention : " + c.getMention()));
         doc.add(new Paragraph("Fait le : " + c.getDateEmission()));

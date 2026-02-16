@@ -4,15 +4,6 @@
 <?import javafx.geometry.*?>
 
 <BorderPane prefWidth="1250" prefHeight="750" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.InterfaceController">
-   <left>
-      <VBox spacing="15" prefWidth="230" style="-fx-background-color: #1a2a3a;">
-         <padding><Insets top="40" left="20" right="20"/></padding>
-         <Label text="FINTECH PRO" style="-fx-text-fill: #00d4ff; -fx-font-size: 24; -fx-font-weight: bold;"/>
-         <Separator opacity="0.1" />
-         <Button text="Dashboard" style="-fx-text-fill: white; -fx-background-color: transparent; -fx-cursor: hand;"/>
-         <Button text="Gestion Formations" style="-fx-text-fill: white; -fx-background-color: #2c3e50; -fx-font-size: 14; -fx-background-radius: 8; -fx-font-weight: bold; -fx-pref-width: 200;"/>
-      </VBox>
-   </left>
    <center>
       <VBox spacing="25" style="-fx-background-color: #f8f9fa; -fx-padding: 30;">
          <HBox alignment="CENTER_LEFT" spacing="15">
