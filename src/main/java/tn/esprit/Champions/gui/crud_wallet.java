@@ -68,10 +68,10 @@ public class crud_wallet {
     @FXML private TextField sourceWalletField;
     @FXML private TextField destinationWalletField;
     @FXML private TextField amountField;
-    @FXML private ComboBox<String> typeTransactionBox;  // transaction_interne / transaction_externe
-    @FXML private ComboBox<String> statusTransactionBox; // retrait / recharge
-    @FXML private ComboBox<String> currencyTransactionBox; // currency sélectionnée pour la transaction
-    @FXML private Button addTransactionBtn; // bouton "+"
+    @FXML private ComboBox<String> typeTransactionBox;
+    @FXML private ComboBox<String> statusTransactionBox;
+    @FXML private ComboBox<String> currencyTransactionBox;
+    @FXML private Button addTransactionBtn;
     @FXML
     private Button btnSignOut;
 
@@ -104,19 +104,19 @@ public class crud_wallet {
 
     @FXML
     public void initialize() {
-        // Initialisation des ComboBox
+
         boxType.getItems().addAll("fiat", "crypto", "trading");
         boxStatus.getItems().addAll("actif", "bloque");
 
-        // Initialisation des services
+
         walletService = new WalletService();
         walletCurrencyService = new wallet_currencyService();
         currencyService = new CurrencyService();
 
-        // Charger les wallets
+
         loadWallets();
 
-        // Gestion de la recherche
+
         if (searchField != null) {
             searchField.setOnKeyReleased(this::handleSearch);
         }
@@ -124,7 +124,7 @@ public class crud_wallet {
             clearSearchButton.setOnAction(e -> handleClearSearch());
         }
 
-        // Boutons modifier/supprimer wallet
+
         if (modify_wallet != null) {
             modify_wallet.setOnAction(e -> handleModifyWallet());
         }
@@ -132,7 +132,7 @@ public class crud_wallet {
             delete_wallet.setOnAction(e -> handleDeleteWallet());
         }
 
-        // Bouton Sign Out → bascule vers DashboardAdminWallet
+
         if (btnSignOut != null) {
             btnSignOut.setOnAction(event -> {
                 try {
@@ -147,7 +147,7 @@ public class crud_wallet {
             });
         }
 
-        // Listener global pour cliquer **en dehors d'une carte**
+
         Platform.runLater(() -> {
             Scene scene = walletContainer.getScene();
             if (scene != null) {
@@ -179,7 +179,7 @@ public class crud_wallet {
     }
     private void clearWalletSelection() {
         if (selectedCard != null) {
-            // Remet le style initial
+
             selectedCard.setStyle(
                     "-fx-background-color: linear-gradient(to bottom right, #ffffff, #e8e8e8);" +
                             "-fx-background-radius: 20;" +
@@ -189,7 +189,7 @@ public class crud_wallet {
 
         }
 
-        // Vider le formulaire
+
         boxType.setDisable(false);
         walletIdField.clear();
         boxType.getSelectionModel().clearSelection();
@@ -198,7 +198,7 @@ public class crud_wallet {
 
     }
 
-    // Ajouter un wallet
+
     @FXML
     private void handleAddWallet() {
         String typeStr = boxType.getValue();
@@ -229,7 +229,7 @@ public class crud_wallet {
 
 
 
-    // Modifier le statut d’un wallet sélectionné
+
     @FXML
     private void handleModifyWallet() {
         if (selectedWallet == null) {
@@ -255,7 +255,7 @@ public class crud_wallet {
         }
     }
 
-    // Supprimer un wallet sélectionné
+
     @FXML
     private void handleDeleteWallet() {
         if (selectedWallet == null) {
@@ -270,7 +270,7 @@ public class crud_wallet {
 
         if (confirmAlert.getResult() == ButtonType.YES) {
             try {
-                // Vérifier que tous les soldes sont à 0
+
                 List<wallet_currency> currencies = walletCurrencyService.getCurrenciesByWallet(selectedWallet.getIdWallet());
                 boolean hasBalance = currencies.stream().anyMatch(c -> c.getSolde() > 0);
                 if (hasBalance) {
@@ -308,21 +308,21 @@ public class crud_wallet {
         }
 
         try {
-            // Créer l'objet wallet_currency à insérer
+
             wallet_currency wc = new wallet_currency();
             wc.setId_wallet(selectedWallet.getIdWallet());
             wc.setNom_currency(selectedCurrency.getNom());
 
-            // Appeler la fonction insertOne() qui gère déjà la duplication
+
             walletCurrencyService.insertOne(wc);
 
             new Alert(Alert.AlertType.INFORMATION, "Currency ajoutée au wallet avec succès !").show();
 
-            // Recharger les wallets pour mettre à jour l'affichage
+
             loadWallets();
 
         } catch (SQLException e) {
-            // Afficher le message d'erreur de duplication ou autre erreur
+
             new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
             e.printStackTrace();
         }
@@ -342,13 +342,13 @@ public class crud_wallet {
         }
 
         try {
-            // Créer un objet wallet_currency pour passer au service
+
             wallet_currency wcToDelete = new wallet_currency();
             wcToDelete.setId_wallet(selectedWallet.getIdWallet());
             wcToDelete.setId_currency(selectedCurrency.getId_currency());
             wcToDelete.setNom_currency(selectedCurrency.getNom());
 
-            // Appeler deleteOne du service (qui gère déjà la vérification du solde)
+
             walletCurrencyService.deleteOne(wcToDelete);
 
             new Alert(Alert.AlertType.INFORMATION, "Currency supprimée du wallet avec succès !").show();
@@ -356,7 +356,7 @@ public class crud_wallet {
             loadWallets();
 
         } catch (SQLException e) {
-            // deleteOne lance une exception si le solde n'est pas nul
+
             new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
             e.printStackTrace();
         }
@@ -435,14 +435,12 @@ public class crud_wallet {
             int destId = selectedTransaction.getIdWalletDestination();
             int currencyId = selectedTransaction.getCurrencyId();
 
-            // Récupérer les soldes
             double sourceBalance = walletCurrencyService.getBalance(sourceId, currencyId);
             double destBalance = walletCurrencyService.getBalance(destId, currencyId);
 
             double difference = newAmount - oldAmount;
 
             if (difference > 0) {
-                // Le montant augmente → retirer du source
                 if (sourceBalance < difference) {
                     new Alert(Alert.AlertType.ERROR, "Solde insuffisant dans le wallet source !").show();
                     return;
@@ -450,17 +448,13 @@ public class crud_wallet {
                 sourceBalance -= difference;
                 destBalance += difference;
             } else {
-                // Le montant diminue → rendre au source
                 difference = Math.abs(difference);
                 destBalance -= difference;
                 sourceBalance += difference;
             }
 
-            // Mettre à jour les soldes
-            walletCurrencyService.updateBalance(sourceId, currencyId, sourceBalance);
-            walletCurrencyService.updateBalance(destId, currencyId, destBalance);
 
-            // Mettre à jour la transaction
+
             selectedTransaction.setMontant(newAmount);
             selectedTransaction.setDateTransaction(LocalDateTime.now());
 
@@ -493,14 +487,12 @@ public class crud_wallet {
             return;
         }
 
-        // Parcours tous les containers
         for (HBox container : List.of(walletContainer, walletContainer1, walletContainer2)) {
             for (Node node : container.getChildren()) {
                 if (node instanceof VBox card) {
                     Label lblName = (Label) card.getChildren().get(0); // "Wallet #id"
                     if (lblName.getText().contains(String.valueOf(walletId))) {
                         VBox currencyBox = (VBox) card.getChildren().get(2); // currencyBox
-                        // Mettre à jour les soldes dans chaque ligne HBox
                         for (Node lineNode : currencyBox.getChildren()) {
                             if (lineNode instanceof HBox line) {
                                 if (line.getChildren().size() < 2) continue; // ignore "View all" button
@@ -514,7 +506,7 @@ public class crud_wallet {
                                         .ifPresent(wc -> soldeLabel.setText(String.format("%.2f", wc.getSolde())));
                             }
                         }
-                        return; // carte trouvée et mise à jour
+                        return;
                     }
                 }
             }
@@ -557,7 +549,6 @@ public class crud_wallet {
             try {
                 List<currency> allCurrencies = currencyService.SelectAll();
 
-                // Filtrer selon le type de wallet et is_trading
                 List<currency> filteredCurrencies = allCurrencies.stream()
                         .filter(c -> {
                             if (w.getTypeWallet() == typeWallet.trading) {
@@ -574,7 +565,6 @@ public class crud_wallet {
                 currencyComboBox.setItems(FXCollections.observableArrayList(filteredCurrencies));
                 currencyComboBox.setPromptText("Sélectionner currency");
 
-                // Afficher le nom de la currency dans la liste déroulante
                 currencyComboBox.setCellFactory(c -> new ListCell<>() {
                     @Override
                     protected void updateItem(currency item, boolean empty) {
@@ -583,7 +573,6 @@ public class crud_wallet {
                     }
                 });
 
-                // Afficher le nom de la currency sélectionnée dans le bouton
                 currencyComboBox.setButtonCell(new ListCell<>() {
                     @Override
                     protected void updateItem(currency item, boolean empty) {
@@ -606,15 +595,12 @@ public class crud_wallet {
 
         if (currencyTransactionBox != null) {
             try {
-                // Récupérer toutes les currencies du wallet sélectionné
                 List<wallet_currency> walletCurrencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
                 List<currency> allCurrencies = currencyService.SelectAll();
 
-                // Créer un map pour accès rapide aux currencies
                 Map<String, currency> currencyMap = allCurrencies.stream()
                         .collect(Collectors.toMap(currency::getNom, c -> c));
 
-                // Filtrer selon is_trading si wallet trading
                 walletCurrencies = walletCurrencies.stream()
                         .filter(wc -> {
                             currency c = currencyMap.get(wc.getNom_currency());
@@ -622,7 +608,6 @@ public class crud_wallet {
                         })
                         .toList();
 
-                // Extraire les noms pour le ComboBox
                 List<String> currencyNames = walletCurrencies.stream()
                         .map(wallet_currency::getNom_currency)
                         .toList();
@@ -678,7 +663,6 @@ public class crud_wallet {
         }
     }
 
-    // Afficher les wallets dans les ScrollPane
     private void displayWallets(List<wallet> wallets) {
         walletContainer.getChildren().clear();
         walletContainer1.getChildren().clear();
@@ -753,7 +737,6 @@ public class crud_wallet {
             currencyBox.getChildren().add(line);
         }
 
-        // Scroll si beaucoup de currencies
         ScrollPane scrollPane = new ScrollPane(currencyBox);
         scrollPane.setFitToWidth(true);
         scrollPane.setPrefHeight(300);
@@ -790,7 +773,6 @@ public class crud_wallet {
         Label lblTransactions = new Label("💸");
         lblTransactions.setStyle("-fx-font-size: 16px; -fx-text-fill: black; -fx-cursor: hand;");
 
-// HBox pour positionner en haut à gauche, légèrement décalé pour éviter le scroll
         HBox topBar = new HBox(lblTransactions);
         topBar.setAlignment(Pos.TOP_LEFT);
         topBar.setPadding(new Insets(0, 0, 0, 0)); // ← 8px depuis le haut et la gauche
@@ -902,7 +884,6 @@ public class crud_wallet {
                         trash.setStyle("-fx-text-fill: red; -fx-cursor: hand;");
                         trash.setOnMouseClicked(ev -> {
                             transaction t = getTableView().getItems().get(getIndex());
-                            //deleteTransaction(t); // Méthode pour supprimer la transaction
                             getTableView().getItems().remove(t);
                         });
                     }
@@ -915,7 +896,6 @@ public class crud_wallet {
                 });
 
                 transactionTable.getColumns().addAll(sourceCol, destCol, montantCol, currencyCol, dateCol, deleteCol);
-                // Coloration rouge/vert selon wallet
                 transactionTable.setRowFactory(tv -> new TableRow<transaction>() {
                     @Override
                     protected void updateItem(transaction item, boolean empty) {
@@ -941,7 +921,7 @@ public class crud_wallet {
                         sourceWalletField.setDisable(true);
                         destinationWalletField.setDisable(true);
                         currencyTransactionBox.setDisable(true);
-                        
+
                     }
                 });
 

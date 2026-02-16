@@ -167,11 +167,11 @@ public class WalletService implements CRUD<wallet> {
                 w.setIdUser(rs.getInt("id_user"));
                 w.setTypeWallet(typeWallet.valueOf(rs.getString("type_wallet")));
                 w.setStatut(statutWallet.valueOf(rs.getString("statut")));
-                // si tu as un solde global dans wallet
+
                 w.setSolde(rs.getDouble("solde"));
                 return w;
             } else {
-                return null; // wallet introuvable
+                return null;
             }
         }
     }

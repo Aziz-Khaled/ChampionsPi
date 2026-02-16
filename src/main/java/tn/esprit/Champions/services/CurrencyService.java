@@ -22,10 +22,10 @@ public class CurrencyService implements CRUD<currency>
     }
 
 
-//currency unique
+
     @Override
     public void insertOne(currency currency) throws SQLException {
-        // Vérifier si la currency existe déjà par code ou nom
+
         String checkQuery = "SELECT id_currency FROM currency WHERE code = ? OR nom = ?";
         PreparedStatement checkStmt = cnx.prepareStatement(checkQuery);
         checkStmt.setString(1, currency.getCode());
@@ -65,7 +65,7 @@ public class CurrencyService implements CRUD<currency>
 
     @Override
     public void deleteOne(currency currency) throws SQLException {
-        // Vérifier si la currency est utilisée dans wallet_currency avec un solde != 0
+
         String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_currency = ? AND solde != 0";
         PreparedStatement checkPst = cnx.prepareStatement(checkQuery);
         checkPst.setInt(1, currency.getId_currency());
@@ -74,7 +74,7 @@ public class CurrencyService implements CRUD<currency>
             throw new SQLException("Impossible de supprimer cette currency : elle est utilisée dans un wallet avec un solde non nul !");
         }
 
-        // Si ok, suppression
+
         String deleteQuery = "DELETE FROM currency WHERE id_currency = ?";
         PreparedStatement deletePst = cnx.prepareStatement(deleteQuery);
         deletePst.setInt(1, currency.getId_currency());

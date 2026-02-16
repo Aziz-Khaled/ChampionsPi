@@ -12,7 +12,7 @@ public class TransactionService implements CRUD<transaction> {
 
     private Connection cnx;
 
-    // Création d'une instance du service wallet_currency
+
     private wallet_currencyService walletCurrencyService;
 
     public TransactionService() {
@@ -35,14 +35,14 @@ public class TransactionService implements CRUD<transaction> {
         if (sourceWallet.getStatut() == statutWallet.bloque)
             throw new SQLException("Le wallet source est bloqué !");
 
-        // Vérifications type de wallet
+
         if (sourceWallet.getTypeWallet() == typeWallet.fiat && destWallet.getTypeWallet() != typeWallet.fiat)
             throw new SQLException("Un wallet fiat ne peut envoyer qu'à un autre wallet fiat !");
         if ((sourceWallet.getTypeWallet() == typeWallet.crypto || sourceWallet.getTypeWallet() == typeWallet.trading)
                 && destWallet.getTypeWallet() == typeWallet.fiat)
             throw new SQLException("Crypto/Trading ne peut pas envoyer vers un wallet fiat !");
 
-        // Vérification crypto → trading
+
         if (sourceWallet.getTypeWallet() == typeWallet.crypto && destWallet.getTypeWallet() == typeWallet.trading) {
             String query = "SELECT is_trading FROM currency WHERE id_currency = ?";
             boolean isTradingCurrency = false;
@@ -58,7 +58,7 @@ public class TransactionService implements CRUD<transaction> {
             }
         }
 
-        // Récupérer le wallet_currency source
+
         wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
                 sourceWallet.getIdWallet(), t.getCurrencyId()
         );
@@ -71,7 +71,7 @@ public class TransactionService implements CRUD<transaction> {
         if (soldeSource.compareTo(montant) < 0)
             throw new SQLException("Solde insuffisant dans le wallet source !");
 
-        // Débiter le wallet source
+
         String updateSourceSql = "UPDATE wallet_currency SET solde = solde - ? WHERE id_wallet = ? AND id_currency = ?";
         try (PreparedStatement pst = cnx.prepareStatement(updateSourceSql)) {
             pst.setDouble(1, t.getMontant());
@@ -80,13 +80,13 @@ public class TransactionService implements CRUD<transaction> {
             pst.executeUpdate();
         }
 
-        // Créditer le wallet destinataire
+
         wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
                 destWallet.getIdWallet(), t.getCurrencyId()
         );
 
         if (destCurrency == null) {
-            // Insérer si le wallet_currency n'existe pas
+
             String insertDestSql = "INSERT INTO wallet_currency (id_wallet, id_currency, solde, nom_currency) VALUES (?, ?, ?, ?)";
             try (PreparedStatement pst = cnx.prepareStatement(insertDestSql)) {
                 pst.setInt(1, destWallet.getIdWallet());
@@ -96,7 +96,7 @@ public class TransactionService implements CRUD<transaction> {
                 pst.executeUpdate();
             }
         } else {
-            // Mettre à jour le solde du wallet destinataire
+
             String updateDestSql = "UPDATE wallet_currency SET solde = solde + ? WHERE id_wallet = ? AND id_currency = ?";
             try (PreparedStatement pst = cnx.prepareStatement(updateDestSql)) {
                 pst.setDouble(1, t.getMontant());
@@ -106,7 +106,7 @@ public class TransactionService implements CRUD<transaction> {
             }
         }
 
-        // Enregistrer la transaction
+
         String insertTransactionSql = "INSERT INTO transaction " +
                 "(id_wallet_source, id_wallet_destination, montant, `type`, statut, date_transaction, id_currency) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -124,7 +124,7 @@ public class TransactionService implements CRUD<transaction> {
     @Override
     public void updateOne(transaction t) throws SQLException {
 
-        // 1️⃣ Récupérer l'ancienne transaction
+
         String selectSql = "SELECT * FROM transaction WHERE id_transaction = ?";
         transaction oldTransaction = null;
 
@@ -144,7 +144,7 @@ public class TransactionService implements CRUD<transaction> {
             }
         }
 
-        // 2️⃣ Calcul de la différence
+
         double oldAmount = oldTransaction.getMontant();
         double newAmount = t.getMontant();
         double diff = newAmount - oldAmount;
@@ -153,7 +153,7 @@ public class TransactionService implements CRUD<transaction> {
         int walletDestId = oldTransaction.getIdWalletDestination();
         int currencyId = oldTransaction.getCurrencyId();
 
-        // 3️⃣ Récupérer solde source
+
         wallet_currency sourceCurrency = walletCurrencyService
                 .getWalletCurrencyByWalletAndId(walletSourceId, currencyId);
 
@@ -163,13 +163,12 @@ public class TransactionService implements CRUD<transaction> {
 
         double soldeSource = sourceCurrency.getSolde();
 
-        // 4️⃣ Vérification du solde si augmentation du montant
+
         if (diff > 0 && soldeSource < diff) {
             throw new SQLException("Solde insuffisant pour augmenter le montant !");
         }
 
-        // 5️⃣ Mise à jour des soldes
-        // Débiter source
+
         String updateSourceSql = "UPDATE wallet_currency SET solde = solde - ? WHERE id_wallet = ? AND id_currency = ?";
         try (PreparedStatement pst = cnx.prepareStatement(updateSourceSql)) {
             pst.setDouble(1, diff);
@@ -178,12 +177,12 @@ public class TransactionService implements CRUD<transaction> {
             pst.executeUpdate();
         }
 
-        // Créditer destination
+
         wallet_currency destCurrency = walletCurrencyService
                 .getWalletCurrencyByWalletAndId(walletDestId, currencyId);
 
         if (destCurrency == null) {
-            // créer la currency dans le wallet destination
+
             String insertDestSql = "INSERT INTO wallet_currency (id_wallet, id_currency, solde, nom_currency) VALUES (?, ?, ?, ?)";
             try (PreparedStatement pst = cnx.prepareStatement(insertDestSql)) {
                 pst.setInt(1, walletDestId);
@@ -202,7 +201,7 @@ public class TransactionService implements CRUD<transaction> {
             }
         }
 
-        // 6️⃣ Mise à jour de la transaction (montant + date)
+
         String updateTransactionSql = "UPDATE transaction SET montant = ?, date_transaction = NOW() WHERE id_transaction = ?";
         try (PreparedStatement pst = cnx.prepareStatement(updateTransactionSql)) {
             pst.setDouble(1, newAmount);
@@ -242,7 +241,7 @@ public class TransactionService implements CRUD<transaction> {
             t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
             t.setMontant(rs.getDouble("montant"));
 
-            // Conversion String -> enum
+
             String typeStr = rs.getString("type").trim(); // supprimer espaces éventuels
             t.setType(typeTransaction.valueOf(typeStr));
 
