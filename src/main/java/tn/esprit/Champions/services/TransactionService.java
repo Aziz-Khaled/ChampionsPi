@@ -122,8 +122,93 @@ public class TransactionService implements CRUD<transaction> {
         }
     }
     @Override
-    public void updateOne(transaction transaction) throws SQLException {
-        // À implémenter
+    public void updateOne(transaction t) throws SQLException {
+
+        // 1️⃣ Récupérer l'ancienne transaction
+        String selectSql = "SELECT * FROM transaction WHERE id_transaction = ?";
+        transaction oldTransaction = null;
+
+        try (PreparedStatement ps = cnx.prepareStatement(selectSql)) {
+            ps.setInt(1, t.getIdTransaction());
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                oldTransaction = new transaction();
+                oldTransaction.setIdTransaction(rs.getInt("id_transaction"));
+                oldTransaction.setIdWalletSource(rs.getInt("id_wallet_source"));
+                oldTransaction.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+                oldTransaction.setMontant(rs.getDouble("montant"));
+                oldTransaction.setCurrencyId(rs.getInt("id_currency"));
+            } else {
+                throw new SQLException("Transaction introuvable !");
+            }
+        }
+
+        // 2️⃣ Calcul de la différence
+        double oldAmount = oldTransaction.getMontant();
+        double newAmount = t.getMontant();
+        double diff = newAmount - oldAmount;
+
+        int walletSourceId = oldTransaction.getIdWalletSource();
+        int walletDestId = oldTransaction.getIdWalletDestination();
+        int currencyId = oldTransaction.getCurrencyId();
+
+        // 3️⃣ Récupérer solde source
+        wallet_currency sourceCurrency = walletCurrencyService
+                .getWalletCurrencyByWalletAndId(walletSourceId, currencyId);
+
+        if (sourceCurrency == null) {
+            throw new SQLException("Currency introuvable dans le wallet source !");
+        }
+
+        double soldeSource = sourceCurrency.getSolde();
+
+        // 4️⃣ Vérification du solde si augmentation du montant
+        if (diff > 0 && soldeSource < diff) {
+            throw new SQLException("Solde insuffisant pour augmenter le montant !");
+        }
+
+        // 5️⃣ Mise à jour des soldes
+        // Débiter source
+        String updateSourceSql = "UPDATE wallet_currency SET solde = solde - ? WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(updateSourceSql)) {
+            pst.setDouble(1, diff);
+            pst.setInt(2, walletSourceId);
+            pst.setInt(3, currencyId);
+            pst.executeUpdate();
+        }
+
+        // Créditer destination
+        wallet_currency destCurrency = walletCurrencyService
+                .getWalletCurrencyByWalletAndId(walletDestId, currencyId);
+
+        if (destCurrency == null) {
+            // créer la currency dans le wallet destination
+            String insertDestSql = "INSERT INTO wallet_currency (id_wallet, id_currency, solde, nom_currency) VALUES (?, ?, ?, ?)";
+            try (PreparedStatement pst = cnx.prepareStatement(insertDestSql)) {
+                pst.setInt(1, walletDestId);
+                pst.setInt(2, currencyId);
+                pst.setDouble(3, diff);
+                pst.setString(4, sourceCurrency.getNom_currency());
+                pst.executeUpdate();
+            }
+        } else {
+            String updateDestSql = "UPDATE wallet_currency SET solde = solde + ? WHERE id_wallet = ? AND id_currency = ?";
+            try (PreparedStatement pst = cnx.prepareStatement(updateDestSql)) {
+                pst.setDouble(1, diff);
+                pst.setInt(2, walletDestId);
+                pst.setInt(3, currencyId);
+                pst.executeUpdate();
+            }
+        }
+
+        // 6️⃣ Mise à jour de la transaction (montant + date)
+        String updateTransactionSql = "UPDATE transaction SET montant = ?, date_transaction = NOW() WHERE id_transaction = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(updateTransactionSql)) {
+            pst.setDouble(1, newAmount);
+            pst.setInt(2, t.getIdTransaction());
+            pst.executeUpdate();
+        }
     }
 
     @Override

@@ -235,12 +235,10 @@
                                 <Button fx:id="addTransactionBtn" onAction="#handleAddTransaction" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="+" textFill="#c1c1c1">
                                     <font><Font name="System Bold" size="27.0" /></font>
                                 </Button>
-                                <Button fx:id="modifyTransactionBtn" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
+                                <Button fx:id="modifyTransactionBtn" onAction="#handleUpdateTransaction" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="✏" textFill="#c1c1c1">
                                     <font><Font name="System Bold" size="27.0" /></font>
                                 </Button>
-                                <Button fx:id="deleteTransactionBtn" prefHeight="57.0" prefWidth="57.0" styleClass="plus_btn" text="🗑" textFill="#c1c1c1">
-                                    <font><Font name="System Bold" size="27.0" /></font>
-                                </Button>
+
                             </HBox>
 
                         </VBox>

@@ -98,6 +98,8 @@ public class crud_wallet {
     private wallet selectedWallet; // wallet sélectionné
 
     private final int DEFAULT_USER_ID = 1;
+    private transaction selectedTransaction;
+    private double oldAmount = 0;
 
 
     @FXML
@@ -413,6 +415,72 @@ public class crud_wallet {
         } catch (SQLException e) {
             e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Erreur lors de la transaction : " + e.getMessage()).show();
+        }
+    }
+    @FXML
+    private void handleUpdateTransaction() {
+        try {
+            if (selectedTransaction == null) {
+                new Alert(Alert.AlertType.WARNING, "Veuillez sélectionner une transaction !").show();
+                return;
+            }
+
+            double newAmount = Double.parseDouble(amountField.getText().trim());
+            if (newAmount <= 0) {
+                new Alert(Alert.AlertType.WARNING, "Montant invalide !").show();
+                return;
+            }
+
+            int sourceId = selectedTransaction.getIdWalletSource();
+            int destId = selectedTransaction.getIdWalletDestination();
+            int currencyId = selectedTransaction.getCurrencyId();
+
+            // Récupérer les soldes
+            double sourceBalance = walletCurrencyService.getBalance(sourceId, currencyId);
+            double destBalance = walletCurrencyService.getBalance(destId, currencyId);
+
+            double difference = newAmount - oldAmount;
+
+            if (difference > 0) {
+                // Le montant augmente → retirer du source
+                if (sourceBalance < difference) {
+                    new Alert(Alert.AlertType.ERROR, "Solde insuffisant dans le wallet source !").show();
+                    return;
+                }
+                sourceBalance -= difference;
+                destBalance += difference;
+            } else {
+                // Le montant diminue → rendre au source
+                difference = Math.abs(difference);
+                destBalance -= difference;
+                sourceBalance += difference;
+            }
+
+            // Mettre à jour les soldes
+            walletCurrencyService.updateBalance(sourceId, currencyId, sourceBalance);
+            walletCurrencyService.updateBalance(destId, currencyId, destBalance);
+
+            // Mettre à jour la transaction
+            selectedTransaction.setMontant(newAmount);
+            selectedTransaction.setDateTransaction(LocalDateTime.now());
+
+            TransactionService transactionService = new TransactionService();
+            transactionService.updateOne(selectedTransaction);
+
+            loadWallets();
+            updateWalletBalanceDisplay(sourceId);
+            updateWalletBalanceDisplay(destId);
+
+            new Alert(Alert.AlertType.INFORMATION, "Transaction mise à jour avec succès !").show();
+
+            clearTransactionForm();
+            selectedTransaction = null;
+
+        } catch (NumberFormatException e) {
+            new Alert(Alert.AlertType.WARNING, "Montant invalide !").show();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Erreur : " + e.getMessage()).show();
         }
     }
 
@@ -808,6 +876,18 @@ public class crud_wallet {
                 TableColumn<transaction, Integer> destCol = new TableColumn<>("Destination");
                 destCol.setCellValueFactory(new PropertyValueFactory<>("idWalletDestination"));
 
+                TableColumn<transaction, String> currencyCol = new TableColumn<>("Currency");
+                currencyCol.setCellValueFactory(cellData -> {
+                    try {
+                        // Récupère le nom via CurrencyService
+                        String currencyName = currencyService.getCurrencyNameById(cellData.getValue().getCurrencyId());
+                        return new javafx.beans.property.SimpleStringProperty(currencyName);
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                        return new javafx.beans.property.SimpleStringProperty("N/A");
+                    }
+                });
+
                 TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
                 montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
 
@@ -834,8 +914,7 @@ public class crud_wallet {
                     }
                 });
 
-                transactionTable.getColumns().addAll(sourceCol, destCol, montantCol, dateCol, deleteCol);
-
+                transactionTable.getColumns().addAll(sourceCol, destCol, montantCol, currencyCol, dateCol, deleteCol);
                 // Coloration rouge/vert selon wallet
                 transactionTable.setRowFactory(tv -> new TableRow<transaction>() {
                     @Override
@@ -849,6 +928,22 @@ public class crud_wallet {
                 });
 
                 transactionTable.setItems(FXCollections.observableArrayList(transactions));
+                transactionTable.setOnMouseClicked(ev -> {
+                    transaction t = transactionTable.getSelectionModel().getSelectedItem();
+                    if (t != null) {
+                        selectedTransaction = t;
+                        oldAmount = t.getMontant();
+
+                        sourceWalletField.setText(String.valueOf(t.getIdWalletSource()));
+                        destinationWalletField.setText(String.valueOf(t.getIdWalletDestination()));
+                        amountField.setText(String.valueOf(t.getMontant()));
+
+                        sourceWalletField.setDisable(true);
+                        destinationWalletField.setDisable(true);
+                        currencyTransactionBox.setDisable(true);
+                        
+                    }
+                });
 
                 // Nouvelle fenêtre
                 Stage stage = new Stage();

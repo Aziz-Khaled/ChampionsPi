@@ -4,6 +4,9 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import tn.esprit.Champions.models.currency;
@@ -13,6 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -28,6 +32,8 @@ public class admin_wallet_controller {
     @FXML private CheckBox chkIsTrading;
     @FXML private Button add_currency;
     @FXML private TableView<currency> table;
+    @FXML
+    private Button btnSignOut;
 
     private ObservableList<currency> assetList = FXCollections.observableArrayList();
     private CurrencyService currencyService = new CurrencyService();
@@ -37,6 +43,8 @@ public class admin_wallet_controller {
     private List<String> fiatCodes = new ArrayList<>();
     private boolean cryptoLoaded = false;
     private boolean fiatLoaded = false;
+    private currency selectedCurrency = null;
+
 
     @FXML
     public void initialize() {
@@ -71,6 +79,21 @@ public class admin_wallet_controller {
 
         boxCode.setOnAction(event -> handleCodeSelection());
         add_currency.setOnAction(event -> handleAdd());
+        // Détecter la sélection d'une ligne
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                selectedCurrency = newSelection;
+                // Mettre à jour le formulaire avec les informations de la ligne sélectionnée
+                boxCode.setValue(selectedCurrency.getCode());
+                lblName.setText(selectedCurrency.getNom());
+                boxType.setValue(selectedCurrency.getType_currency() == typeCurrency.crypto ? "CRYPTO" : "FIAT");
+                chkIsTrading.setSelected(selectedCurrency.isIs_trading());
+
+                // Activer ou désactiver le checkbox selon le type
+                chkIsTrading.setDisable(selectedCurrency.getType_currency() == typeCurrency.fiat);
+            }
+        });
+        btnSignOut.setOnAction(event -> handleSignOut());
     }
 
     private void loadCurrenciesFromDB() {
@@ -215,5 +238,85 @@ public class admin_wallet_controller {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    @FXML
+    private void handleDelete() {
+        if (selectedCurrency == null) {
+            showAlert("Erreur", "Veuillez sélectionner une currency à supprimer !");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirmation");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Voulez-vous vraiment supprimer la currency : " + selectedCurrency.getNom() + " ?");
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    // Supprimer de la base avec contrôle
+                    currencyService.deleteOne(selectedCurrency);
+
+                    // Supprimer de la table
+                    assetList.remove(selectedCurrency);
+
+                    showAlert("Succès", "Currency supprimée avec succès !");
+
+                    // Réinitialiser le formulaire
+                    boxCode.setValue(null);
+                    lblName.setText("");
+                    boxType.setValue(null);
+                    chkIsTrading.setSelected(false);
+                    chkIsTrading.setDisable(true);
+
+                    selectedCurrency = null;
+                } catch (SQLException ex) {
+                    // Affiche le message d'erreur si solde != 0 ou autre erreur
+                    showAlert("Erreur", ex.getMessage());
+                }
+            }
+        });
+    }
+    @FXML
+    private void handleModify() {
+        if (selectedCurrency == null) {
+            showAlert("Erreur", "Veuillez sélectionner une currency à modifier !");
+            return;
+        }
+
+        if (selectedCurrency.getType_currency() == typeCurrency.fiat) {
+            showAlert("Info", "Tu n’as rien à changer dans une currency de type FIAT.");
+            return;
+        }
+
+        // Récupérer la valeur actuelle du checkbox pour CRYPTO
+        boolean newIsTrading = chkIsTrading.isSelected();
+        selectedCurrency.setIs_trading(newIsTrading);
+
+        try {
+            currencyService.updateOne(selectedCurrency);
+
+            // Mettre à jour la table (rafraîchir)
+            table.refresh();
+
+            showAlert("Succès", "Currency mise à jour avec succès !");
+        } catch (SQLException e) {
+            showAlert("Erreur", e.getMessage());
+        }
+    }
+    @FXML
+    private void handleSignOut() {
+        try {
+            // Charger le FXML depuis resources racine
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            Parent root = loader.load();
+
+            // Remplacer la scène actuelle par le Dashboard client
+            btnSignOut.getScene().setRoot(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger le Dashboard client !");
+        }
     }
 }

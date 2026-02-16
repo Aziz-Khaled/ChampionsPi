@@ -177,4 +177,24 @@ public class wallet_currencyService implements CRUD <wallet_currency>
         }
         return null; // si la currency n'existe pas dans ce wallet
     }
+    public void updateBalance(int walletId, int currencyId, double newBalance) throws SQLException {
+        String query = "UPDATE wallet_currency SET solde = ? WHERE id_wallet = ? AND id_currency = ?";
+        PreparedStatement pst = cnx.prepareStatement(query);
+        pst.setDouble(1, newBalance);
+        pst.setInt(2, walletId);
+        pst.setInt(3, currencyId);
+        pst.executeUpdate();
+    }
+    public double getBalance(int walletId, int currencyId) throws SQLException {
+        String query = "SELECT solde FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        PreparedStatement pst = cnx.prepareStatement(query);
+        pst.setInt(1, walletId);
+        pst.setInt(2, currencyId);
+
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) {
+            return rs.getDouble("solde");
+        }
+        return 0; // si aucune ligne trouvée
+    }
     }

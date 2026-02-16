@@ -52,41 +52,33 @@ public class CurrencyService implements CRUD<currency>
 
     @Override
     public void updateOne(currency currency) throws SQLException {
-        // Vérification doublon
-        String checkQuery = "SELECT id_currency FROM currency WHERE nom = ? AND id_currency != ?";
-        PreparedStatement checkStmt = cnx.prepareStatement(checkQuery);
-        checkStmt.setString(1, currency.getNom());
-        checkStmt.setInt(2, currency.getId_currency());
-        ResultSet rs = checkStmt.executeQuery();
-        if (rs.next()) {
-            throw new SQLException("Une autre currency existe déjà avec ce nom : " + currency.getNom());
+
+        if (currency.getType_currency() == typeCurrency.crypto) {
+            String query = "UPDATE `currency` SET is_trading = ? WHERE id_currency = ?";
+            PreparedStatement pst = cnx.prepareStatement(query);
+            pst.setInt(1, currency.isIs_trading() ? 1 : 0); // 1 si true, 0 si false
+            pst.setInt(2, currency.getId_currency());
+            pst.executeUpdate();
         }
 
-        // Update currency
-        String query = "UPDATE currency SET nom = ?, type_currency = ? WHERE id_currency = ?";
-        PreparedStatement pst = cnx.prepareStatement(query);
-        pst.setString(1, currency.getNom());
-        pst.setString(2, currency.getType_currency().name());
-        pst.setInt(3, currency.getId_currency());
-        pst.executeUpdate();
-
-        // Update wallet_currency pour correspondre au nouveau nom
-        String updateWallet = "UPDATE wallet_currency SET nom_currency = ? WHERE id_currency = ?";
-        PreparedStatement pstWallet = cnx.prepareStatement(updateWallet);
-        pstWallet.setString(1, currency.getNom());
-        pstWallet.setInt(2, currency.getId_currency());
-        pstWallet.executeUpdate();
-
-        System.out.println("Currency mise à jour : " + currency.getNom());
     }
 
     @Override
     public void deleteOne(currency currency) throws SQLException {
-        String query ="DELETE FROM `currency` WHERE id_currency =?";
-        PreparedStatement pst = cnx.prepareStatement(query);
-        pst.setInt(1, currency.getId_currency());
-        pst.executeUpdate();
+        // Vérifier si la currency est utilisée dans wallet_currency avec un solde != 0
+        String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_currency = ? AND solde != 0";
+        PreparedStatement checkPst = cnx.prepareStatement(checkQuery);
+        checkPst.setInt(1, currency.getId_currency());
+        ResultSet rs = checkPst.executeQuery();
+        if (rs.next() && rs.getInt(1) > 0) {
+            throw new SQLException("Impossible de supprimer cette currency : elle est utilisée dans un wallet avec un solde non nul !");
+        }
 
+        // Si ok, suppression
+        String deleteQuery = "DELETE FROM currency WHERE id_currency = ?";
+        PreparedStatement deletePst = cnx.prepareStatement(deleteQuery);
+        deletePst.setInt(1, currency.getId_currency());
+        deletePst.executeUpdate();
     }
 
     @Override
@@ -107,6 +99,18 @@ public class CurrencyService implements CRUD<currency>
             list.add(c);
         }
         return list;
+    }
+    public String getCurrencyNameById(int idCurrency) throws SQLException {
+        String sql = "SELECT nom FROM currency WHERE id_currency = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, idCurrency);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("nom");
+                }
+            }
+        }
+        return "N/A";
     }
 }
 
