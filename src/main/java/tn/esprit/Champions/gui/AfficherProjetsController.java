@@ -15,6 +15,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.projetStatus;
 import tn.esprit.Champions.services.projetService;
@@ -207,14 +208,26 @@ public class AfficherProjetsController implements Initializable {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/AjouterProjet.fxml"));
             Parent root = loader.load();
+
+            // 1. Récupérer l'instance du contrôleur que tu viens de charger
+            AjouterProjetController controller = loader.getController();
+
+            // 2. CRÉER OU RÉCUPÉRER L'UTILISATEUR (Indispensable !)
+            // On simule l'utilisateur connecté (ID 1 par exemple)
+            Utilisateur userConnecte = new Utilisateur();
+            userConnecte.setId_user(1);
+            userConnecte.setNom("Sarra"); // Optionnel, pour le test
+
+            // 3. ENVOYER l'objet au contrôleur de la popup
+            controller.setConnectedOwner(userConnecte);
+
+            // 4. Afficher la fenêtre
             Stage stage = new Stage();
-            stage.setTitle("Nouveau Projet");
-            stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
-            stage.showAndWait();
-            chargerDonnees();
+            stage.show();
+
         } catch (IOException e) {
-            afficherErreur("Erreur d'ouverture du formulaire d'ajout.");
+            e.printStackTrace();
         }
     }
 

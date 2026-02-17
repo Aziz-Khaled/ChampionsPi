@@ -6,6 +6,8 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.projetStatus;
+import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.services.ImageAiService;
 import tn.esprit.Champions.services.projetService;
 
 import java.net.URL;
@@ -20,16 +22,28 @@ public class AjouterProjetController implements Initializable {
     @FXML private ComboBox<projetStatus> comboStatus;
     @FXML private DatePicker dateDebut, dateFin;
 
-    private projetService ps = new projetService();
+    private final projetService ps = new projetService();
+    private Utilisateur connectedOwner;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        configurerFormulaire();
+        appliquerControlesSaisieUX();
+    }
+
+    private void configurerFormulaire() {
         comboStatus.getItems().setAll(projetStatus.values());
         comboStatus.setValue(projetStatus.ACTIVE);
         dateDebut.setValue(LocalDate.now());
+        // Optionnel : mettre une date de fin par défaut à +30 jours
+        dateFin.setValue(LocalDate.now().plusDays(30));
+    }
 
-        // --- CONTROLE EN TEMPS RÉEL (UX) ---
-        // Empêcher la saisie de texte dans le champ montant (uniquement chiffres et point)
+    public void setConnectedOwner(Utilisateur owner) {
+        this.connectedOwner = owner;
+    }
+
+    private void appliquerControlesSaisieUX() {
         txtMontant.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*(\\.\\d*)?")) {
                 txtMontant.setText(oldVal);
@@ -39,62 +53,64 @@ public class AjouterProjetController implements Initializable {
 
     @FXML
     private void enregistrer() {
-        if (estValide()) { // On utilise la nouvelle méthode de validation
+        if (estValide()) {
             try {
                 projet p = new projet();
+
+                // 1. Données de base
                 p.setTitle(txtTitre.getText().trim());
                 p.setDescription(txtDescription.getText().trim());
-                p.setTarget_amount(Float.parseFloat(txtMontant.getText()));
+                p.setTarget_amount(Double.parseDouble(txtMontant.getText()));
                 p.setStatus(comboStatus.getValue());
+
+                // 2. Conversion des dates (LocalDate -> Timestamp pour la DB)
                 p.setStart_date(Timestamp.valueOf(dateDebut.getValue().atStartOfDay()));
                 p.setEnd_date(Timestamp.valueOf(dateFin.getValue().atStartOfDay()));
-                p.setOwner_id(1); // À dynamiser plus tard
 
+                // 3. --- GÉNÉRATION IMAGE IA ---
+                // On utilise le titre et la description pour que l'IA choisisse la bonne image
+                String imageUrl = ImageAiService.generateProjectImageUrl(p.getTitle(), p.getDescription());
+                p.setImageUrl(imageUrl);
+                // ------------------------------
+
+                // 4. Propriétaire
+                p.setOwner_id(this.connectedOwner);
+
+                // 5. Sauvegarde
                 ps.insertOne(p);
-                afficherAlerte(Alert.AlertType.INFORMATION, "Succès", "Projet créé avec succès !");
-                annuler();
+
+                afficherAlerte(Alert.AlertType.INFORMATION, "Succès",
+                        "Projet '" + p.getTitle() + "' créé avec succès !\nUne image IA a été assignée automatiquement.");
+
+                annuler(); // Ferme la fenêtre après succès
 
             } catch (Exception e) {
-                afficherAlerte(Alert.AlertType.ERROR, "Erreur", "Erreur technique : " + e.getMessage());
+                e.printStackTrace();
+                afficherAlerte(Alert.AlertType.ERROR, "Erreur de sauvegarde", "Impossible d'enregistrer le projet : " + e.getMessage());
             }
         }
     }
 
-    // --- LE CŒUR DU CONTRÔLE DE SAISIE ---
     private boolean estValide() {
         StringBuilder erreurs = new StringBuilder();
 
-        // 1. Titre : pas vide et longueur minimum
-        if (txtTitre.getText().trim().isEmpty() || txtTitre.getText().length() < 3) {
-            erreurs.append("- Le titre doit contenir au moins 3 caractères.\n");
+        if (connectedOwner == null) {
+            erreurs.append("- Propriétaire non défini (vérifiez la session).\n");
         }
-
-        // 2. Montant : non vide et positif
+        if (txtTitre.getText().trim().isEmpty()) {
+            erreurs.append("- Le titre est obligatoire.\n");
+        }
         if (txtMontant.getText().isEmpty()) {
             erreurs.append("- Le montant cible est obligatoire.\n");
-        } else {
-            try {
-                float montant = Float.parseFloat(txtMontant.getText());
-                if (montant <= 0) erreurs.append("- Le montant doit être supérieur à zéro.\n");
-            } catch (NumberFormatException e) {
-                erreurs.append("- Le montant doit être un nombre valide.\n");
-            }
         }
-
-        // 3. Dates : Logique chronologique
         if (dateDebut.getValue() == null || dateFin.getValue() == null) {
-            erreurs.append("- Les dates de début et de fin sont obligatoires.\n");
-        } else {
-            if (dateDebut.getValue().isBefore(LocalDate.now()) && !dateDebut.getValue().isEqual(LocalDate.now())) {
-                erreurs.append("- La date de début ne peut pas être dans le passé.\n");
-            }
-            if (dateFin.getValue().isBefore(dateDebut.getValue())) {
-                erreurs.append("- La date de fin doit être après la date de début.\n");
-            }
+            erreurs.append("- Les dates sont obligatoires.\n");
+        } else if (dateFin.getValue().isBefore(dateDebut.getValue())) {
+            erreurs.append("- La date de fin ne peut pas être antérieure à la date de début.\n");
         }
 
         if (erreurs.length() > 0) {
-            afficherAlerte(Alert.AlertType.WARNING, "Champs invalides", erreurs.toString());
+            afficherAlerte(Alert.AlertType.WARNING, "Validation", erreurs.toString());
             return false;
         }
         return true;
@@ -102,10 +118,12 @@ public class AjouterProjetController implements Initializable {
 
     @FXML
     private void annuler() {
-        ((Stage) txtTitre.getScene().getWindow()).close();
+        if (txtTitre.getScene() != null) {
+            Stage stage = (Stage) txtTitre.getScene().getWindow();
+            stage.close();
+        }
     }
 
-    // Amélioration de l'alerte pour gérer différents types (Erreur, Info, Warning)
     private void afficherAlerte(Alert.AlertType type, String titre, String msg) {
         Alert alert = new Alert(type);
         alert.setTitle(titre);

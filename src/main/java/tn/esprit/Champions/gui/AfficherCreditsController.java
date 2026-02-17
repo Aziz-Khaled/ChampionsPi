@@ -16,6 +16,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.CreditStatus;
 import tn.esprit.Champions.models.projet;
@@ -182,7 +183,9 @@ public class AfficherCreditsController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/AjouterCredit.fxml"));
             Parent root = loader.load();
             AjouterCreditController controller = loader.getController();
-            controller.setConnectedUserId(1);
+            Utilisateur tempUser = new Utilisateur();
+            tempUser.setId_user(1);
+            controller.setConnectedUser(tempUser);
 
             Stage stage = new Stage();
             stage.setTitle("Nouvelle Demande");

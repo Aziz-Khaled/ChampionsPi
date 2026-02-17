@@ -7,6 +7,7 @@ import javafx.stage.Stage;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.CreditStatus;
+import tn.esprit.Champions.models.Utilisateur; // <--- Import de ton modèle Utilisateur
 import tn.esprit.Champions.services.projetService;
 import tn.esprit.Champions.services.creditService;
 
@@ -23,7 +24,8 @@ public class AjouterCreditController implements Initializable {
     private final projetService ps = new projetService();
     private final creditService cs = new creditService();
 
-    private int connectedUserId;
+    // Changement : on utilise l'objet Utilisateur au lieu d'un int
+    private Utilisateur connectedUser;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -33,8 +35,9 @@ public class AjouterCreditController implements Initializable {
         appliquerControlesSaisieTempsReel();
     }
 
-    public void setConnectedUserId(int id) {
-        this.connectedUserId = id;
+    // Changement : le tuteur veut passer l'objet utilisateur complet
+    public void setConnectedUser(Utilisateur user) {
+        this.connectedUser = user;
     }
 
     // --- CONFIGURATION DES UI ---
@@ -69,25 +72,19 @@ public class AjouterCreditController implements Initializable {
         }
     }
 
-    // --- CONTROLE DE SAISIE EN TEMPS RÉEL (UX) ---
-
     private void appliquerControlesSaisieTempsReel() {
-        // Bloquer tout ce qui n'est pas chiffre ou point (Montant et Taux)
         txtMontant.textProperty().addListener((obs, old, newVal) -> {
             if (!newVal.matches("\\d*(\\.\\d*)?")) txtMontant.setText(old);
         });
-
         txtTaux.textProperty().addListener((obs, old, newVal) -> {
             if (!newVal.matches("\\d*(\\.\\d*)?")) txtTaux.setText(old);
         });
-
-        // Bloquer tout ce qui n'est pas un chiffre entier (Durée)
         txtDuree.textProperty().addListener((obs, old, newVal) -> {
             if (!newVal.matches("\\d*")) txtDuree.setText(old);
         });
     }
 
-    // --- LOGIQUE D'ENREGISTREMENT ET VALIDATION ---
+    // --- LOGIQUE D'ENREGISTREMENT ---
 
     @FXML
     private void enregistrer() {
@@ -96,8 +93,10 @@ public class AjouterCreditController implements Initializable {
                 projet pSelected = comboProjet.getValue();
                 credit nouveauCredit = new credit();
 
+                // On associe les objets (POO)
                 nouveauCredit.setProject_id(pSelected.getId_project());
-                nouveauCredit.setBorrower_id(this.connectedUserId);
+                nouveauCredit.setBorrower_id(this.connectedUser);
+
                 nouveauCredit.setMontant(Double.parseDouble(txtMontant.getText()));
                 nouveauCredit.setDevise(comboDevise.getValue());
                 nouveauCredit.setTaux(Double.parseDouble(txtTaux.getText()));
@@ -105,6 +104,7 @@ public class AjouterCreditController implements Initializable {
                 nouveauCredit.setDescription(txtDescription.getText().trim());
                 nouveauCredit.setStatus(CreditStatus.OPEN);
 
+                // Ton service s'occupera d'extraire les IDs des objets pour la DB
                 cs.insertOne(nouveauCredit);
 
                 afficherAlerte(Alert.AlertType.INFORMATION, "Succès", "Le crédit a été ajouté avec succès !");
@@ -119,6 +119,11 @@ public class AjouterCreditController implements Initializable {
     private boolean estSaisieValide() {
         StringBuilder erreurs = new StringBuilder();
 
+        // 0. Vérification de l'utilisateur (Sécurité)
+        if (connectedUser == null) {
+            erreurs.append("- Aucun utilisateur connecté détecté.\n");
+        }
+
         // 1. Vérification Projet
         if (comboProjet.getValue() == null) {
             erreurs.append("- Veuillez sélectionner un projet cible.\n");
@@ -132,7 +137,7 @@ public class AjouterCreditController implements Initializable {
             if (m <= 0) {
                 erreurs.append("- Le montant doit être strictement positif.\n");
             } else if (comboProjet.getValue() != null && m > comboProjet.getValue().getTarget_amount()) {
-                erreurs.append("- Le montant demandé ne peut pas dépasser le budget du projet (")
+                erreurs.append("- Le montant demandé dépasse le budget du projet (")
                         .append(comboProjet.getValue().getTarget_amount()).append(").\n");
             }
         }
@@ -142,27 +147,21 @@ public class AjouterCreditController implements Initializable {
             erreurs.append("- Le taux d'intérêt est obligatoire.\n");
         } else {
             double t = Double.parseDouble(txtTaux.getText());
-            if (t < 0 || t > 30) {
-                erreurs.append("- Le taux doit être compris entre 0% et 30%.\n");
-            }
+            if (t < 0 || t > 30) erreurs.append("- Le taux doit être entre 0% et 30%.\n");
         }
 
         // 4. Vérification Durée
         if (txtDuree.getText().trim().isEmpty()) {
-            erreurs.append("- La durée du crédit est obligatoire.\n");
+            erreurs.append("- La durée est obligatoire.\n");
         } else {
             int d = Integer.parseInt(txtDuree.getText());
-            if (d < 1 || d > 360) {
-                erreurs.append("- La durée doit être comprise entre 1 et 360 mois.\n");
-            }
+            if (d < 1 || d > 360) erreurs.append("- La durée doit être entre 1 et 360 mois.\n");
         }
 
-        // Affichage des erreurs
         if (erreurs.length() > 0) {
             afficherAlerte(Alert.AlertType.WARNING, "Erreur de saisie", erreurs.toString());
             return false;
         }
-
         return true;
     }
 
