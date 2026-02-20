@@ -66,7 +66,15 @@
         <!-- List Area -->
         <VBox spacing="15" HBox.hgrow="ALWAYS">
             <children>
-                <Label text="Mes Produits en vente" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                <HBox spacing="15" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Mes Produits en vente" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="adminSearchField" promptText="Rechercher..." prefWidth="200"/>
+                        <Button text="Voir Stat" onAction="#handleShowStats" styleClass="btn-primary"/>
+                        <Button text="Exporter CSV" onAction="#handleExportCSV" styleClass="btn-secondary"/>
+                    </children>
+                </HBox>
                 <TableView fx:id="productsTable" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="colName" text="Produit" prefWidth="150"/>

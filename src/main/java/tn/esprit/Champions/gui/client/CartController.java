@@ -37,6 +37,8 @@ public class CartController {
     private final ProductService productService = new ProductService();
     private final OrderService orderService = new OrderService();
     private final OrderItemService orderItemService = new OrderItemService();
+    private final tn.esprit.Champions.services.StripeService stripeService = new tn.esprit.Champions.services.StripeService();
+    private final tn.esprit.Champions.services.PdfService pdfService = new tn.esprit.Champions.services.PdfService();
 
     @FXML
     // Initialiser le contrôleur, configurer les colonnes et les actions
@@ -187,33 +189,49 @@ public class CartController {
             }
 
             try {
-                // 1. Validate stock one last time and decrement
+                // 1. Stripe Payment
+                String checkoutUrl = stripeService.createCheckoutSession(ShoppingCart.getInstance().getItems());
+                if (checkoutUrl != null) {
+                    java.awt.Desktop.getDesktop().browse(new java.net.URI(checkoutUrl));
+                }
+
+                // 2. Validate stock and decrement
                 for (OrderItem item : ShoppingCart.getInstance().getItems()) {
                     productService.decrementStock(item.getProduct().getId(), item.getQuantity());
                 }
 
-                // 2. Create the Order object
+                // 3. Create the Order object
                 Order order = new Order();
                 order.setUserId(2); // Static user ID for now
                 order.setOrderDate(LocalDateTime.now());
                 order.setTotalAmount(ShoppingCart.getInstance().getTotal());
                 order.setStatus(OrderStatus.PAID);
                 order.setShippingAddress(address);
-                order.setPaymentMethod("CRYPTO");
+                order.setPaymentMethod("STRIPE");
                 order.setPhoneNumber(phone);
 
-                // 3. Save Order to database
+                // 4. Save Order to database
                 orderService.insertOne(order);
 
-                // 4. Save each OrderItem to database
-                for (OrderItem item : ShoppingCart.getInstance().getItems()) {
+                // 5. Save each OrderItem to database
+                List<OrderItem> currentItems = new java.util.ArrayList<>(ShoppingCart.getInstance().getItems());
+                for (OrderItem item : currentItems) {
                     item.setOrder(order);
                     orderItemService.insertOne(item);
                 }
 
+                // 6. Generate PDF Receipt
+                String uploadsDir = System.getProperty("user.dir") + "/uploads/receipts";
+                java.io.File dir = new java.io.File(uploadsDir);
+                if (!dir.exists())
+                    dir.mkdirs();
+
+                String filePath = uploadsDir + "/receipt_order_" + order.getId() + ".pdf";
+                pdfService.generateReceipt(order, currentItems, filePath);
+
                 Notifications.create()
                         .title("Succès")
-                        .text("Commande passée avec succès !")
+                        .text("Commande payée via Stripe ! Reçu généré : " + filePath)
                         .showConfirm();
 
                 ShoppingCart.getInstance().clear();

@@ -57,8 +57,11 @@ public class FournisseurDashboardController {
     private TableColumn<Product, String> colStatus;
     @FXML
     private TableColumn<Product, Void> colAction;
+    @FXML
+    private TextField adminSearchField;
 
     private final ProductService productService = new ProductService();
+    private List<Product> allProducts;
     private String selectedImagePath = "";
     private File selectedFile = null;
     private Product editingProduct = null;
@@ -77,8 +80,72 @@ public class FournisseurDashboardController {
         colStock.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getStock())));
         colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getStatus().name()));
 
+        adminSearchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
+
         setupActionColumn();
         refreshTable();
+    }
+
+    private void applyFilters() {
+        if (allProducts == null)
+            return;
+        String searchText = adminSearchField.getText().toLowerCase();
+        List<Product> filtered = allProducts.stream()
+                .filter(p -> p.getName().toLowerCase().contains(searchText) ||
+                        p.getBrand().toLowerCase().contains(searchText) ||
+                        p.getCategory().name().toLowerCase().contains(searchText))
+                .toList();
+        productsTable.getItems().setAll(filtered);
+    }
+
+    @FXML
+    private void handleShowStats() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/views/fournisseur/StatsModal.fxml"));
+            javafx.scene.Parent root = loader.load();
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Statistiques des Produits");
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Notifications.create().title("Erreur").text("Impossible d'ouvrir les statistiques.").showError();
+        }
+    }
+
+    @FXML
+    private void handleExportCSV() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Exporter en CSV");
+        fileChooser.setInitialFileName("produits_export.csv");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        File file = fileChooser.showSaveDialog(null);
+
+        if (file != null) {
+            try (com.opencsv.CSVWriter writer = new com.opencsv.CSVWriter(new java.io.FileWriter(file))) {
+                String[] header = { "ID", "Nom", "Marque", "Catégorie", "Prix", "Stock", "Statut" };
+                writer.writeNext(header);
+
+                for (Product p : productsTable.getItems()) {
+                    String[] data = {
+                            String.valueOf(p.getId()),
+                            p.getName(),
+                            p.getBrand(),
+                            p.getCategory().name(),
+                            String.valueOf(p.getPrice()),
+                            String.valueOf(p.getStock()),
+                            p.getStatus().name()
+                    };
+                    writer.writeNext(data);
+                }
+                Notifications.create().title("Succès").text("Export CSV réussi !").showInformation();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Notifications.create().title("Erreur").text("Échec de l'export CSV.").showError();
+            }
+        }
     }
 
     // Configurer la colonne des actions avec les boutons modifier et supprimer
@@ -288,10 +355,8 @@ public class FournisseurDashboardController {
     // Actualiser la table des produits avec les données de la base de données
     private void refreshTable() {
         try {
-            List<Product> products = productService.SelectAll();
-            if (products != null) {
-                productsTable.getItems().setAll(products);
-            }
+            allProducts = productService.SelectAll();
+            applyFilters();
         } catch (Exception e) {
             System.err.println("Database connection failed during refresh.");
         }

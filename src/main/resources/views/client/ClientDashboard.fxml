@@ -6,7 +6,16 @@
 
 <VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.ClientDashboardController" spacing="20">
     <children>
-        <Label text="Notre Catalogue" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+        <HBox spacing="20" alignment="CENTER_LEFT">
+            <children>
+                <Label text="Notre Catalogue" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS" />
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <TextField fx:id="searchField" promptText="Rechercher un produit..." prefWidth="250" styleClass="text-field"/>
+                    <ComboBox fx:id="categoryFilter" promptText="Toutes les catégories" prefWidth="180" styleClass="text-field"/>
+                </HBox>
+            </children>
+        </HBox>
         <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
             <content>
                 <GridPane fx:id="productGrid" hgap="20" vgap="20">
