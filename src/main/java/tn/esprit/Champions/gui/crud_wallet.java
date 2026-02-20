@@ -1,5 +1,6 @@
 package tn.esprit.Champions.gui;
 
+import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -19,7 +20,9 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.CurrencyService;
 import tn.esprit.Champions.services.TransactionService;
@@ -29,6 +32,7 @@ import tn.esprit.Champions.services.wallet_currencyService;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -566,7 +570,7 @@ public class crud_wallet {
 
                 if (node instanceof VBox card) {
 
-                    // 🔥 index 1 = lblName (PAS 0)
+
                     Label lblName = (Label) card.getChildren().get(1);
 
                     if (lblName.getText().contains(String.valueOf(walletId))
@@ -858,11 +862,15 @@ public class crud_wallet {
 
         card.setStyle(styleInitial);
 
-        // ----------- Emoji transactions -----------
+        // ----------- Emoji transactions 💸 -----------
         Label lblTransactions = new Label("💸");
         lblTransactions.setStyle("-fx-font-size: 16px; -fx-text-fill: black; -fx-cursor: hand;");
 
-        HBox topBar = new HBox(lblTransactions);
+        // ----------- Flèche pour le verso -----------
+        Label lblDates = new Label("⬆️");
+        lblDates.setStyle("-fx-font-size: 18px; -fx-cursor: hand;");
+
+        HBox topBar = new HBox(10, lblTransactions, lblDates);
         topBar.setAlignment(Pos.TOP_LEFT);
         topBar.setMaxWidth(Double.MAX_VALUE);
 
@@ -877,7 +885,6 @@ public class crud_wallet {
         String statutText = (w.getStatut() != null ? w.getStatut().name() : "");
 
         Label lblInfo = new Label(typeText + " • " + statutText);
-
         if ("bloque".equalsIgnoreCase(statutText))
             lblInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px;");
         else if ("actif".equalsIgnoreCase(statutText))
@@ -902,18 +909,15 @@ public class crud_wallet {
                 empty.setStyle("-fx-text-fill: #a0a0a0;");
                 currencyBox.getChildren().add(empty);
             } else {
-
                 for (int i = 0; i < Math.min(2, currencies.size()); i++) {
                     wallet_currency wc = currencies.get(i);
 
                     HBox line = new HBox(10);
                     line.setAlignment(Pos.CENTER);
 
-                    // 🔥 NOM via CurrencyService
                     String currencyName;
                     try {
-                        currencyName =
-                                currencyService.getCurrencyNameById(wc.getId_currency());
+                        currencyName = currencyService.getCurrencyNameById(wc.getId_currency());
                     } catch (SQLException ex) {
                         currencyName = "N/A";
                     }
@@ -921,8 +925,7 @@ public class crud_wallet {
                     Label name = new Label(currencyName);
                     name.setStyle("-fx-text-fill: #2c2c2c; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-                    Label solde =
-                            new Label(String.format("%.2f", wc.getSolde()));
+                    Label solde = new Label(String.format("%.2f", wc.getSolde()));
                     solde.setStyle("-fx-text-fill: #4a4a4a; -fx-font-size: 14px;");
 
                     line.getChildren().addAll(name, solde);
@@ -941,109 +944,38 @@ public class crud_wallet {
             e.printStackTrace();
         }
 
-        // ----------- Clic emoji transactions -----------
+        // ----------- Clic sur 💸 pour afficher le tableau de transactions -----------
         lblTransactions.setOnMouseClicked(e -> {
             try {
                 TransactionService transactionService = new TransactionService();
-                List<transaction> transactions =
-                        transactionService.getTransactionsByWallet(w.getIdWallet());
+                List<transaction> transactions = transactionService.getTransactionsByWallet(w.getIdWallet());
 
                 int walletId = w.getIdWallet();
-
                 TableView<transaction> table = new TableView<>();
 
                 TableColumn<transaction, String> sourceCol = new TableColumn<>("Source");
                 sourceCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(
-                                walletService.SelectById(
-                                        cell.getValue().getIdWalletSource()
-                                ).getRib()
-                        )
-                );
+                        new SimpleStringProperty(walletService.SelectById(cell.getValue().getIdWalletSource()).getRib()));
 
                 TableColumn<transaction, String> destCol = new TableColumn<>("Destination");
                 destCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(
-                                walletService.SelectById(
-                                        cell.getValue().getIdWalletDestination()
-                                ).getRib()
-                        )
-                );
+                        new SimpleStringProperty(walletService.SelectById(cell.getValue().getIdWalletDestination()).getRib()));
 
-                TableColumn<transaction, String> currencyCol =
-                        new TableColumn<>("Currency");
+                TableColumn<transaction, String> currencyCol = new TableColumn<>("Currency");
                 currencyCol.setCellValueFactory(cell -> {
                     try {
-                        String name =
-                                currencyService.getCurrencyNameById(
-                                        cell.getValue().getCurrencyId()
-                                );
+                        String name = currencyService.getCurrencyNameById(cell.getValue().getCurrencyId());
                         return new SimpleStringProperty(name);
                     } catch (SQLException ex) {
                         return new SimpleStringProperty("N/A");
                     }
                 });
 
-                TableColumn<transaction, Double> montantCol =
-                        new TableColumn<>("Montant");
-                montantCol.setCellValueFactory(
-                        new PropertyValueFactory<>("montant"));
+                TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
+                montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
 
-                TableColumn<transaction, LocalDateTime> dateCol =
-                        new TableColumn<>("Date");
-                dateCol.setCellValueFactory(
-                        new PropertyValueFactory<>("dateTransaction"));
-
-                // 🗑 Delete
-                TableColumn<transaction, Void> deleteCol =
-                        new TableColumn<>("Delete");
-
-                deleteCol.setCellFactory(col -> new TableCell<>() {
-                    private final Label trash = new Label("🗑");
-
-                    {
-                        trash.setStyle("-fx-text-fill: red; -fx-cursor: hand;");
-                        trash.setOnMouseClicked(ev -> {
-                            transaction t =
-                                    getTableView().getItems().get(getIndex());
-                            try {
-                                transactionService.deleteOne(t);
-                                getTableView().getItems().remove(t);
-                            } catch (SQLException ex) {
-                                ex.printStackTrace();
-                            }
-                        });
-                    }
-
-                    @Override
-                    protected void updateItem(Void item, boolean empty) {
-                        super.updateItem(item, empty);
-                        setGraphic(empty ? null : trash);
-                    }
-                });
-
-                table.getColumns().addAll(
-                        sourceCol, destCol, montantCol,
-                        currencyCol, dateCol, deleteCol
-                );
-
-                // 🔴🟢 Couleur ligne
-                table.setRowFactory(tv -> new TableRow<>() {
-                    @Override
-                    protected void updateItem(transaction item, boolean empty) {
-                        super.updateItem(item, empty);
-
-                        if (item == null || empty) {
-                            setStyle("");
-                        } else if (item.getIdWalletSource() == walletId) {
-                            setStyle("-fx-background-color: #ffcccc;");
-                        } else if (item.getIdWalletDestination() == walletId) {
-                            setStyle("-fx-background-color: #ccffcc;");
-                        } else {
-                            setStyle("");
-                        }
-                    }
-                });
+                TableColumn<transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
+                dateCol.setCellValueFactory(new PropertyValueFactory<>("dateTransaction"));
 
                 table.setItems(FXCollections.observableArrayList(transactions));
 
@@ -1055,6 +987,84 @@ public class crud_wallet {
                 stage.show();
 
             } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        // ----------- Clic sur la flèche verso pour afficher les dates sur la carte -----------
+        lblDates.setOnMouseClicked(e -> {
+            try {
+                WalletService walletService = new WalletService();
+                wallet wUpdated = walletService.SelectById(w.getIdWallet());
+
+                RotateTransition rotateOut = new RotateTransition(Duration.millis(300), card);
+                rotateOut.setAxis(Rotate.Y_AXIS);
+                rotateOut.setFromAngle(0);
+                rotateOut.setToAngle(90);
+                rotateOut.setOnFinished(ev -> {
+
+                    // Contenu verso
+                    Label lblBack = new Label("⬅️");
+                    lblBack.setStyle("-fx-font-size: 20px; -fx-cursor: hand;");
+
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy - HH:mm");
+
+// Date de création
+                    Label lblCreationTitle = new Label("Date de création :");
+                    lblCreationTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;");
+                    Label lblCreationValue = new Label(
+                            wUpdated.getDateCreation() != null ? wUpdated.getDateCreation().format(formatter) : "N/A");
+                    lblCreationValue.setStyle("-fx-font-size: 16px; -fx-text-fill: #1a5f7a;");
+                    VBox creationBox = new VBox(2, lblCreationTitle, lblCreationValue);
+                    creationBox.setAlignment(Pos.CENTER);
+
+// Date de dernière modification
+                    Label lblModifTitle = new Label("Dernière modification :");
+                    lblModifTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;");
+                    Label lblModifValue = new Label(
+                            wUpdated.getDateDerniereModification() != null ? wUpdated.getDateDerniereModification().format(formatter) : "N/A");
+                    lblModifValue.setStyle("-fx-font-size: 16px; -fx-text-fill: #1a5f7a;");
+                    VBox modifBox = new VBox(2, lblModifTitle, lblModifValue);
+                    modifBox.setAlignment(Pos.CENTER);
+
+// Verso complet avec la flèche pour retourner
+                    VBox verso = new VBox(15, lblBack, creationBox, modifBox);
+                    verso.setAlignment(Pos.TOP_CENTER);
+                    verso.setPadding(new Insets(20));
+                    card.getChildren().clear();
+                    card.getChildren().add(verso);
+
+                    RotateTransition rotateIn = new RotateTransition(Duration.millis(300), card);
+                    rotateIn.setAxis(Rotate.Y_AXIS);
+                    rotateIn.setFromAngle(90);
+                    rotateIn.setToAngle(0);
+                    rotateIn.play();
+
+                    lblBack.setOnMouseClicked(ev2 -> {
+                        RotateTransition rotateOutBack = new RotateTransition(Duration.millis(300), card);
+                        rotateOutBack.setAxis(Rotate.Y_AXIS);
+                        rotateOutBack.setFromAngle(0);
+                        rotateOutBack.setToAngle(90);
+                        rotateOutBack.setOnFinished(ev3 -> {
+                            card.getChildren().clear();
+                            HBox topBarOriginal = new HBox(10, lblTransactions, lblDates);
+                            topBarOriginal.setAlignment(Pos.TOP_LEFT);
+                            topBarOriginal.setMaxWidth(Double.MAX_VALUE);
+                            card.getChildren().addAll(topBarOriginal, lblName, lblInfo, currencyBox);
+
+                            RotateTransition rotateInBack = new RotateTransition(Duration.millis(300), card);
+                            rotateInBack.setAxis(Rotate.Y_AXIS);
+                            rotateInBack.setFromAngle(90);
+                            rotateInBack.setToAngle(0);
+                            rotateInBack.play();
+                        });
+                        rotateOutBack.play();
+                    });
+
+                });
+                rotateOut.play();
+
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
@@ -1071,7 +1081,6 @@ public class crud_wallet {
         });
 
         card.getChildren().addAll(topBar, lblName, lblInfo, currencyBox);
-
         return card;
     }
     private boolean isWalletCard(Node node) {
