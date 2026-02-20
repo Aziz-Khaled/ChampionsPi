@@ -20,7 +20,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet">
+<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet">
 
     <BorderPane>
 
@@ -150,8 +150,8 @@
                                     <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                     <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
                                 </rowConstraints>
-                                <Label styleClass="label-header" text="Wallet ID" GridPane.columnIndex="0" />
-                                <TextField fx:id="walletIdField" promptText="wallet id" styleClass="text-field" GridPane.columnIndex="1" />
+                                <Label styleClass="label-header" text="Wallet RIB" GridPane.columnIndex="0" />
+                                <TextField fx:id="walletIdField" promptText="wallet RIB" styleClass="text-field" GridPane.columnIndex="1" />
                                 <Label styleClass="label-header" text="Currency" GridPane.rowIndex="1" />
                                 <ComboBox fx:id="currencyComboBox" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                             </GridPane>

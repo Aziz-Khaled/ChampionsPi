@@ -15,6 +15,60 @@ public class WalletService implements CRUD<wallet> {
     public WalletService() {
         cnx = DbConnection.getInstance().getCnx();
     }
+    private String generateRIB() {
+        int number = (int)(Math.random() * 90000000) + 10000000;
+        return String.valueOf(number);
+    }
+
+    private String generateUniqueRIB() throws SQLException {
+        String rib;
+        boolean exists;
+
+        do {
+            rib = generateRIB();
+
+            String sql = "SELECT COUNT(*) FROM wallet WHERE rib = ?";
+            PreparedStatement ps = cnx.prepareStatement(sql);
+            ps.setString(1, rib);
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+
+            exists = rs.getInt(1) > 0;
+
+            rs.close();
+            ps.close();
+
+        } while (exists);
+
+        return rib;
+    }
+    public wallet getByRib(String rib) throws SQLException {
+        String query = "SELECT * FROM wallet WHERE rib = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(query)) {
+            pst.setString(1, rib);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    wallet w = new wallet();
+                    w.setIdWallet(rs.getInt("id_wallet"));
+                    w.setRib(rs.getString("rib"));
+                    w.setTypeWallet(typeWallet.valueOf(rs.getString("type_wallet")));
+                    w.setStatut(statutWallet.valueOf(rs.getString("statut")));
+                    w.setSolde(rs.getDouble("solde"));
+                    return w;
+                } else {
+                    return null; // wallet non trouvé
+                }
+            }
+        }
+    }
+    public String getRibById(int idWallet) throws SQLException {
+        String query = "SELECT rib FROM wallet WHERE id_wallet = ?";
+        PreparedStatement pst = cnx.prepareStatement(query);
+        pst.setInt(1, idWallet);
+        ResultSet rs = pst.executeQuery();
+        if (rs.next()) return rs.getString("rib");
+        else throw new SQLException("Wallet introuvable pour id " + idWallet);
+    }
     public wallet getWalletById(int idWallet) {
         wallet w = null;
         try {
@@ -49,7 +103,7 @@ public class WalletService implements CRUD<wallet> {
         return w;
     }
 
-    // Méthode pour récupérer le nom complet d'un utilisateur par son ID
+
     public String getNomProprietaire(int userId) {
         String nomComplet = "Inconnu";
         try {
@@ -68,25 +122,31 @@ public class WalletService implements CRUD<wallet> {
         return nomComplet;
     }
 
+
     @Override
     public void insertOne(wallet wallet) throws SQLException {
-        String query = "INSERT INTO wallet (type_wallet, statut, id_user) VALUES (?, ?, ?)";
+        String rib = generateUniqueRIB();
+        wallet.setRib(rib); // on met le RIB dans l'objet
+
+         String query = "INSERT INTO wallet (type_wallet, statut, id_user, rib, date_creation, date_derniere_modification) " +
+                "VALUES (?, ?, ?, ?, NOW(), NOW())";
         PreparedStatement pst = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         pst.setString(1, wallet.getTypeWallet().name());
         pst.setString(2, wallet.getStatut().name());
         pst.setInt(3, wallet.getIdUser());
+        pst.setString(4, wallet.getRib());
         pst.executeUpdate();
 
-        // Récupérer l'ID auto-généré
         ResultSet rs = pst.getGeneratedKeys();
         if (rs.next()) {
             wallet.setIdWallet(rs.getInt(1));
+            wallet.setRib(rib);
         }
 
         rs.close();
         pst.close();
 
-        System.out.println("Wallet inséré avec ID : " + wallet.getIdWallet());
+        System.out.println("Wallet inséré avec ID : " + wallet.getIdWallet() + " et RIB : " + wallet.getRib());
     }
 
     @Override
@@ -148,6 +208,9 @@ public class WalletService implements CRUD<wallet> {
                 wallet.setStatut(statutWallet.valueOf(statut));
             }
 
+            // ⚡ Ajouter cette ligne pour récupérer le RIB
+            wallet.setRib(rs.getString("rib"));
+
             wallets.add(wallet);
         }
 
@@ -156,7 +219,7 @@ public class WalletService implements CRUD<wallet> {
 
         return wallets;
     }
-    public wallet SelectById(int idWallet) throws SQLException {
+    public wallet SelectById(int idWallet) {
         String query = "SELECT * FROM wallet WHERE id_wallet = ?";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setInt(1, idWallet);
@@ -165,14 +228,30 @@ public class WalletService implements CRUD<wallet> {
                 wallet w = new wallet();
                 w.setIdWallet(rs.getInt("id_wallet"));
                 w.setIdUser(rs.getInt("id_user"));
-                w.setTypeWallet(typeWallet.valueOf(rs.getString("type_wallet")));
-                w.setStatut(statutWallet.valueOf(rs.getString("statut")));
+                w.setRib(rs.getString("rib"));
+
+                String typeStr = rs.getString("type_wallet");
+                if (typeStr != null) w.setTypeWallet(typeWallet.valueOf(typeStr));
+
+                String statutStr = rs.getString("statut");
+                if (statutStr != null) w.setStatut(statutWallet.valueOf(statutStr));
 
                 w.setSolde(rs.getDouble("solde"));
+
+                // -------- Dates --------
+                Timestamp tsCreation = rs.getTimestamp("date_creation");
+                if (tsCreation != null) w.setDateCreation(tsCreation.toLocalDateTime());
+
+                Timestamp tsModification = rs.getTimestamp("date_derniere_modification");
+                if (tsModification != null) w.setDateDerniereModification(tsModification.toLocalDateTime());
+
                 return w;
             } else {
                 return null;
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

@@ -17,13 +17,17 @@ public class TransactionService implements CRUD<transaction> {
 
     public TransactionService() {
         cnx = DbConnection.getInstance().getCnx();
-        walletCurrencyService = new wallet_currencyService(); // instanciation pour l'appel non statique
+        walletCurrencyService = new wallet_currencyService();
     }
+
+
+
 
 
     @Override
     public void insertOne(transaction t) throws SQLException {
         WalletService walletService = new WalletService();
+        wallet_currencyService walletCurrencyService = new wallet_currencyService();
 
         wallet sourceWallet = walletService.SelectById(t.getIdWalletSource());
         wallet destWallet = walletService.SelectById(t.getIdWalletDestination());
@@ -35,90 +39,95 @@ public class TransactionService implements CRUD<transaction> {
         if (sourceWallet.getStatut() == statutWallet.bloque)
             throw new SQLException("Le wallet source est bloqué !");
 
-
+        // 🔹 Vérifications types wallet
         if (sourceWallet.getTypeWallet() == typeWallet.fiat && destWallet.getTypeWallet() != typeWallet.fiat)
             throw new SQLException("Un wallet fiat ne peut envoyer qu'à un autre wallet fiat !");
         if ((sourceWallet.getTypeWallet() == typeWallet.crypto || sourceWallet.getTypeWallet() == typeWallet.trading)
                 && destWallet.getTypeWallet() == typeWallet.fiat)
             throw new SQLException("Crypto/Trading ne peut pas envoyer vers un wallet fiat !");
 
-
+        // 🔹 Vérification currency pour wallet trading
         if (sourceWallet.getTypeWallet() == typeWallet.crypto && destWallet.getTypeWallet() == typeWallet.trading) {
             String query = "SELECT is_trading FROM currency WHERE id_currency = ?";
             boolean isTradingCurrency = false;
-
             try (PreparedStatement stmt = cnx.prepareStatement(query)) {
                 stmt.setInt(1, t.getCurrencyId());
                 ResultSet rs = stmt.executeQuery();
                 if (rs.next()) isTradingCurrency = rs.getBoolean("is_trading");
             }
-
-            if (!isTradingCurrency) {
+            if (!isTradingCurrency)
                 throw new SQLException("Cette currency n'est pas autorisée pour un wallet TRADING !");
-            }
         }
 
-
-        wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
-                sourceWallet.getIdWallet(), t.getCurrencyId()
-        );
+        // 🔹 Vérifie le solde du wallet source
+        wallet_currency sourceCurrency = walletCurrencyService
+                .getWalletCurrencyByWalletAndId(sourceWallet.getIdWallet(), t.getCurrencyId());
         if (sourceCurrency == null)
             throw new SQLException("La currency n'existe pas dans le wallet source !");
 
         BigDecimal soldeSource = BigDecimal.valueOf(sourceCurrency.getSolde());
         BigDecimal montant = BigDecimal.valueOf(t.getMontant());
-
         if (soldeSource.compareTo(montant) < 0)
             throw new SQLException("Solde insuffisant dans le wallet source !");
 
+        boolean previousAutoCommit = cnx.getAutoCommit();
+        try {
+            cnx.setAutoCommit(false);
 
-        String updateSourceSql = "UPDATE wallet_currency SET solde = solde - ? WHERE id_wallet = ? AND id_currency = ?";
-        try (PreparedStatement pst = cnx.prepareStatement(updateSourceSql)) {
-            pst.setDouble(1, t.getMontant());
-            pst.setInt(2, sourceWallet.getIdWallet());
-            pst.setInt(3, t.getCurrencyId());
-            pst.executeUpdate();
-        }
+            // 🔹 Débite le wallet source
+            sourceCurrency.setSolde(soldeSource.subtract(montant).doubleValue());
+            walletCurrencyService.updateOne(sourceCurrency);
 
+            // 🔹 Créditer le wallet destinataire
+            wallet_currency destCurrency = walletCurrencyService
+                    .getWalletCurrencyByWalletAndId(destWallet.getIdWallet(), t.getCurrencyId());
 
-        wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(
-                destWallet.getIdWallet(), t.getCurrencyId()
-        );
-
-        if (destCurrency == null) {
-
-            String insertDestSql = "INSERT INTO wallet_currency (id_wallet, id_currency, solde, nom_currency) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement pst = cnx.prepareStatement(insertDestSql)) {
-                pst.setInt(1, destWallet.getIdWallet());
-                pst.setInt(2, t.getCurrencyId());
-                pst.setDouble(3, t.getMontant());
-                pst.setString(4, sourceCurrency.getNom_currency()); // nom currency depuis source
-                pst.executeUpdate();
+            if (destCurrency == null) {
+                // Currency n'existe pas → création avec solde initial = 0
+                destCurrency = new wallet_currency();
+                destCurrency.setId_wallet(destWallet.getIdWallet());
+                destCurrency.setId_currency(t.getCurrencyId());
+                destCurrency.setNom_currency(sourceCurrency.getNom_currency());
+                destCurrency.setSolde(0);
+                walletCurrencyService.insertOne(destCurrency);
             }
-        } else {
 
-            String updateDestSql = "UPDATE wallet_currency SET solde = solde + ? WHERE id_wallet = ? AND id_currency = ?";
-            try (PreparedStatement pst = cnx.prepareStatement(updateDestSql)) {
-                pst.setDouble(1, t.getMontant());
+            // Ajoute le montant après insertion
+            destCurrency.setSolde(destCurrency.getSolde() + t.getMontant());
+            walletCurrencyService.updateOne(destCurrency);
+
+            // 🔹 Insère la transaction
+            String insertTransactionSql = "INSERT INTO transaction " +
+                    "(id_wallet_source, id_wallet_destination, montant, `type`, statut, date_transaction, id_currency) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pst = cnx.prepareStatement(insertTransactionSql)) {
+                pst.setInt(1, sourceWallet.getIdWallet());
                 pst.setInt(2, destWallet.getIdWallet());
-                pst.setInt(3, t.getCurrencyId());
+                pst.setDouble(3, t.getMontant());
+                pst.setString(4, t.getType().name());
+                pst.setString(5, t.getStatut().name());
+                pst.setObject(6, t.getDateTransaction());
+                pst.setInt(7, t.getCurrencyId());
                 pst.executeUpdate();
             }
-        }
 
+            // 🔹 Met à jour la date de modification des wallets
+            String updateWalletSql = "UPDATE wallet SET date_derniere_modification = NOW() WHERE id_wallet = ?";
+            try (PreparedStatement pst = cnx.prepareStatement(updateWalletSql)) {
+                pst.setInt(1, sourceWallet.getIdWallet());
+                pst.executeUpdate();
+                pst.setInt(1, destWallet.getIdWallet());
+                pst.executeUpdate();
+            }
 
-        String insertTransactionSql = "INSERT INTO transaction " +
-                "(id_wallet_source, id_wallet_destination, montant, `type`, statut, date_transaction, id_currency) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement pst = cnx.prepareStatement(insertTransactionSql)) {
-            pst.setInt(1, t.getIdWalletSource());
-            pst.setInt(2, t.getIdWalletDestination());
-            pst.setDouble(3, t.getMontant());
-            pst.setString(4, t.getType().name());
-            pst.setString(5, t.getStatut().name());
-            pst.setObject(6, t.getDateTransaction());
-            pst.setInt(7, t.getCurrencyId());
-            pst.executeUpdate();
+            cnx.commit();
+            System.out.println("Transaction effectuée avec succès : " + t);
+
+        } catch (SQLException ex) {
+            cnx.rollback();
+            throw new SQLException("Erreur lors de l'insertion de la transaction : " + ex.getMessage());
+        } finally {
+            cnx.setAutoCommit(previousAutoCommit);
         }
     }
     @Override
@@ -206,6 +215,13 @@ public class TransactionService implements CRUD<transaction> {
         try (PreparedStatement pst = cnx.prepareStatement(updateTransactionSql)) {
             pst.setDouble(1, newAmount);
             pst.setInt(2, t.getIdTransaction());
+            pst.executeUpdate();
+        }
+        String updateWalletSql = "UPDATE wallet SET date_derniere_modification = NOW() WHERE id_wallet = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(updateWalletSql)) {
+            pst.setInt(1, oldTransaction.getIdWalletSource());
+            pst.executeUpdate();
+            pst.setInt(1, oldTransaction.getIdWalletDestination());
             pst.executeUpdate();
         }
     }

@@ -1,6 +1,7 @@
 package tn.esprit.Champions.gui;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -17,6 +18,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.CurrencyService;
@@ -27,8 +29,10 @@ import tn.esprit.Champions.services.wallet_currencyService;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -169,13 +173,41 @@ public class crud_wallet {
         return false;
     }
     private void clearTransactionForm() {
-        if (sourceWalletField != null) sourceWalletField.clear();
-        if (destinationWalletField != null) destinationWalletField.clear();
-        if (amountField != null) amountField.clear();
-        if (typeTransactionBox != null) typeTransactionBox.getSelectionModel().clearSelection();
-        if (statusTransactionBox != null) statusTransactionBox.getSelectionModel().clearSelection();
-        if (currencyTransactionBox != null) currencyTransactionBox.getSelectionModel().clearSelection();
+        // Réinitialiser le champ du wallet source
+        if (sourceWalletField != null) {
+            sourceWalletField.clear();
+            sourceWalletField.setDisable(false); // rendre éditable
+        }
 
+        // Réinitialiser le champ du wallet destination
+        if (destinationWalletField != null) {
+            destinationWalletField.clear();
+            destinationWalletField.setDisable(false);
+        }
+
+        // Réinitialiser le champ montant
+        if (amountField != null) {
+            amountField.clear();
+        }
+
+        // Réinitialiser le type de transaction
+        if (typeTransactionBox != null) {
+            typeTransactionBox.getSelectionModel().clearSelection();
+        }
+
+        // Réinitialiser le statut de transaction
+        if (statusTransactionBox != null) {
+            statusTransactionBox.getSelectionModel().clearSelection();
+        }
+
+        // Réinitialiser la sélection de la currency et rendre éditable
+        if (currencyTransactionBox != null) {
+            currencyTransactionBox.getSelectionModel().clearSelection();
+            currencyTransactionBox.setDisable(false);
+        }
+
+        // Aucune transaction sélectionnée
+        selectedTransaction = null;
     }
     private void clearWalletSelection() {
         if (selectedCard != null) {
@@ -365,11 +397,16 @@ public class crud_wallet {
     @FXML
     private void handleAddTransaction() {
         try {
-            int idWalletSource = Integer.parseInt(sourceWalletField.getText().trim());
-            int idWalletDest = Integer.parseInt(destinationWalletField.getText().trim());
+            String ribSource = sourceWalletField.getText().trim();
+            String ribDest = destinationWalletField.getText().trim();
             String currencyName = currencyTransactionBox.getValue();
             double montant = Double.parseDouble(amountField.getText().trim());
 
+            // 🔎 Vérifications de base
+            if (ribSource.isEmpty() || ribDest.isEmpty()) {
+                new Alert(Alert.AlertType.WARNING, "Veuillez entrer les RIB !").show();
+                return;
+            }
             if (currencyName == null || currencyName.isEmpty()) {
                 new Alert(Alert.AlertType.WARNING, "Veuillez sélectionner une currency !").show();
                 return;
@@ -379,42 +416,77 @@ public class crud_wallet {
                 return;
             }
 
+            WalletService walletService = new WalletService();
+
+            // 🔥 Récupération des wallets via RIB
+            wallet sourceWallet = walletService.getByRib(ribSource);
+            wallet destWallet = walletService.getByRib(ribDest);
+
+            if (sourceWallet == null || destWallet == null) {
+                new Alert(Alert.AlertType.ERROR, "Wallet introuvable !").show();
+                return;
+            }
+
+            // 🚫 Empêcher transfert vers soi-même
+            if (sourceWallet.getIdWallet() == destWallet.getIdWallet()) {
+                new Alert(Alert.AlertType.WARNING,
+                        "Vous ne pouvez pas transférer vers le même wallet !").show();
+                return;
+            }
+
             int idCurrency = walletCurrencyService.getCurrencyIdByName(currencyName);
             if (idCurrency == 0) {
                 new Alert(Alert.AlertType.ERROR, "Currency introuvable !").show();
                 return;
             }
 
-            // Créer la transaction
+            // 💰 Vérifier solde suffisant pour la currency spécifique
+            wallet_currency sourceCurrency = walletCurrencyService
+                    .getWalletCurrencyByWalletAndId(sourceWallet.getIdWallet(), idCurrency);
+            if (sourceCurrency == null) {
+                new Alert(Alert.AlertType.WARNING,
+                        "Le wallet source ne contient pas cette currency !").show();
+                return;
+            }
+            if (sourceCurrency.getSolde() < montant) {
+                new Alert(Alert.AlertType.WARNING,
+                        "Solde insuffisant dans cette currency !").show();
+                return;
+            }
+
+            // 📦 Création de la transaction
             transaction t = new transaction();
-            t.setIdWalletSource(idWalletSource);
-            t.setIdWalletDestination(idWalletDest);
+            t.setIdWalletSource(sourceWallet.getIdWallet());
+            t.setIdWalletDestination(destWallet.getIdWallet());
             t.setMontant(montant);
             t.setCurrencyId(idCurrency);
             t.setDateTransaction(java.time.LocalDateTime.now());
             t.setType(typeTransaction.TRANSFERT);
             t.setStatut(StatutTransaction.Completed);
 
-            // Appeler insertOne pour tout le contrôle et la mise à jour
+            // 🔄 Exécution de la transaction avec tous les contrôles
             TransactionService transactionService = new TransactionService();
             transactionService.insertOne(t);
 
+            // 🔄 Rafraîchir affichage
             loadWallets();
-            updateWalletBalanceDisplay(idWalletSource);
-            updateWalletBalanceDisplay(idWalletDest);
+
 
             new Alert(Alert.AlertType.INFORMATION, "Transaction effectuée avec succès !").show();
 
+            // 🧹 Nettoyage
             sourceWalletField.clear();
             destinationWalletField.clear();
             amountField.clear();
             currencyTransactionBox.getSelectionModel().clearSelection();
 
         } catch (NumberFormatException e) {
-            new Alert(Alert.AlertType.WARNING, "Veuillez entrer des valeurs valides pour les champs numériques !").show();
+            new Alert(Alert.AlertType.WARNING,
+                    "Veuillez entrer un montant valide !").show();
         } catch (SQLException e) {
             e.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Erreur lors de la transaction : " + e.getMessage()).show();
+            new Alert(Alert.AlertType.ERROR,
+                    "Erreur lors de la transaction : " + e.getMessage()).show();
         }
     }
     @FXML
@@ -462,8 +534,7 @@ public class crud_wallet {
             transactionService.updateOne(selectedTransaction);
 
             loadWallets();
-            updateWalletBalanceDisplay(sourceId);
-            updateWalletBalanceDisplay(destId);
+
 
             new Alert(Alert.AlertType.INFORMATION, "Transaction mise à jour avec succès !").show();
 
@@ -479,7 +550,9 @@ public class crud_wallet {
     }
 
     private void updateWalletBalanceDisplay(int walletId) {
+
         List<wallet_currency> currencies;
+
         try {
             currencies = walletCurrencyService.getCurrenciesByWallet(walletId);
         } catch (SQLException e) {
@@ -488,31 +561,56 @@ public class crud_wallet {
         }
 
         for (HBox container : List.of(walletContainer, walletContainer1, walletContainer2)) {
+
             for (Node node : container.getChildren()) {
+
                 if (node instanceof VBox card) {
-                    Label lblName = (Label) card.getChildren().get(0); // "Wallet #id"
-                    if (lblName.getText().contains(String.valueOf(walletId))) {
-                        VBox currencyBox = (VBox) card.getChildren().get(2); // currencyBox
+
+                    // 🔥 index 1 = lblName (PAS 0)
+                    Label lblName = (Label) card.getChildren().get(1);
+
+                    if (lblName.getText().contains(String.valueOf(walletId))
+                            || lblName.getText().contains(selectedWallet != null ? selectedWallet.getRib() : "")) {
+
+                        // 🔥 index 3 = currencyBox (PAS 2)
+                        VBox currencyBox = (VBox) card.getChildren().get(3);
+
                         for (Node lineNode : currencyBox.getChildren()) {
+
                             if (lineNode instanceof HBox line) {
-                                if (line.getChildren().size() < 2) continue; // ignore "View all" button
+
+                                if (line.getChildren().size() < 2) continue;
+
                                 Label nameLabel = (Label) line.getChildren().get(0);
                                 Label soldeLabel = (Label) line.getChildren().get(1);
 
                                 String currencyName = nameLabel.getText();
+
                                 currencies.stream()
-                                        .filter(wc -> wc.getNom_currency().equals(currencyName))
+                                        .filter(wc -> {
+                                            try {
+                                                String dbName = currencyService
+                                                        .getCurrencyNameById(wc.getId_currency());
+                                                return dbName.equals(currencyName);
+                                            } catch (SQLException ex) {
+                                                return false;
+                                            }
+                                        })
                                         .findFirst()
-                                        .ifPresent(wc -> soldeLabel.setText(String.format("%.2f", wc.getSolde())));
+                                        .ifPresent(wc ->
+                                                soldeLabel.setText(
+                                                        String.format("%.2f", wc.getSolde())
+                                                )
+                                        );
                             }
                         }
-                        return;
                     }
                 }
             }
         }
     }
 
+    // ------------------------ Gestion de l'affichage des wallets ------------------------
     private void showWalletDetails(wallet w, VBox card) {
         selectedWallet = w;
 
@@ -529,7 +627,7 @@ public class crud_wallet {
         // -------------------- Style de la carte sélectionnée --------------------
         selectedCard = card;
         selectedCard.setStyle(
-                "-fx-background-color: #d3d3d3;" + // gris clair
+                "-fx-background-color: #d3d3d3;" +  // gris clair
                         "-fx-background-radius: 20;" +
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);"
         );
@@ -541,23 +639,18 @@ public class crud_wallet {
 
         // -------------------- Remplir ID du wallet dans le formulaire --------------------
         if (walletIdField != null) {
-            walletIdField.setText(String.valueOf(w.getIdWallet()));
+            walletIdField.setText(w.getRib());
         }
 
         // -------------------- Charger les currencies pour le formulaire Wallet --------------------
         if (currencyComboBox != null) {
             try {
                 List<currency> allCurrencies = currencyService.SelectAll();
-
                 List<currency> filteredCurrencies = allCurrencies.stream()
                         .filter(c -> {
-                            if (w.getTypeWallet() == typeWallet.trading) {
-                                return c.getType_currency() == typeCurrency.crypto && c.isIs_trading();
-                            } else if (w.getTypeWallet() == typeWallet.crypto) {
-                                return c.getType_currency() == typeCurrency.crypto;
-                            } else if (w.getTypeWallet() == typeWallet.fiat) {
-                                return c.getType_currency() == typeCurrency.fiat;
-                            }
+                            if (w.getTypeWallet() == typeWallet.trading) return c.getType_currency() == typeCurrency.crypto && c.isIs_trading();
+                            else if (w.getTypeWallet() == typeWallet.crypto) return c.getType_currency() == typeCurrency.crypto;
+                            else if (w.getTypeWallet() == typeWallet.fiat) return c.getType_currency() == typeCurrency.fiat;
                             return false;
                         })
                         .collect(Collectors.toList());
@@ -565,6 +658,7 @@ public class crud_wallet {
                 currencyComboBox.setItems(FXCollections.observableArrayList(filteredCurrencies));
                 currencyComboBox.setPromptText("Sélectionner currency");
 
+                // Personnalisation affichage des items
                 currencyComboBox.setCellFactory(c -> new ListCell<>() {
                     @Override
                     protected void updateItem(currency item, boolean empty) {
@@ -572,7 +666,6 @@ public class crud_wallet {
                         setText(empty || item == null ? "" : item.getNom());
                     }
                 });
-
                 currencyComboBox.setButtonCell(new ListCell<>() {
                     @Override
                     protected void updateItem(currency item, boolean empty) {
@@ -580,7 +673,6 @@ public class crud_wallet {
                         setText(empty || item == null ? "" : item.getNom());
                     }
                 });
-
             } catch (SQLException e) {
                 e.printStackTrace();
                 new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement des currencies !").show();
@@ -589,7 +681,7 @@ public class crud_wallet {
 
         // -------------------- Remplir le formulaire Transaction --------------------
         if (sourceWalletField != null) {
-            sourceWalletField.setText(String.valueOf(w.getIdWallet())); // ID wallet source
+            sourceWalletField.setText(w.getRib());
             sourceWalletField.setEditable(false);
         }
 
@@ -597,7 +689,6 @@ public class crud_wallet {
             try {
                 List<wallet_currency> walletCurrencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
                 List<currency> allCurrencies = currencyService.SelectAll();
-
                 Map<String, currency> currencyMap = allCurrencies.stream()
                         .collect(Collectors.toMap(currency::getNom, c -> c));
 
@@ -622,13 +713,13 @@ public class crud_wallet {
             }
         }
     }
-    // Recherche
+
+    // ------------------------ Recherche Wallet ------------------------
     @FXML
     private void handleSearch(KeyEvent event) {
         if (searchField == null) return;
 
         String filter = searchField.getText().toLowerCase();
-
         try {
             List<wallet> wallets = walletService.SelectAll();
             List<wallet> filtered = wallets.stream()
@@ -638,21 +729,19 @@ public class crud_wallet {
                     .collect(Collectors.toList());
 
             displayWallets(filtered);
-
         } catch (SQLException e) {
             e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Erreur lors de la recherche !").show();
         }
     }
 
-    // Effacer la recherche
     @FXML
     private void handleClearSearch() {
         if (searchField != null) searchField.clear();
         loadWallets();
     }
 
-    // Charger les wallets
+    // ------------------------ Chargement Wallets ------------------------
     private void loadWallets() {
         try {
             List<wallet> wallets = walletService.SelectAll();
@@ -663,6 +752,7 @@ public class crud_wallet {
         }
     }
 
+    // ------------------------ Affichage Wallets ------------------------
     private void displayWallets(List<wallet> wallets) {
         walletContainer.getChildren().clear();
         walletContainer1.getChildren().clear();
@@ -677,6 +767,8 @@ public class crud_wallet {
             else if (w.getTypeWallet() == typeWallet.trading) walletContainer2.getChildren().add(card);
         }
     }
+
+    // ------------------------ Vue étendue d'un wallet ------------------------
     private void showExpandedWallet(wallet w, List<wallet_currency> currencies) {
         Stage stage = new Stage();
         stage.setTitle("Wallet #" + w.getIdWallet());
@@ -690,26 +782,25 @@ public class crud_wallet {
                         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8,0,0,3);"
         );
 
-        // ----------- Titre Wallet -----------
+        // Titre
         Label title = new Label("Wallet #" + w.getIdWallet());
         title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;");
         title.setAlignment(Pos.CENTER);
         title.setMaxWidth(Double.MAX_VALUE);
 
-        // ----------- Type + Statut -----------
-        String typeText = (w.getTypeWallet() != null ? w.getTypeWallet().name() : "");
-        String statutText = (w.getStatut() != null ? w.getStatut().name() : "");
+        // Type + Statut
+        String typeText = w.getTypeWallet() != null ? w.getTypeWallet().name() : "";
+        String statutText = w.getStatut() != null ? w.getStatut().name() : "";
         Label lblInfo = new Label(typeText + " • " + statutText);
-        if ("bloque".equalsIgnoreCase(statutText))
-            lblInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px;");
-        else if ("actif".equalsIgnoreCase(statutText))
-            lblInfo.setStyle("-fx-text-fill: green; -fx-font-size: 13px;");
-        else
-            lblInfo.setStyle("-fx-text-fill: #6e6e6e; -fx-font-size: 13px;");
+        lblInfo.setStyle(switch (statutText.toLowerCase()) {
+            case "bloque" -> "-fx-text-fill: red; -fx-font-size: 13px;";
+            case "actif" -> "-fx-text-fill: green; -fx-font-size: 13px;";
+            default -> "-fx-text-fill: #6e6e6e; -fx-font-size: 13px;";
+        });
         lblInfo.setAlignment(Pos.CENTER);
         lblInfo.setMaxWidth(Double.MAX_VALUE);
 
-        // ----------- Box des currencies -----------
+        // Box des currencies
         VBox currencyBox = new VBox();
         currencyBox.setSpacing(10);
         currencyBox.setPadding(new Insets(10));
@@ -742,9 +833,7 @@ public class crud_wallet {
         scrollPane.setPrefHeight(300);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-insets: 0;");
 
-
         root.getChildren().addAll(title, lblInfo, scrollPane);
-
         Scene scene = new Scene(root, 320, 400);
         stage.setScene(scene);
         stage.show();
@@ -769,20 +858,16 @@ public class crud_wallet {
 
         card.setStyle(styleInitial);
 
-        // ----------- Label emoji transactions en haut à droite -----------
+        // ----------- Emoji transactions -----------
         Label lblTransactions = new Label("💸");
         lblTransactions.setStyle("-fx-font-size: 16px; -fx-text-fill: black; -fx-cursor: hand;");
 
         HBox topBar = new HBox(lblTransactions);
         topBar.setAlignment(Pos.TOP_LEFT);
-        topBar.setPadding(new Insets(0, 0, 0, 0)); // ← 8px depuis le haut et la gauche
         topBar.setMaxWidth(Double.MAX_VALUE);
 
-
-
-
-        // ----------- Titre Wallet -----------
-        Label lblName = new Label("Wallet #" + w.getIdWallet());
+        // ----------- Titre Wallet (RIB) -----------
+        Label lblName = new Label("Wallet RIB: " + w.getRib());
         lblName.setStyle("-fx-text-fill: #1a5f7a; -fx-font-size: 18px; -fx-font-weight: bold;");
         lblName.setAlignment(Pos.CENTER);
         lblName.setMaxWidth(Double.MAX_VALUE);
@@ -790,39 +875,54 @@ public class crud_wallet {
         // ----------- Type + Statut -----------
         String typeText = (w.getTypeWallet() != null ? w.getTypeWallet().name() : "");
         String statutText = (w.getStatut() != null ? w.getStatut().name() : "");
+
         Label lblInfo = new Label(typeText + " • " + statutText);
+
         if ("bloque".equalsIgnoreCase(statutText))
             lblInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px;");
         else if ("actif".equalsIgnoreCase(statutText))
             lblInfo.setStyle("-fx-text-fill: green; -fx-font-size: 13px;");
         else
             lblInfo.setStyle("-fx-text-fill: #6e6e6e; -fx-font-size: 13px;");
+
         lblInfo.setAlignment(Pos.CENTER);
         lblInfo.setMaxWidth(Double.MAX_VALUE);
 
-        // ----------- Box des currencies (compact) -----------
+        // ----------- Currencies -----------
         VBox currencyBox = new VBox();
         currencyBox.setSpacing(4);
         currencyBox.setAlignment(Pos.CENTER);
+
         try {
-            List<wallet_currency> currencies = walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
+            List<wallet_currency> currencies =
+                    walletCurrencyService.getCurrenciesByWallet(w.getIdWallet());
 
             if (currencies.isEmpty()) {
                 Label empty = new Label("No currencies");
                 empty.setStyle("-fx-text-fill: #a0a0a0;");
                 currencyBox.getChildren().add(empty);
             } else {
+
                 for (int i = 0; i < Math.min(2, currencies.size()); i++) {
                     wallet_currency wc = currencies.get(i);
 
-                    HBox line = new HBox();
-                    line.setSpacing(10);
+                    HBox line = new HBox(10);
                     line.setAlignment(Pos.CENTER);
 
-                    Label name = new Label(wc.getNom_currency());
+                    // 🔥 NOM via CurrencyService
+                    String currencyName;
+                    try {
+                        currencyName =
+                                currencyService.getCurrencyNameById(wc.getId_currency());
+                    } catch (SQLException ex) {
+                        currencyName = "N/A";
+                    }
+
+                    Label name = new Label(currencyName);
                     name.setStyle("-fx-text-fill: #2c2c2c; -fx-font-size: 14px; -fx-font-weight: bold;");
 
-                    Label solde = new Label(String.format("%.2f", wc.getSolde()));
+                    Label solde =
+                            new Label(String.format("%.2f", wc.getSolde()));
                     solde.setStyle("-fx-text-fill: #4a4a4a; -fx-font-size: 14px;");
 
                     line.getChildren().addAll(name, solde);
@@ -841,97 +941,117 @@ public class crud_wallet {
             e.printStackTrace();
         }
 
-        // ----------- Clic sur l'emoji transactions pour ouvrir le tableau -----------
-
+        // ----------- Clic emoji transactions -----------
         lblTransactions.setOnMouseClicked(e -> {
             try {
                 TransactionService transactionService = new TransactionService();
-                List<transaction> transactions = transactionService.getTransactionsByWallet(w.getIdWallet());
+                List<transaction> transactions =
+                        transactionService.getTransactionsByWallet(w.getIdWallet());
+
                 int walletId = w.getIdWallet();
 
-                TableView<transaction> transactionTable = new TableView<>();
-                transactionTable.setPrefHeight(300);
+                TableView<transaction> table = new TableView<>();
 
-                TableColumn<transaction, Integer> sourceCol = new TableColumn<>("Source");
-                sourceCol.setCellValueFactory(new PropertyValueFactory<>("idWalletSource"));
+                TableColumn<transaction, String> sourceCol = new TableColumn<>("Source");
+                sourceCol.setCellValueFactory(cell ->
+                        new SimpleStringProperty(
+                                walletService.SelectById(
+                                        cell.getValue().getIdWalletSource()
+                                ).getRib()
+                        )
+                );
 
-                TableColumn<transaction, Integer> destCol = new TableColumn<>("Destination");
-                destCol.setCellValueFactory(new PropertyValueFactory<>("idWalletDestination"));
+                TableColumn<transaction, String> destCol = new TableColumn<>("Destination");
+                destCol.setCellValueFactory(cell ->
+                        new SimpleStringProperty(
+                                walletService.SelectById(
+                                        cell.getValue().getIdWalletDestination()
+                                ).getRib()
+                        )
+                );
 
-                TableColumn<transaction, String> currencyCol = new TableColumn<>("Currency");
-                currencyCol.setCellValueFactory(cellData -> {
+                TableColumn<transaction, String> currencyCol =
+                        new TableColumn<>("Currency");
+                currencyCol.setCellValueFactory(cell -> {
                     try {
-                        // Récupère le nom via CurrencyService
-                        String currencyName = currencyService.getCurrencyNameById(cellData.getValue().getCurrencyId());
-                        return new javafx.beans.property.SimpleStringProperty(currencyName);
+                        String name =
+                                currencyService.getCurrencyNameById(
+                                        cell.getValue().getCurrencyId()
+                                );
+                        return new SimpleStringProperty(name);
                     } catch (SQLException ex) {
-                        ex.printStackTrace();
-                        return new javafx.beans.property.SimpleStringProperty("N/A");
+                        return new SimpleStringProperty("N/A");
                     }
                 });
 
-                TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
-                montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
+                TableColumn<transaction, Double> montantCol =
+                        new TableColumn<>("Montant");
+                montantCol.setCellValueFactory(
+                        new PropertyValueFactory<>("montant"));
 
-                TableColumn<transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
-                dateCol.setCellValueFactory(new PropertyValueFactory<>("dateTransaction"));
+                TableColumn<transaction, LocalDateTime> dateCol =
+                        new TableColumn<>("Date");
+                dateCol.setCellValueFactory(
+                        new PropertyValueFactory<>("dateTransaction"));
 
-                // Colonne poubelle
-                TableColumn<transaction, Void> deleteCol = new TableColumn<>("Delete");
+                // 🗑 Delete
+                TableColumn<transaction, Void> deleteCol =
+                        new TableColumn<>("Delete");
+
                 deleteCol.setCellFactory(col -> new TableCell<>() {
                     private final Label trash = new Label("🗑");
+
                     {
                         trash.setStyle("-fx-text-fill: red; -fx-cursor: hand;");
                         trash.setOnMouseClicked(ev -> {
-                            transaction t = getTableView().getItems().get(getIndex());
-                            getTableView().getItems().remove(t);
+                            transaction t =
+                                    getTableView().getItems().get(getIndex());
+                            try {
+                                transactionService.deleteOne(t);
+                                getTableView().getItems().remove(t);
+                            } catch (SQLException ex) {
+                                ex.printStackTrace();
+                            }
                         });
                     }
+
                     @Override
                     protected void updateItem(Void item, boolean empty) {
                         super.updateItem(item, empty);
-                        if (empty) setGraphic(null);
-                        else setGraphic(trash);
+                        setGraphic(empty ? null : trash);
                     }
                 });
 
-                transactionTable.getColumns().addAll(sourceCol, destCol, montantCol, currencyCol, dateCol, deleteCol);
-                transactionTable.setRowFactory(tv -> new TableRow<transaction>() {
+                table.getColumns().addAll(
+                        sourceCol, destCol, montantCol,
+                        currencyCol, dateCol, deleteCol
+                );
+
+                // 🔴🟢 Couleur ligne
+                table.setRowFactory(tv -> new TableRow<>() {
                     @Override
                     protected void updateItem(transaction item, boolean empty) {
                         super.updateItem(item, empty);
-                        if (item == null || empty) setStyle("");
-                        else if (item.getIdWalletSource() == walletId) setStyle("-fx-background-color: #ffcccc;");
-                        else if (item.getIdWalletDestination() == walletId) setStyle("-fx-background-color: #ccffcc;");
-                        else setStyle("");
+
+                        if (item == null || empty) {
+                            setStyle("");
+                        } else if (item.getIdWalletSource() == walletId) {
+                            setStyle("-fx-background-color: #ffcccc;");
+                        } else if (item.getIdWalletDestination() == walletId) {
+                            setStyle("-fx-background-color: #ccffcc;");
+                        } else {
+                            setStyle("");
+                        }
                     }
                 });
 
-                transactionTable.setItems(FXCollections.observableArrayList(transactions));
-                transactionTable.setOnMouseClicked(ev -> {
-                    transaction t = transactionTable.getSelectionModel().getSelectedItem();
-                    if (t != null) {
-                        selectedTransaction = t;
-                        oldAmount = t.getMontant();
+                table.setItems(FXCollections.observableArrayList(transactions));
 
-                        sourceWalletField.setText(String.valueOf(t.getIdWalletSource()));
-                        destinationWalletField.setText(String.valueOf(t.getIdWalletDestination()));
-                        amountField.setText(String.valueOf(t.getMontant()));
-
-                        sourceWalletField.setDisable(true);
-                        destinationWalletField.setDisable(true);
-                        currencyTransactionBox.setDisable(true);
-
-                    }
-                });
-
-                // Nouvelle fenêtre
                 Stage stage = new Stage();
-                VBox root = new VBox(transactionTable);
+                VBox root = new VBox(table);
                 root.setPadding(new Insets(10));
-                Scene scene = new Scene(root);
-                stage.setScene(scene);
-                stage.setTitle("Transactions Wallet #" + walletId);
+                stage.setScene(new Scene(root, 700, 400));
+                stage.setTitle("Transactions Wallet RIB: " + w.getRib());
                 stage.show();
 
             } catch (SQLException ex) {
@@ -939,7 +1059,7 @@ public class crud_wallet {
             }
         });
 
-        // ----------- Clic sur la carte -----------
+        // ----------- Sélection carte -----------
         card.setOnMouseClicked(e -> {
             if (selectedCard != null && selectedCard != card) {
                 selectedCard.setStyle(styleInitial);
@@ -949,8 +1069,6 @@ public class crud_wallet {
             showWalletDetails(w, card);
             e.consume();
         });
-
-
 
         card.getChildren().addAll(topBar, lblName, lblInfo, currencyBox);
 
@@ -963,6 +1081,4 @@ public class crud_wallet {
         }
         return false;
     }
-
-
 }
