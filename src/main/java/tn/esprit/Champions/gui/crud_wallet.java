@@ -948,34 +948,105 @@ public class crud_wallet {
         lblTransactions.setOnMouseClicked(e -> {
             try {
                 TransactionService transactionService = new TransactionService();
-                List<transaction> transactions = transactionService.getTransactionsByWallet(w.getIdWallet());
+                List<transaction> transactions =
+                        transactionService.getTransactionsByWallet(w.getIdWallet());
 
                 int walletId = w.getIdWallet();
+
                 TableView<transaction> table = new TableView<>();
 
                 TableColumn<transaction, String> sourceCol = new TableColumn<>("Source");
                 sourceCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(walletService.SelectById(cell.getValue().getIdWalletSource()).getRib()));
+                        new SimpleStringProperty(
+                                walletService.SelectById(
+                                        cell.getValue().getIdWalletSource()
+                                ).getRib()
+                        )
+                );
 
                 TableColumn<transaction, String> destCol = new TableColumn<>("Destination");
                 destCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(walletService.SelectById(cell.getValue().getIdWalletDestination()).getRib()));
+                        new SimpleStringProperty(
+                                walletService.SelectById(
+                                        cell.getValue().getIdWalletDestination()
+                                ).getRib()
+                        )
+                );
 
-                TableColumn<transaction, String> currencyCol = new TableColumn<>("Currency");
+                TableColumn<transaction, String> currencyCol =
+                        new TableColumn<>("Currency");
                 currencyCol.setCellValueFactory(cell -> {
                     try {
-                        String name = currencyService.getCurrencyNameById(cell.getValue().getCurrencyId());
+                        String name =
+                                currencyService.getCurrencyNameById(
+                                        cell.getValue().getCurrencyId()
+                                );
                         return new SimpleStringProperty(name);
                     } catch (SQLException ex) {
                         return new SimpleStringProperty("N/A");
                     }
                 });
 
-                TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
-                montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
+                TableColumn<transaction, Double> montantCol =
+                        new TableColumn<>("Montant");
+                montantCol.setCellValueFactory(
+                        new PropertyValueFactory<>("montant"));
 
-                TableColumn<transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
-                dateCol.setCellValueFactory(new PropertyValueFactory<>("dateTransaction"));
+                TableColumn<transaction, LocalDateTime> dateCol =
+                        new TableColumn<>("Date");
+                dateCol.setCellValueFactory(
+                        new PropertyValueFactory<>("dateTransaction"));
+
+                // 🗑 Delete
+                TableColumn<transaction, Void> deleteCol =
+                        new TableColumn<>("Delete");
+
+                deleteCol.setCellFactory(col -> new TableCell<>() {
+                    private final Label trash = new Label("🗑");
+
+                    {
+                        trash.setStyle("-fx-text-fill: red; -fx-cursor: hand;");
+                        trash.setOnMouseClicked(ev -> {
+                            transaction t =
+                                    getTableView().getItems().get(getIndex());
+                            try {
+                                transactionService.deleteOne(t);
+                                getTableView().getItems().remove(t);
+                            } catch (SQLException ex) {
+                                ex.printStackTrace();
+                            }
+                        });
+                    }
+
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        setGraphic(empty ? null : trash);
+                    }
+                });
+
+                table.getColumns().addAll(
+                        sourceCol, destCol, montantCol,
+                        currencyCol, dateCol, deleteCol
+                );
+
+                // 🔴🟢 Couleur ligne
+                table.setRowFactory(tv -> new TableRow<>() {
+                    @Override
+                    protected void updateItem(transaction item, boolean empty) {
+                        super.updateItem(item, empty);
+
+                        if (item == null || empty) {
+                            setStyle("");
+                        } else if (item.getIdWalletSource() == walletId) {
+                            setStyle("-fx-background-color: #ffcccc;");
+                        } else if (item.getIdWalletDestination() == walletId) {
+                            setStyle("-fx-background-color: #ccffcc;");
+                        } else {
+                            setStyle("");
+                        }
+                    }
+                });
 
                 table.setItems(FXCollections.observableArrayList(transactions));
 
