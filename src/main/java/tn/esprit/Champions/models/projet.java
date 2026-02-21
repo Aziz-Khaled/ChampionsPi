@@ -12,6 +12,7 @@ public class projet {
     private Timestamp start_date;
     private Timestamp end_date;
     private String imageUrl; // Ajout pour l'IA
+    private String secteur;
 
     public projet() {}
 
@@ -28,6 +29,8 @@ public class projet {
         this.start_date = start_date;
         this.end_date = end_date;
         this.imageUrl = imageUrl;
+        this.secteur = secteur;
+
     }
 
     // --- GETTERS ET SETTERS ---
@@ -104,6 +107,8 @@ public class projet {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+    public String getSecteur() { return secteur; }
+    public void setSecteur(String secteur) { this.secteur = secteur; }
 
     @Override
     public String toString() {
@@ -111,6 +116,7 @@ public class projet {
                 "id_project=" + id_project +
                 ", owner_id=" + (owner_id != null ? owner_id.getNom() : "null") +
                 ", title='" + title + '\'' +
+                ", secteur='" + secteur + '\'' +
                 ", target_amount=" + target_amount +
                 ", imageUrl='" + imageUrl + '\'' +
                 '}';

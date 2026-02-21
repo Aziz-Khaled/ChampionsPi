@@ -5,77 +5,107 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.image.ImageView?>
 
-<VBox prefHeight="750.0" prefWidth="1200.0" spacing="0.0" style="-fx-background-color: #F8F9FD;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.invest.MarketplaceController">
-    <children>
-        <HBox alignment="CENTER_LEFT" prefHeight="110.0" spacing="25.0" style="-fx-background-color: white; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 4);">
-            <children>
-                <VBox alignment="CENTER_LEFT" spacing="5.0">
-                    <children>
-                        <Label text="Opportunités d'Investissement" textFill="#1e272e">
-                            <font>
-                                <Font name="System Bold" size="28.0" />
-                            </font>
-                        </Label>
-                        <HBox alignment="CENTER_LEFT" spacing="10.0">
-                            <children>
-                                <Circle fill="#27ae60" radius="5.0" />
-                                <Label text="12 nouveaux projets cette semaine" textFill="#7f8c8d">
-                                    <font>
-                                        <Font name="System Italic" size="14.0" />
-                                    </font>
-                                </Label>
-                            </children>
-                        </HBox>
-                    </children>
-                </VBox>
+<HBox fx:id="mainContainer" prefHeight="850.0" prefWidth="1300.0" style="-fx-background-color: #F4F7FB;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.invest.MarketplaceController">
 
-                <Region HBox.hgrow="ALWAYS" />
+    <VBox prefWidth="260.0" style="-fx-background-color: #1e272e; -fx-padding: 30 20;">
+        <children>
+            <Label text="CHAMPIONS PI" textFill="WHITE" style="-fx-font-weight: 900; -fx-font-size: 22px;">
+                <VBox.margin><Insets bottom="40.0" /></VBox.margin>
+            </Label>
 
-                <HBox alignment="CENTER" spacing="12.0">
-                    <children>
-                        <HBox alignment="CENTER_LEFT" prefHeight="45.0" prefWidth="320.0" style="-fx-background-color: #F1F2F6; -fx-background-radius: 12; -fx-border-color: #E0E0E0; -fx-border-radius: 12;">
-                            <children>
-                                <Label text=" 🔍 " textFill="#95a5a6" />
-                                <TextField fx:id="txtSearch" promptText="Rechercher par titre, secteur..." style="-fx-background-color: transparent; -fx-prompt-text-fill: #95a5a6;" HBox.hgrow="ALWAYS">
-                                    <font><Font size="14.0" /></font>
-                                </TextField>
-                            </children>
-                            <padding><Insets left="10.0" right="10.0" /></padding>
-                        </HBox>
+            <VBox spacing="10.0" VBox.vgrow="ALWAYS">
+                <children>
+                    <Button mnemonicParsing="false" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-background-radius: 10;" text="🏠 Marketplace" />
+                    <Button mnemonicParsing="false" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-text-fill: #bdc3c7; -fx-alignment: CENTER_LEFT;" text="📊 Mon Portefeuille" />
+                    <Button mnemonicParsing="false" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-text-fill: #bdc3c7; -fx-alignment: CENTER_LEFT;" text="📑 Historique" />
+                </children>
+            </VBox>
 
-                        <ComboBox fx:id="comboFilter" prefHeight="45.0" prefWidth="200.0" promptText="Tous les secteurs" style="-fx-background-color: white; -fx-border-color: #27ae60; -fx-border-radius: 12; -fx-background-radius: 12; -fx-font-weight: bold;" />
+            <Separator opacity="0.1" />
+            <Button mnemonicParsing="false" prefHeight="45.0" prefWidth="220.0" style="-fx-background-color: transparent; -fx-text-fill: #e74c3c; -fx-alignment: CENTER_LEFT;" text="🚪 Déconnexion" />
+        </children>
+    </VBox>
 
-                        <Button fx:id="btnRefresh" prefHeight="45.0" prefWidth="45.0" style="-fx-background-color: #F1F2F6; -fx-background-radius: 12; -fx-cursor: hand;" text="🔄" />
-                    </children>
-                </HBox>
-            </children>
-            <padding>
-                <Insets left="50.0" right="50.0" />
-            </padding>
-        </HBox>
+    <VBox HBox.hgrow="ALWAYS">
+        <children>
 
-        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
-            <content>
-                <VBox spacing="20.0" style="-fx-background-color: #F8F9FD;">
-                    <children>
-                        <HBox spacing="20.0">
-                            <children>
-                                <Label style="-fx-background-color: #E8F5E9; -fx-text-fill: #2E7D32; -fx-padding: 8 15; -fx-background-radius: 20;" text="Agriculture 🌱" />
-                                <Label style="-fx-background-color: #E3F2FD; -fx-text-fill: #1565C0; -fx-padding: 8 15; -fx-background-radius: 20;" text="Technologie 💻" />
-                                <Label style="-fx-background-color: #FFF3E0; -fx-text-fill: #E65100; -fx-padding: 8 15; -fx-background-radius: 20;" text="Énergie ⚡" />
-                            </children>
-                            <VBox.margin><Insets left="50.0" top="20.0" /></VBox.margin>
-                        </HBox>
+            <HBox alignment="CENTER_LEFT" prefHeight="100.0" style="-fx-background-color: white; -fx-padding: 0 40;">
+                <children>
+                    <VBox alignment="CENTER_LEFT">
+                        <children>
+                            <Label text="Marketplace" textFill="#1e272e" style="-fx-font-weight: 800; -fx-font-size: 30px;" />
+                            <Label text="Découvrez les meilleures opportunités" textFill="#7f8c8d" />
+                        </children>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS" />
+                    <HBox alignment="CENTER" spacing="15.0">
+                        <children>
+                            <HBox alignment="CENTER_LEFT" prefHeight="40.0" prefWidth="300.0" style="-fx-background-color: #F1F2F6; -fx-background-radius: 20; -fx-padding: 0 15;">
+                                <children>
+                                    <Label text="🔍" textFill="#95a5a6" />
+                                    <TextField fx:id="txtSearch" promptText="Rechercher un projet..." style="-fx-background-color: transparent;" HBox.hgrow="ALWAYS" />
+                                </children>
+                            </HBox>
+                            <Button fx:id="btnRefresh" style="-fx-background-color: #F1F2F6; -fx-background-radius: 50;" text="🔄" />
+                        </children>
+                    </HBox>
+                </children>
+            </HBox>
 
-                        <FlowPane fx:id="gridPane" hgap="30.0" vgap="30.0">
-                            <padding>
-                                <Insets bottom="50.0" left="50.0" right="50.0" top="10.0" />
-                            </padding>
-                        </FlowPane>
-                    </children>
-                </VBox>
-            </content>
-        </ScrollPane>
-    </children>
-</VBox>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                <content>
+                    <VBox spacing="30.0" style="-fx-padding: 30 40;">
+                        <children>
+
+                            <HBox spacing="25.0">
+                                <children>
+                                    <VBox prefWidth="280.0" style="-fx-background-color: #093468; -fx-background-radius: 15; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+                                        <children>
+                                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                                <Label text="📁" style="-fx-font-size: 18px;" />
+                                                <Label text="Projets Disponibles" textFill="#7f8c8d" style="-fx-font-weight: bold;" />
+                                            </HBox>
+                                            <Label fx:id="lblTotalProjects" text="--" style="-fx-font-size: 28px; -fx-font-weight: 900;" textFill="#27ae60">
+                                                <VBox.margin><Insets top="10.0" /></VBox.margin>
+                                            </Label>
+                                        </children>
+                                    </VBox>
+
+                                    <VBox prefWidth="280.0" style="-fx-background-color: #093468; -fx-background-radius: 15; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+                                        <children>
+                                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                                <Label text="💰" style="-fx-font-size: 18px;" />
+                                                <Label text="Volume Total" textFill="#7f8c8d" style="-fx-font-weight: bold;" />
+                                            </HBox>
+                                            <Label fx:id="lblTotalVolume" text="--" style="-fx-font-size: 28px; -fx-font-weight: 900;" textFill="#2980b9">
+                                                <VBox.margin><Insets top="10.0" /></VBox.margin>
+                                            </Label>
+                                        </children>
+                                    </VBox>
+                                </children>
+                            </HBox>
+
+                            <VBox spacing="15.0">
+                                <children>
+                                    <Label text="Filtrer par secteur" style="-fx-font-weight: bold; -fx-font-size: 16px;" textFill="#2d3436" />
+                                    <HBox spacing="12.0">
+                                        <children>
+                                            <ComboBox fx:id="comboFilter" prefHeight="35.0" prefWidth="180.0" style="-fx-background-radius: 20; -fx-background-color: white; -fx-border-color: #dcdde1; -fx-border-radius: 20;" />
+                                            <Label style="-fx-background-color: #E8F5E9; -fx-text-fill: #2E7D32; -fx-padding: 6 15; -fx-background-radius: 15; -fx-font-weight: bold; -fx-cursor: hand;" text="Agriculture 🌱" />
+                                            <Label style="-fx-background-color: #E3F2FD; -fx-text-fill: #1565C0; -fx-padding: 6 15; -fx-background-radius: 15; -fx-font-weight: bold; -fx-cursor: hand;" text="Technologie 💻" />
+                                        </children>
+                                    </HBox>
+                                </children>
+                            </VBox>
+
+                            <FlowPane fx:id="gridPane" hgap="25.0" vgap="25.0" prefWrapLength="1000.0" />
+
+                        </children>
+                    </VBox>
+                </content>
+            </ScrollPane>
+        </children>
+    </VBox>
+</HBox>

@@ -16,148 +16,131 @@ public class projetService implements CRUD<projet> {
         cnx = DbConnection.getInstance().getCnx();
     }
 
+    private String detecterSecteur(String titre, String description) {
+        String texte = ((titre != null ? titre : "") + " " + (description != null ? description : "")).toLowerCase();
+
+        if (texte.contains("agri") || texte.contains("ferme") || texte.contains("culture")) return "Agriculture";
+        if (texte.contains("tech") || texte.contains("ai") || texte.contains("logiciel") || texte.contains("hub")) return "Technologie";
+        if (texte.contains("solaire") || texte.contains("energie") || texte.contains("electrique")) return "Énergie";
+        if (texte.contains("santé") || texte.contains("medical") || texte.contains("clinique") || texte.contains("diagnostic")) return "Santé";
+        if (texte.contains("coworking") || texte.contains("immobilier") || texte.contains("bureau")) return "Immobilier";
+
+        return "Autre";
+    }
+
     @Override
     public void insertOne(projet p) throws SQLException {
-        // Ajout de image_url dans la requête
-        String req = "INSERT INTO `projet` (`owner_id`, `title`, `description`, `status`, `target_amount`, `start_date`, `end_date`, `image_url`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String secteurDetecte = detecterSecteur(p.getTitle(), p.getDescription());
 
-        PreparedStatement pst = cnx.prepareStatement(req);
+        String req = "INSERT INTO `projet` (`owner_id`, `title`, `description`, `status`, `target_amount`, `start_date`, `end_date`, `image_url`, `secteur`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        if (p.getOwner_id() != null) {
+        try (PreparedStatement pst = cnx.prepareStatement(req)) {
             pst.setInt(1, p.getOwner_id().getId_user());
-        } else {
-            throw new SQLException("Erreur : Le projet doit avoir un propriétaire (Owner).");
+            pst.setString(2, p.getTitle());
+            pst.setString(3, p.getDescription());
+            pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : "ACTIVE");
+            pst.setDouble(5, p.getTarget_amount());
+            pst.setTimestamp(6, p.getStart_date());
+            pst.setTimestamp(7, p.getEnd_date());
+            pst.setString(8, p.getImageUrl());
+            pst.setString(9, secteurDetecte);
+
+            pst.executeUpdate();
         }
-
-        pst.setString(2, p.getTitle());
-        pst.setString(3, p.getDescription());
-        pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : null);
-        pst.setDouble(5, p.getTarget_amount());
-        pst.setTimestamp(6, p.getStart_date());
-        pst.setTimestamp(7, p.getEnd_date());
-
-        // --- NOUVEAU : Insertion de l'URL de l'image ---
-        pst.setString(8, p.getImageUrl());
-
-        pst.executeUpdate();
-        pst.close();
-        System.out.println("Projet inséré avec succès avec image !");
     }
 
     @Override
     public void updateOne(projet p) throws SQLException {
-        // Mise à jour de image_url incluse
-        String req = "UPDATE `projet` SET `owner_id`=?, `title`=?, `description`=?, `status`=?, `target_amount`=?, `start_date`=?, `end_date`=?, `image_url`=? WHERE `id_projet`=?";
+        // Recalcul du secteur en cas de changement de titre/description
+        String secteurDetecte = detecterSecteur(p.getTitle(), p.getDescription());
 
-        PreparedStatement pst = cnx.prepareStatement(req);
+        String req = "UPDATE `projet` SET `owner_id`=?, `title`=?, `description`=?, `status`=?, `target_amount`=?, `start_date`=?, `end_date`=?, `image_url`=?, `secteur`=? WHERE `id_projet`=?";
 
-        pst.setInt(1, p.getOwner_id().getId_user());
-        pst.setString(2, p.getTitle());
-        pst.setString(3, p.getDescription());
-        pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : null);
-        pst.setDouble(5, p.getTarget_amount());
-        pst.setTimestamp(6, p.getStart_date());
-        pst.setTimestamp(7, p.getEnd_date());
+        try (PreparedStatement pst = cnx.prepareStatement(req)) {
+            pst.setInt(1, p.getOwner_id().getId_user());
+            pst.setString(2, p.getTitle());
+            pst.setString(3, p.getDescription());
+            pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : null);
+            pst.setDouble(5, p.getTarget_amount());
+            pst.setTimestamp(6, p.getStart_date());
+            pst.setTimestamp(7, p.getEnd_date());
+            pst.setString(8, p.getImageUrl());
+            pst.setString(9, secteurDetecte);
+            pst.setInt(10, p.getId_project());
 
-        // --- NOUVEAU : Mise à jour de l'image ---
-        pst.setString(8, p.getImageUrl());
-
-        pst.setInt(9, p.getId_project());
-
-        pst.executeUpdate();
-        pst.close();
-        System.out.println("Projet mis à jour avec succès !");
+            pst.executeUpdate();
+        }
     }
 
     @Override
     public void deleteOne(projet p) throws SQLException {
         String req = "DELETE FROM `projet` WHERE `id_projet` = ?";
-        PreparedStatement pst = cnx.prepareStatement(req);
-        pst.setInt(1, p.getId_project());
-        pst.executeUpdate();
-        pst.close();
+        try (PreparedStatement pst = cnx.prepareStatement(req)) {
+            pst.setInt(1, p.getId_project());
+            pst.executeUpdate();
+        }
     }
 
     @Override
     public List<projet> SelectAll() throws SQLException {
         List<projet> listeProjets = new ArrayList<>();
         String req = "SELECT * FROM `projet`";
-        Statement st = cnx.createStatement();
-        ResultSet rs = st.executeQuery(req);
-
-        while (rs.next()) {
-            projet p = new projet();
-            p.setId_project(rs.getInt("id_projet"));
-
-            Utilisateur owner = new Utilisateur();
-            owner.setId_user(rs.getInt("owner_id"));
-            p.setOwner_id(owner);
-
-            p.setTitle(rs.getString("title"));
-            p.setDescription(rs.getString("description"));
-
-            String statusFromDB = rs.getString("status");
-            if (statusFromDB != null) {
-                p.setStatus(projetStatus.valueOf(statusFromDB));
+        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(req)) {
+            while (rs.next()) {
+                listeProjets.add(mapperResultSetToProjet(rs));
             }
-
-            p.setTarget_amount(rs.getFloat("target_amount"));
-            p.setStart_date(rs.getTimestamp("start_date"));
-            p.setEnd_date(rs.getTimestamp("end_date"));
-
-            // --- NOUVEAU : Lecture de l'URL de l'image depuis la DB ---
-            p.setImageUrl(rs.getString("image_url"));
-
-            listeProjets.add(p);
         }
-        rs.close();
-        st.close();
         return listeProjets;
     }
 
     public projet findById(int id) throws SQLException {
         String req = "SELECT * FROM `projet` WHERE `id_projet` = ?";
-        PreparedStatement pst = cnx.prepareStatement(req);
-        pst.setInt(1, id);
-        ResultSet rs = pst.executeQuery();
-
-        if (rs.next()) {
-            projet p = new projet();
-            p.setId_project(rs.getInt("id_projet"));
-
-            Utilisateur owner = new Utilisateur();
-            owner.setId_user(rs.getInt("owner_id"));
-            p.setOwner_id(owner);
-
-            p.setTitle(rs.getString("title"));
-            p.setDescription(rs.getString("description"));
-
-            String statusFromDB = rs.getString("status");
-            if (statusFromDB != null) {
-                p.setStatus(projetStatus.valueOf(statusFromDB));
+        try (PreparedStatement pst = cnx.prepareStatement(req)) {
+            pst.setInt(1, id);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    return mapperResultSetToProjet(rs);
+                }
             }
-
-            p.setTarget_amount(rs.getFloat("target_amount"));
-            p.setStart_date(rs.getTimestamp("start_date"));
-            p.setEnd_date(rs.getTimestamp("end_date"));
-
-            // --- NOUVEAU : Lecture de l'image ---
-            p.setImageUrl(rs.getString("image_url"));
-
-            return p;
         }
         return null;
     }
 
+    // Méthode interne pour éviter la répétition de code et ne rien oublier
+    private projet mapperResultSetToProjet(ResultSet rs) throws SQLException {
+        projet p = new projet();
+        p.setId_project(rs.getInt("id_projet"));
+
+        Utilisateur owner = new Utilisateur();
+        owner.setId_user(rs.getInt("owner_id"));
+        p.setOwner_id(owner);
+
+        p.setTitle(rs.getString("title"));
+        p.setDescription(rs.getString("description"));
+
+        String statusFromDB = rs.getString("status");
+        if (statusFromDB != null) {
+            p.setStatus(projetStatus.valueOf(statusFromDB));
+        }
+
+        p.setTarget_amount(rs.getDouble("target_amount"));
+        p.setStart_date(rs.getTimestamp("start_date"));
+        p.setEnd_date(rs.getTimestamp("end_date"));
+        p.setImageUrl(rs.getString("image_url"));
+
+        // --- LA LIGNE CRUCIALE POUR TON FILTRAGE ---
+        p.setSecteur(rs.getString("secteur"));
+
+        return p;
+    }
+
     public int getTotalProjets() {
-        int count = 0;
         String query = "SELECT COUNT(*) FROM `projet`";
-        try (Statement st = cnx.createStatement();
-             ResultSet rs = st.executeQuery(query)) {
-            if (rs.next()) count = rs.getInt(1);
+        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(query)) {
+            if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return count;
+        return 0;
     }
 }

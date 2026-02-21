@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.shape.Rectangle?>
+
+<VBox fx:id="detailsRoot" prefHeight="750.0" prefWidth="1000.0" style="-fx-background-color: #F4F7FB;"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="tn.esprit.Champions.gui.invest.DetailsCreditController">
+
+    <children>
+        <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="20.0" style="-fx-background-color: white; -fx-padding: 0 30;">
+            <children>
+                <Button onAction="#retourMarketplace" style="-fx-background-color: #F1F2F6; -fx-background-radius: 10; -fx-cursor: hand;" text="← Retour" />
+                <Label fx:id="lblTitle" style="-fx-font-weight: 800; -fx-font-size: 24px; -fx-text-fill: #2d3436;" text="Détails du Projet" />
+            </children>
+        </HBox>
+
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
+            <content>
+                <VBox spacing="30.0" style="-fx-padding: 40;">
+                    <children>
+                        <HBox spacing="40.0">
+                            <children>
+                                <VBox spacing="15.0" HBox.hgrow="ALWAYS">
+                                    <children>
+                                        <ImageView fx:id="imgLarge" fitHeight="400.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="false">
+                                            <clip><Rectangle arcHeight="30.0" arcWidth="30.0" height="400.0" width="600.0" /></clip>
+                                        </ImageView>
+                                        <Label fx:id="lblDescription" style="-fx-font-size: 16px; -fx-text-fill: #636e72;" text="Description complète ici..." wrapText="true" />
+                                    </children>
+                                </VBox>
+
+                                <VBox prefWidth="350.0" spacing="20.0">
+                                    <children>
+                                        <VBox style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 25; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 10);">
+                                            <children>
+                                                <Label text="ANALYSE IA" style="-fx-font-weight: bold; -fx-text-fill: #b2bec3; -fx-font-size: 12px;" />
+                                                <Label fx:id="lblScoreRisque" style="-fx-font-size: 22px; -fx-font-weight: 900; -fx-text-fill: #27ae60; -fx-padding: 10 0;" text="Calculer le Score..." />
+                                                <Button onAction="#calculerRisqueIA" prefWidth="300.0" style="-fx-background-color: #2d3436; -fx-text-fill: white; -fx-background-radius: 10; -fx-font-weight: bold; -fx-padding: 12;" text="Générer Rapport IA" />
+                                            </children>
+                                        </VBox>
+
+                                        <GridPane hgap="15.0" vgap="15.0" style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 25;">
+                                            <columnConstraints>
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                                                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                                            </columnConstraints>
+                                            <children>
+                                                <VBox GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                                    <Label text="MONTANT" style="-fx-text-fill: #b2bec3; -fx-font-size: 10px;" />
+                                                    <Label fx:id="lblMontant" text="--" style="-fx-font-weight: bold; -fx-font-size: 16px;" />
+                                                </VBox>
+                                                <VBox GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                                    <Label text="RENDEMENT" style="-fx-text-fill: #b2bec3; -fx-font-size: 10px;" />
+                                                    <Label fx:id="lblTaux" text="--" style="-fx-font-weight: bold; -fx-font-size: 16px;" />
+                                                </VBox>
+                                                <VBox GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                                    <Label text="SECTEUR" style="-fx-text-fill: #b2bec3; -fx-font-size: 10px;" />
+                                                    <Label fx:id="lblSecteur" text="--" style="-fx-font-weight: bold; -fx-font-size: 16px;" />
+                                                </VBox>
+                                            </children>
+                                        </GridPane>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </children>
+</VBox>
