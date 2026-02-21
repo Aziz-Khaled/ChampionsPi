@@ -146,8 +146,8 @@ public class CrudTrade {
                     Double.parseDouble(txtQuantity.getText()),
                     boxStatus.getValue(),
                     LocalDateTime.now(),
-                    null,
-                    2
+                    null
+
             );
 
             tradeService.insertOne(newTrade);

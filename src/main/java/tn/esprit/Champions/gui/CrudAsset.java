@@ -300,7 +300,7 @@ public class CrudAsset {
         }
     }
 
-    // ==================== HELPER METHODS ====================
+
 
     private boolean validateForm() {
         if (txtSymbol.getText().trim().isEmpty()) {

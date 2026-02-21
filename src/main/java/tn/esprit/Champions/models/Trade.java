@@ -30,8 +30,8 @@ public class Trade {
             double quantity,
             Status status,
             LocalDateTime createdAt,
-            LocalDateTime executedAt,
-            int id_transaction
+            LocalDateTime executedAt
+
     ) {
         this.id = id;
         this.id_user = user_id;
@@ -43,7 +43,7 @@ public class Trade {
         this.status = status;
         this.createdAt = createdAt;
         this.executedAt = executedAt;
-        this.id_transaction = id_transaction;
+
     }
 
     public int getId() {

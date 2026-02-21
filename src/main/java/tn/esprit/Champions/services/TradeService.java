@@ -22,8 +22,8 @@ public class TradeService implements CRUD<Trade> {
 
     @Override
     public void insertOne(Trade trade) throws SQLException {
-        String req ="INSERT INTO `trade`( `user_id`, `asset_id`, `trade_type`, `order_mode`, `price`, `quantity`, `status`, `created_at`, `executed_at`, `id_transaction`)" +
-                " VALUES (?,?,?,?,?,?,?,?,?,?)";
+        String req ="INSERT INTO `trade`( `user_id`, `asset_id`, `trade_type`, `order_mode`, `price`, `quantity`, `status`, `created_at`, `executed_at`)" +
+                " VALUES (?,?,?,?,?,?,?,?,?)";
 
         PreparedStatement ps =  cnx.prepareStatement(req);
 
@@ -42,7 +42,7 @@ public class TradeService implements CRUD<Trade> {
             ps.setNull(9, Types.TIMESTAMP);
         }
 
-        ps.setInt(10,trade.getId_transaction());
+
 
         ps.executeUpdate();
 
@@ -108,8 +108,7 @@ public class TradeService implements CRUD<Trade> {
                     rs.getDouble("quantity"),
                     Status.valueOf(rs.getString("status")),
                     rs.getTimestamp("created_at").toLocalDateTime(),
-                    executedAtTs != null ? executedAtTs.toLocalDateTime() : null,
-                    rs.getInt("id_transaction")
+                    executedAtTs != null ? executedAtTs.toLocalDateTime() : null
             );
 
             trades.add(trade);

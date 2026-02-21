@@ -1,135 +1,109 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.Region?>
 
-<AnchorPane prefHeight="1400.0" prefWidth="1600.0" style="-fx-background-color: #0f172a;"
-            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="tn.esprit.Champions.gui.TradingDashboard">
-
+<HBox prefHeight="750.0" prefWidth="1150.0" spacing="0" style="-fx-background-color: #131722;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.TradingDashboard">
     <children>
-        <VBox prefHeight="1400.0" prefWidth="1600.0" spacing="12.0" style="-fx-padding: 15;">
-            <!-- HEADER -->
-            <HBox prefHeight="70.0" spacing="20.0" style="-fx-background-color: #1e2a47; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #2d3e5f; -fx-border-width: 1;">
-                <Label text="📈 TRADING DASHBOARD PRO" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;" />
-                <Pane HBox.hgrow="ALWAYS" />
-                <VBox spacing="5.0" style="-fx-alignment: CENTER-RIGHT;">
-                    <Label fx:id="labelStatus" text="✓ Prêt" style="-fx-text-fill: #27ae60; -fx-font-size: 12; -fx-font-weight: bold;" />
-                    <Label fx:id="labelUser" text="Utilisateur: Admin" style="-fx-text-fill: #bdc3c7; -fx-font-size: 11;" />
-                    <Label fx:id="labelDateTime" text="00/00/0000 00:00:00" style="-fx-text-fill: #00ff00; -fx-font-size: 14; -fx-font-family: 'Courier New'; -fx-font-weight: bold;" />
+
+        <VBox prefWidth="300.0" spacing="20" style="-fx-background-color: #1e222d; -fx-padding: 20;">
+            <children>
+                <VBox spacing="5">
+                    <Label style="-fx-text-fill: #d1d4dc; -fx-font-size: 12;" text="TOTAL BALANCE" />
+                    <Label fx:id="lblBalance" style="-fx-text-fill: white; -fx-font-size: 22; -fx-font-weight: bold;" text="100,000.00 USDT" />
                 </VBox>
-            </HBox>
 
-            <!-- STATISTICS CARDS -->
-            <GridPane hgap="15.0" vgap="15.0">
-                <columnConstraints>
-                    <ColumnConstraints prefWidth="200.0"/>
-                    <ColumnConstraints prefWidth="200.0"/>
-                    <ColumnConstraints prefWidth="200.0"/>
-                    <ColumnConstraints prefWidth="200.0"/>
-                </columnConstraints>
-                <children>
-                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="0">
-                        <Label text="📊 Total Assets" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
-                        <Label fx:id="labelTotalAssets" text="0" style="-fx-text-fill: #3498db; -fx-font-size: 24; -fx-font-weight: bold;"/>
-                    </VBox>
-                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="1">
-                        <Label text="✓ Assets Actifs" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
-                        <Label fx:id="labelActiveAssets" text="0" style="-fx-text-fill: #27ae60; -fx-font-size: 24; -fx-font-weight: bold;"/>
-                    </VBox>
-                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="2">
-                        <Label text="📝 Total Trades" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
-                        <Label fx:id="labelTotalTrades" text="0" style="-fx-text-fill: #9b59b6; -fx-font-size: 24; -fx-font-weight: bold;"/>
-                    </VBox>
-                    <VBox style="-fx-background-color: #1e2a47; -fx-border-color: #2d3e5f; -fx-border-width: 1; -fx-background-radius: 8; -fx-padding: 15;" GridPane.columnIndex="3">
-                        <Label text="⏳ En Attente" style="-fx-text-fill: #7f8c8d; -fx-font-size: 11;"/>
-                        <Label fx:id="labelActiveTrades" text="0" style="-fx-text-fill: #f39c12; -fx-font-size: 24; -fx-font-weight: bold;"/>
-                    </VBox>
-                </children>
-            </GridPane>
+                <Separator style="-fx-opacity: 0.1;" />
 
-            <!-- TABS -->
-            <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS">
-                <tabs>
-                    <!-- ASSETS TAB -->
-                    <Tab text="📊 ASSETS" closable="false">
-                        <VBox spacing="12.0" style="-fx-padding: 15;">
-                            <TableView fx:id="assetsTable" VBox.vgrow="ALWAYS">
-                                <columns>
-                                    <TableColumn fx:id="colSymbol" text="Symbol"/>
-                                    <TableColumn fx:id="colName" text="Nom"/>
-                                    <TableColumn fx:id="colType" text="Type"/>
-                                    <TableColumn fx:id="colPrice" text="Prix"/>
-                                    <TableColumn fx:id="colMarket" text="Marché"/>
-                                    <TableColumn fx:id="colStatus" text="Statut"/>
-                                    <TableColumn fx:id="colUpdatedAt" text="Mis à jour"/>
-                                </columns>
-                            </TableView>
-                        </VBox>
-                    </Tab>
+                <Label style="-fx-text-fill: #d1d4dc; -fx-font-weight: bold;" text="MARKET WATCH" />
+                <TableView fx:id="tableAssets" prefHeight="550.0" style="-fx-background-color: transparent; -fx-base: #1e222d;">
+                    <columns>
+                        <TableColumn fx:id="colSymbol" prefWidth="120.0" text="Asset" />
+                        <TableColumn fx:id="colPrice" prefWidth="130.0" text="Price (USD)" />
+                    </columns>
+                </TableView>
+            </children>
+        </VBox>
 
-                    <!-- TRADES TAB -->
-                    <Tab text="📝 TRADES" closable="false">
-                        <VBox spacing="12.0" style="-fx-padding: 15;">
-                            <TableView fx:id="tradesTable" VBox.vgrow="ALWAYS">
-                                <columns>
-                                    <TableColumn fx:id="colTradeID" text="ID"/>
-                                    <TableColumn fx:id="colTradeUser" text="User"/>
-                                    <TableColumn fx:id="colTradeAsset" text="Asset"/>
-                                    <TableColumn fx:id="colTradeType" text="Type"/>
-                                    <TableColumn fx:id="colOrderMode" text="Mode"/>
-                                    <TableColumn fx:id="colTradePrice" text="Prix"/>
-                                    <TableColumn fx:id="colTradeQty" text="Quantité"/>
-                                    <TableColumn fx:id="colTradeTotal" text="Total"/>
-                                    <TableColumn fx:id="colTradeStatus" text="Statut"/>
-                                    <TableColumn fx:id="colTradeCreated" text="Date"/>
-                                </columns>
-                            </TableView>
-                        </VBox>
-                    </Tab>
+        <VBox spacing="15" HBox.hgrow="ALWAYS" style="-fx-padding: 20;">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="20">
+                    <children>
+                        <Label fx:id="lblSelected" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;" text="SELECT AN ASSET" />
+                        <Region HBox.hgrow="ALWAYS" />
 
-                    <!-- CHARTS TAB -->
-                    <Tab text="📈 GRAPHIQUES" closable="false">
-                        <VBox spacing="12.0" style="-fx-padding: 15;">
-                            <Label text="Tendance des prix (24h)" style="-fx-text-fill: white; -fx-font-size: 14;"/>
-                            <LineChart fx:id="trendChart" prefHeight="300.0">
-                                <xAxis>
-                                    <NumberAxis label="Heures"/>
-                                </xAxis>
-                                <yAxis>
-                                    <NumberAxis label="Prix (USD)"/>
-                                </yAxis>
-                            </LineChart>
+                        <HBox spacing="15" style="-fx-background-color: #2a2e39; -fx-padding: 10; -fx-background-radius: 8;">
+                            <children>
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label style="-fx-text-fill: #b2b5be; -fx-font-size: 10;" text="TECHNICAL RSI" />
+                                    <Label fx:id="lblRSI" style="-fx-text-fill: white; -fx-font-weight: bold;" text="RSI: --" />
+                                </VBox>
+                                <Separator orientation="VERTICAL" style="-fx-opacity: 0.2;" />
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label style="-fx-text-fill: #b2b5be; -fx-font-size: 10;" text="SIGNAL" />
+                                    <Label fx:id="lblSignal" style="-fx-text-fill: #ffa502; -fx-font-weight: bold;" text="WAITING..." />
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </HBox>
 
-                            <Label text="Évolution des prix (30 jours)" style="-fx-text-fill: white; -fx-font-size: 14;"/>
-                            <LineChart fx:id="priceChart" prefHeight="300.0">
-                                <xAxis>
-                                    <NumberAxis label="Jours"/>
-                                </xAxis>
-                                <yAxis>
-                                    <NumberAxis label="Prix (USD)"/>
-                                </yAxis>
-                            </LineChart>
 
-                            <Label text="Statistiques" style="-fx-text-fill: white; -fx-font-size: 14;"/>
-                            <BarChart fx:id="statsChart" prefHeight="300.0">
-                                <xAxis>
-                                    <CategoryAxis label="Catégories"/>
-                                </xAxis>
-                                <yAxis>
-                                    <NumberAxis label="Valeurs"/>
-                                </yAxis>
-                            </BarChart>
-                        </VBox>
-                    </Tab>
-                </tabs>
-            </TabPane>
+                <LineChart fx:id="priceChart" animated="false" createSymbols="false" prefHeight="400.0" style="-fx-background-color: transparent;">
+                    <xAxis><CategoryAxis side="BOTTOM" tickLabelFill="#d1d4dc" /></xAxis>
+                    <yAxis><NumberAxis side="LEFT" tickLabelFill="#d1d4dc" /></yAxis>
+                </LineChart>
 
+                <VBox spacing="15" style="-fx-background-color: #1e222d; -fx-padding: 25; -fx-background-radius: 12;">
+                    <children>
+                        <GridPane hgap="20" vgap="15">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="33" />
+                                <ColumnConstraints percentWidth="33" />
+                                <ColumnConstraints percentWidth="33" />
+                            </columnConstraints>
+                            <children>
+                                <VBox spacing="8">
+                                    <Label style="-fx-text-fill: #b2b5be;" text="Quantity" />
+                                    <TextField fx:id="txtQty" prefHeight="40.0" promptText="0.00" style="-fx-background-color: #2a2e39; -fx-text-fill: white; -fx-border-color: #434651; -fx-border-radius: 5;" />
+                                </VBox>
+
+                                <VBox spacing="8" GridPane.columnIndex="1">
+                                    <Label style="-fx-text-fill: #b2b5be;" text="Order Type" />
+                                    <ComboBox fx:id="comboMode" maxWidth="Infinity" prefHeight="40.0" style="-fx-background-color: #2a2e39; -fx-base: #2a2e39;" />
+                                </VBox>
+
+                                <VBox alignment="CENTER_RIGHT" spacing="5" GridPane.columnIndex="2">
+                                    <Label fx:id="lblSL" style="-fx-text-fill: #ef5350;" text="Stop Loss: --" />
+                                    <Label fx:id="lblTP" style="-fx-text-fill: #26a69a;" text="Take Profit: --" />
+                                    <Label fx:id="lblTotal" style="-fx-text-fill: white; -fx-font-weight: bold;" text="Total: 0.00 USDT" />
+                                </VBox>
+                            </children>
+                        </GridPane>
+
+                        <HBox spacing="15">
+                            <children>
+                                <Button maxWidth="Infinity" onAction="#onBuy" prefHeight="50.0" style="-fx-background-color: #089981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-cursor: hand;" text="BUY / LONG" HBox.hgrow="ALWAYS" />
+                                <Button maxWidth="Infinity" onAction="#onSell" prefHeight="50.0" style="-fx-background-color: #f23645; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16; -fx-cursor: hand;" text="SELL / SHORT" HBox.hgrow="ALWAYS" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </children>
         </VBox>
     </children>
-</AnchorPane>
+</HBox>

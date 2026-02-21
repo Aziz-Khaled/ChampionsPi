@@ -1,157 +1,153 @@
 package tn.esprit.Champions.gui;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.animation.*;
 import javafx.fxml.FXML;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.XYChart;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.chart.*;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.util.Duration;
-import tn.esprit.Champions.models.Asset;
-import tn.esprit.Champions.models.Trade;
-import tn.esprit.Champions.models.Status;
-import tn.esprit.Champions.services.AssetService;
-import tn.esprit.Champions.services.TradeService;
-
+import tn.esprit.Champions.models.*;
+import tn.esprit.Champions.services.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Random;
 
 public class TradingDashboard {
 
-    @FXML private Label labelDateTime, labelUser, labelStatus;
-    @FXML private Label labelTotalAssets, labelActiveAssets, labelTotalTrades, labelActiveTrades;
-
-    @FXML private TableView<Asset> assetsTable;
+    // Éléments FXML
+    @FXML private TableView<Asset> tableAssets;
     @FXML private TableColumn<Asset, String> colSymbol;
-    @FXML private TableColumn<Asset, String> colName;
-    @FXML private TableColumn<Asset, String> colType;
     @FXML private TableColumn<Asset, Double> colPrice;
-    @FXML private TableColumn<Asset, String> colMarket;
-    @FXML private TableColumn<Asset, Status> colStatus;
-    @FXML private TableColumn<Asset, LocalDateTime> colUpdatedAt;
+    @FXML private Label lblBalance, lblSelected, lblTotal, lblSL, lblTP;
+    @FXML private Label lblRSI, lblSignal; // NOUVEAU : Aide au trader
+    @FXML private TextField txtQty;
+    @FXML private ComboBox<OrderMode> comboMode;
+    @FXML private LineChart<String, Number> priceChart;
 
-    @FXML private TableView<Trade> tradesTable;
-    @FXML private TableColumn<Trade, Integer> colTradeID;
-    @FXML private TableColumn<Trade, Integer> colTradeUser;
-    @FXML private TableColumn<Trade, Integer> colTradeAsset;
-    @FXML private TableColumn<Trade, String> colTradeType;
-    @FXML private TableColumn<Trade, String> colOrderMode;
-    @FXML private TableColumn<Trade, Double> colTradePrice;
-    @FXML private TableColumn<Trade, Double> colTradeQty;
-    @FXML private TableColumn<Trade, Double> colTradeTotal;
-    @FXML private TableColumn<Trade, Status> colTradeStatus;
-    @FXML private TableColumn<Trade, LocalDateTime> colTradeCreated;
+    // Services et Variables
+    private XYChart.Series<String, Number> series = new XYChart.Series<>();
+    private AssetService assetService = new AssetService();
+    private TradeService tradeService = new TradeService();
+    private MarketApiService marketApi = new MarketApiService(); // API 1 : Prix
+    private TechnicalAnalysisService taApi = new TechnicalAnalysisService(); // API 2 : Aide Trader
 
-    @FXML private LineChart<Number, Number> trendChart, priceChart;
-    @FXML private BarChart<String, Number> statsChart;
-
-    private final AssetService assetService = new AssetService();
-    private final TradeService tradeService = new TradeService();
-
-    private final ObservableList<Asset> allAssets = FXCollections.observableArrayList();
-    private final ObservableList<Trade> allTrades = FXCollections.observableArrayList();
-    private final Random random = new Random();
+    private Asset selectedAsset;
+    private double walletBalance = 100000.0;
 
     @FXML
     public void initialize() {
-        labelUser.setText("ADMIN");
-        labelStatus.setText("CONNECTED");
-        startDateTime();
+        // Setup Table
+        colSymbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
+        colPrice.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
 
-        loadData();
-        initTables();
-        initCharts();
-        updateStatistics();
+        // Setup Chart & Combo
+        priceChart.getData().add(series);
+        comboMode.getItems().setAll(OrderMode.values());
+        comboMode.setValue(OrderMode.MARKET);
+
+        loadInitialData();
+        startGlobalEngine();
+
+        // Listener de sélection
+        tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
+            if (newVal != null) {
+                selectedAsset = newVal;
+                series.getData().clear();
+                lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
+                updateTechnicalAnalysis(); // Calculer l'aide au trader immédiatement
+                updateMetrics();
+            }
+        });
     }
 
-    private void startDateTime() {
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-            labelDateTime.setText(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+    private void startGlobalEngine() {
+        // Timeline principale (toutes les 2 secondes)
+        Timeline engine = new Timeline(new KeyFrame(Duration.seconds(2), e -> {
+            tableAssets.getItems().forEach(a -> {
+                double newPrice = marketApi.fetchPrice(a.getSymbol());
+                a.setCurrentPrice(newPrice);
+
+                if (selectedAsset != null && a.getId() == selectedAsset.getId()) {
+                    updateChart(newPrice);
+                    updateMetrics();
+                }
+            });
+            tableAssets.refresh();
         }));
-        timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.play();
+
+        // Timeline pour l'Analyse Technique (toutes les 10 secondes pour l'API 2)
+        Timeline taEngine = new Timeline(new KeyFrame(Duration.seconds(10), e -> updateTechnicalAnalysis()));
+
+        engine.setCycleCount(Animation.INDEFINITE);
+        taEngine.setCycleCount(Animation.INDEFINITE);
+        engine.play();
+        taEngine.play();
     }
 
-    private void loadData() {
-        List<Asset> assets = null;
-        try {
-            assets = assetService.SelectAll();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    private void updateTechnicalAnalysis() {
+        if (selectedAsset == null) return;
+
+        double rsi = taApi.fetchRSI(selectedAsset.getSymbol());
+        String advice = taApi.getAdvice(rsi);
+
+        lblRSI.setText(String.format("RSI (14): %.2f", rsi));
+        lblSignal.setText(advice);
+
+        // Style dynamique pour aider visuellement le trader
+        if (rsi >= 70) lblSignal.setStyle("-fx-text-fill: #ff4757; -fx-font-weight: bold;"); // Rouge (Vendre)
+        else if (rsi <= 30) lblSignal.setStyle("-fx-text-fill: #2ed573; -fx-font-weight: bold;"); // Vert (Acheter)
+        else lblSignal.setStyle("-fx-text-fill: #ffa502; -fx-font-weight: bold;"); // Orange
+    }
+
+    private void updateChart(double price) {
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        series.getData().add(new XYChart.Data<>(time, price));
+        if (series.getData().size() > 15) series.getData().remove(0);
+    }
+
+    private void updateMetrics() {
+        if (selectedAsset == null) return;
+        double p = selectedAsset.getCurrentPrice();
+        lblSL.setText(String.format("Stop-Loss: %.2f", RiskManager.getStopLoss(p)));
+        lblTP.setText(String.format("Take-Profit: %.2f", RiskManager.getTakeProfit(p)));
+
+        if (!txtQty.getText().isEmpty()) {
+            try {
+                double q = Double.parseDouble(txtQty.getText());
+                lblTotal.setText(String.format("Total: %.2f USDT", TradingEngine.calculateTotal(q, p)));
+            } catch (Exception ex) { lblTotal.setText("Total: 0.00"); }
         }
-        if (assets != null) allAssets.setAll(assets);
-        assetsTable.setItems(allAssets);
+    }
 
-        List<Trade> trades = null;
-        try {
-            trades = tradeService.SelectAll();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    @FXML private void onBuy() { handleTrade(TradeType.BUY); }
+    @FXML private void onSell() { handleTrade(TradeType.SELL); }
+
+    private void handleTrade(TradeType type) {
+        if (selectedAsset == null || txtQty.getText().isEmpty()) return;
+
+        double qty = Double.parseDouble(txtQty.getText());
+        double price = selectedAsset.getCurrentPrice();
+        double totalEffect = (type == TradeType.BUY) ? TradingEngine.calculateTotal(qty, price) : TradingEngine.calculateSaleGain(qty, price);
+
+        if (type == TradeType.BUY && totalEffect > walletBalance) {
+            new Alert(Alert.AlertType.ERROR, "Solde insuffisant !").show();
+            return;
         }
-        if (trades != null) allTrades.setAll(trades);
-        tradesTable.setItems(allTrades);
+
+        try {
+            Trade t = new Trade(0, 1, selectedAsset.getId(), type, comboMode.getValue(), price, qty,
+                    TradingEngine.resolveStatus(comboMode.getValue()), LocalDateTime.now(), LocalDateTime.now());
+            tradeService.insertOne(t);
+
+            walletBalance += (type == TradeType.SELL) ? totalEffect : -totalEffect;
+            lblBalance.setText(String.format("%.2f USDT", walletBalance));
+            new Alert(Alert.AlertType.INFORMATION, "Ordre " + type + " exécuté avec succès !").show();
+        } catch (SQLException e) {
+            new Alert(Alert.AlertType.ERROR, "Erreur DB: " + e.getMessage()).show();
+        }
     }
 
-    private void initTables() {
-        colSymbol.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("symbol"));
-        colName.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("name"));
-        colType.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("type"));
-        colPrice.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("price"));
-        colMarket.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("market"));
-        colStatus.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("status"));
-        colUpdatedAt.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("updatedAt"));
-
-        colTradeID.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("id"));
-        colTradeUser.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("userId"));
-        colTradeAsset.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("assetId"));
-        colTradeType.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("tradeType"));
-        colOrderMode.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("orderMode"));
-        colTradePrice.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("price"));
-        colTradeQty.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("quantity"));
-        colTradeTotal.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("total"));
-        colTradeStatus.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("status"));
-        colTradeCreated.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("createdAt"));
-    }
-
-    private void initCharts() {
-        trendChart.getData().clear();
-        priceChart.getData().clear();
-        statsChart.getData().clear();
-
-        // Trend chart - 24h
-        XYChart.Series<Number, Number> seriesTrend = new XYChart.Series<>();
-        seriesTrend.setName("BTC");
-        for (int i = 0; i < 24; i++) seriesTrend.getData().add(new XYChart.Data<>(i, 50000 + random.nextDouble() * 1000));
-        trendChart.getData().add(seriesTrend);
-
-        // Price chart - 30 jours
-        XYChart.Series<Number, Number> seriesPrice = new XYChart.Series<>();
-        seriesPrice.setName("ETH");
-        for (int i = 0; i < 30; i++) seriesPrice.getData().add(new XYChart.Data<>(i, 3000 + random.nextDouble() * 500));
-        priceChart.getData().add(seriesPrice);
-
-        // Stats BarChart
-        XYChart.Series<String, Number> seriesStats = new XYChart.Series<>();
-        seriesStats.setName("Performance");
-        seriesStats.getData().add(new XYChart.Data<>("BTC", 120));
-        seriesStats.getData().add(new XYChart.Data<>("ETH", 80));
-        seriesStats.getData().add(new XYChart.Data<>("XRP", 45));
-        statsChart.getData().add(seriesStats);
-    }
-
-    private void updateStatistics() {
-        labelTotalAssets.setText(String.valueOf(allAssets.size()));
-        labelActiveAssets.setText(String.valueOf(allAssets.stream().filter(a -> a.getStatus() == Status.ACTIVE).count()));
-        labelTotalTrades.setText(String.valueOf(allTrades.size()));
-        labelActiveTrades.setText(String.valueOf(allTrades.stream().filter(t -> t.getStatus() == Status.PENDING).count()));
+    private void loadInitialData() {
+        try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) { e.printStackTrace(); }
     }
 }
