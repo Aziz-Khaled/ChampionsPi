@@ -130,9 +130,24 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         updateWalletModificationDate(walletCurrency.getId_wallet());
     }
 
+
     @Override
     public List<wallet_currency> SelectAll() throws SQLException {
-        return List.of();
+        List<wallet_currency> list = new ArrayList<>();
+        String query = "SELECT * FROM wallet_currency";
+        try (PreparedStatement pst = cnx.prepareStatement(query);
+             ResultSet rs = pst.executeQuery()) {
+            while (rs.next()) {
+                wallet_currency wc = new wallet_currency();
+                wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
+                wc.setId_wallet(rs.getInt("id_wallet"));
+                wc.setId_currency(rs.getInt("id_currency"));
+                wc.setNom_currency(rs.getString("nom_currency"));
+                wc.setSolde(rs.getDouble("solde"));
+                list.add(wc);
+            }
+        }
+        return list;
     }
 
     public static List<wallet_currency> getCurrenciesByWallet(int idWallet) throws SQLException {

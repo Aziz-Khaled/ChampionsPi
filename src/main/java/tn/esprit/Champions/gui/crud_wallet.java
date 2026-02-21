@@ -4,6 +4,7 @@ import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -11,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
@@ -82,6 +84,8 @@ public class crud_wallet {
     @FXML private Button addTransactionBtn;
     @FXML
     private Button btnSignOut;
+    @FXML
+    private PieChart currencyChart; // Assure-toi que l'ID dans le FXML est bien currencyChart
 
 
 
@@ -153,6 +157,7 @@ public class crud_wallet {
                     e.printStackTrace();
                 }
             });
+            updateGlobalCurrencyChart();
         }
 
 
@@ -750,6 +755,7 @@ public class crud_wallet {
         try {
             List<wallet> wallets = walletService.SelectAll();
             displayWallets(wallets);
+            updateGlobalCurrencyChart();
         } catch (SQLException e) {
             e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement des wallets !").show();
@@ -1160,5 +1166,45 @@ public class crud_wallet {
             node = node.getParent();
         }
         return false;
+    }
+
+    private void updateGlobalCurrencyChart() {
+        try {
+
+            List<wallet_currency> allWalletCurrencies = walletCurrencyService.SelectAll();
+
+            if (allWalletCurrencies == null || allWalletCurrencies.isEmpty()) {
+                System.out.println("Aucune donnée de devise trouvée dans la base.");
+                return;
+            }
+
+
+            Map<String, Double> totalsByCurrency = allWalletCurrencies.stream()
+                    .collect(Collectors.groupingBy(
+                            wallet_currency::getNom_currency,
+                            Collectors.summingDouble(wallet_currency::getSolde)
+                    ));
+
+
+            ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
+
+            totalsByCurrency.forEach((name, total) -> {
+                if (total > 0) {
+                    pieChartData.add(new PieChart.Data(name + " (" + String.format("%.2f", total) + ")", total));
+                }
+            });
+
+
+            if (currencyChart != null) {
+                Platform.runLater(() -> {
+                    currencyChart.setData(pieChartData);
+                   
+                });
+            }
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la mise à jour du graphique : " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
