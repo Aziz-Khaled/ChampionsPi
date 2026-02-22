@@ -3,51 +3,89 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.chart.*?>
 
-<HBox prefHeight="700.0" prefWidth="1150.0" style="-fx-background-color: #131722;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.TradingDashboard">
+<VBox prefHeight="800.0" prefWidth="1200.0" style="-fx-background-color: #131722;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.TradingDashboard">
     <children>
-        <VBox prefWidth="300.0" spacing="20.0" style="-fx-background-color: #1e222d; -fx-padding: 20;">
+        <HBox spacing="20" style="-fx-background-color: #1e222d; -fx-padding: 15; -fx-border-color: #2a2e39; -fx-border-width: 0 0 1 0;">
             <children>
-                <Label text="WALLET BALANCE" style="-fx-text-fill: #b2b5be; -fx-font-size: 12;" />
-                <Label fx:id="lblBalance" text="0.00 USDT" style="-fx-text-fill: #00ff88; -fx-font-size: 24; -fx-font-weight: bold;" />
-                <Label fx:id="lblBalanceTND" text="0.00 TND" style="-fx-text-fill: white;" />
-                <Separator opacity="0.1" />
-                <Label text="LIVE MARKET" style="-fx-text-fill: white; -fx-font-weight: bold;" />
-                <TableView fx:id="tableAssets" VBox.vgrow="ALWAYS">
-                    <columns>
-                        <TableColumn fx:id="colSymbol" text="Symbol" prefWidth="100" />
-                        <TableColumn fx:id="colPrice" text="Price" prefWidth="150" />
-                    </columns>
-                </TableView>
+                <Label text="🏆 CHAMPIONS FINTECH" style="-fx-text-fill: #2962ff; -fx-font-weight: bold; -fx-font-size: 16;" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#showMarket" text="📊 MARKET" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;" />
+                <Button onAction="#showHistory" text="📜 MY TRADES" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;" />
             </children>
-        </VBox>
+        </HBox>
 
-        <VBox spacing="20.0" HBox.hgrow="ALWAYS" style="-fx-padding: 20;">
+        <HBox VBox.vgrow="ALWAYS">
             <children>
-                <HBox spacing="20">
-                    <Label fx:id="lblSelected" text="SELECT ASSET" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;" />
-                    <Label fx:id="lblAdvice" text="Signal: ---" style="-fx-text-fill: #2962ff; -fx-font-size: 18;" />
-                </HBox>
-
-                <LineChart fx:id="priceChart" animated="false" createSymbols="false" VBox.vgrow="ALWAYS">
-                    <xAxis><CategoryAxis side="BOTTOM" tickLabelFill="WHITE" /></xAxis>
-                    <yAxis><NumberAxis side="LEFT" tickLabelFill="WHITE" forceZeroInRange="false" /></yAxis>
-                </LineChart>
-
-                <VBox spacing="15" style="-fx-background-color: #1e222d; -fx-padding: 20; -fx-background-radius: 10;">
+                <VBox prefWidth="280.0" spacing="20.0" style="-fx-background-color: #1e222d; -fx-padding: 20;">
                     <children>
-                        <HBox spacing="20" alignment="CENTER_LEFT">
-                            <TextField fx:id="txtQty" promptText="Quantity" prefHeight="40" prefWidth="150" />
-                            <Label fx:id="lblPnL" text="0.00 %" style="-fx-font-size: 20; -fx-font-weight: bold;" />
-                            <Region HBox.hgrow="ALWAYS" />
-                            <Label fx:id="lblTotal" text="Total: 0.00 USDT" style="-fx-text-fill: white; -fx-font-size: 16;" />
-                        </HBox>
-                        <HBox spacing="15">
-                            <Button onAction="#onBuy" text="BUY / LONG" prefHeight="45" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-background-color: #089981; -fx-text-fill: white; -fx-font-weight: bold;" />
-                            <Button onAction="#onSell" text="SELL / SHORT" prefHeight="45" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-background-color: #f23645; -fx-text-fill: white; -fx-font-weight: bold;" />
-                        </HBox>
+                        <Label text="AVAILABLE BALANCE" style="-fx-text-fill: #b2b5be; -fx-font-size: 11; -fx-font-weight: bold;" />
+                        <Label fx:id="lblBalance" text="0.00 USDT" style="-fx-text-fill: #00ff88; -fx-font-size: 22; -fx-font-weight: bold;" />
+                        <Label fx:id="lblBalanceTND" text="0.00 TND" style="-fx-text-fill: white; -fx-opacity: 0.7;" />
+                        <Separator opacity="0.1" />
+                        <Label text="SELECT ASSET" style="-fx-text-fill: white; -fx-font-weight: bold;" />
+                        <TableView fx:id="tableAssets" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+                            <columns>
+                                <TableColumn fx:id="colSymbol" text="Asset" prefWidth="100" />
+                                <TableColumn fx:id="colPrice" text="Live Price" prefWidth="130" />
+                            </columns>
+                        </TableView>
                     </children>
                 </VBox>
+
+                <StackPane HBox.hgrow="ALWAYS">
+                    <children>
+                        <VBox fx:id="paneMarket" spacing="20" style="-fx-padding: 25;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="20">
+                                    <VBox>
+                                        <Label fx:id="lblSelected" text="Select an asset" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;" />
+                                        <Label fx:id="lblAdvice" text="RSI Signal: ---" style="-fx-text-fill: #2962ff;" />
+                                    </VBox>
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Label fx:id="lblPnL" text="0.00 %" style="-fx-font-size: 20; -fx-font-weight: bold;" />
+                                </HBox>
+
+                                <LineChart fx:id="priceChart" animated="false" createSymbols="false" VBox.vgrow="ALWAYS">
+                                    <xAxis><CategoryAxis side="BOTTOM" tickLabelFill="WHITE" /></xAxis>
+                                    <yAxis><NumberAxis side="LEFT" tickLabelFill="WHITE" forceZeroInRange="false" /></yAxis>
+                                </LineChart>
+
+                                <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-background-color: #1e222d; -fx-padding: 20; -fx-background-radius: 10;">
+                                    <children>
+                                        <VBox spacing="5">
+                                            <TextField fx:id="txtQty" promptText="Quantity" prefHeight="40" prefWidth="150" style="-fx-background-color: #2a2e39; -fx-text-fill: white;" />
+                                            <Label fx:id="lblTotal" text="Total: 0.00 USDT" style="-fx-text-fill: #b2b5be; -fx-font-size: 11;" />
+                                        </VBox>
+                                        <Button onAction="#onBuy" text="BUY / LONG" prefHeight="45" prefWidth="150" style="-fx-background-color: #089981; -fx-text-fill: white; -fx-font-weight: bold;" />
+                                        <Button onAction="#onSell" text="SELL / SHORT" prefHeight="45" prefWidth="150" style="-fx-background-color: #f23645; -fx-text-fill: white; -fx-font-weight: bold;" />
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <VBox fx:id="paneHistory" visible="false" spacing="20" style="-fx-padding: 25;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="TRADE HISTORY LOG" style="-fx-text-fill: white; -fx-font-size: 24; -fx-font-weight: bold;" />
+                                        <Region HBox.hgrow="ALWAYS" />
+                                        <Button onAction="#loadTradeHistory" text="🔄 Refresh" style="-fx-background-color: #2962ff; -fx-text-fill: white;" />
+                                    </children>
+                                </HBox>
+                                <TableView fx:id="tableHistory" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="colHistSymbol" text="Asset ID" prefWidth="100" />
+                                        <TableColumn fx:id="colHistType" text="Side" prefWidth="100" />
+                                        <TableColumn fx:id="colHistQty" text="Amount" prefWidth="120" />
+                                        <TableColumn fx:id="colHistPrice" text="Exec. Price" prefWidth="150" />
+                                        <TableColumn fx:id="colHistStatus" text="Status" prefWidth="150" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+                    </children>
+                </StackPane>
             </children>
-        </VBox>
+        </HBox>
     </children>
-</HBox>
+</VBox>
