@@ -11,186 +11,187 @@ import tn.esprit.Champions.services.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class TradingDashboard {
 
     @FXML private TableView<Asset> tableAssets;
     @FXML private TableColumn<Asset, String> colSymbol;
     @FXML private TableColumn<Asset, Double> colPrice;
-    @FXML private Label lblBalance, lblBalanceTND, lblSelected, lblTotal, lblSL, lblTP;
-    @FXML private Label lblRSI, lblSignal;
+    @FXML private Label lblBalance, lblBalanceTND, lblSelected, lblTotal, lblEquity, lblPnL;
     @FXML private TextField txtQty;
-    @FXML private ComboBox<OrderMode> comboMode;
     @FXML private LineChart<String, Number> priceChart;
 
     private XYChart.Series<String, Number> series = new XYChart.Series<>();
 
-    // Services existants (Trading)
-    private AssetService assetService = new AssetService();
-    private TradeService tradeService = new TradeService();
-    private MarketApiService marketApi = new MarketApiService();
-    private TechnicalAnalysisService taApi = new TechnicalAnalysisService();
-
-    // Services de la collègue (Wallet)
+    // Services
+    private TransactionService transService = new TransactionService();
     private wallet_currencyService wcService = new wallet_currencyService();
+    private WalletService walletService = new WalletService();
+    private AssetService assetService = new AssetService();
+    private MarketApiService marketApi = new MarketApiService();
 
     private Asset selectedAsset;
-    private wallet_currency usdtWallet;
-    private final int currentWalletId = 1; // ID de ton wallet en DB
-    private final double TND_RATE = 3.12;
+    private wallet userWallet;
+    private wallet marketWallet;
+
+    // Variables pour le calcul du PnL
+    private double initialEntryPrice = 0.0;
+    private final int USDT_ID = 1;
 
     @FXML
     public void initialize() {
-        // 1. Configurer la table des actifs
-        colSymbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
-        colPrice.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
-
-        // 2. Configurer le graphique et les modes d'ordre
+        setupTable();
         priceChart.getData().add(series);
-        comboMode.getItems().setAll(OrderMode.values());
-        comboMode.setValue(OrderMode.MARKET);
 
-        // 3. Charger les DONNÉES RÉELLES de la base
-        loadRealWalletData();
-        loadInitialAssets();
+        // 1. Load data from DB
+        loadWalletsFromDatabase();
+        refreshWalletUI();
 
-        // 4. Lancer le moteur de mise à jour (Prix et RSI)
+        // 2. Start Real-time Engine
         startLiveEngine();
 
-        // 5. Listener pour changer d'actif
+        // 3. Asset Selection Listener
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
                 selectedAsset = newVal;
+                initialEntryPrice = newVal.getCurrentPrice(); // Simule un prix d'entrée
                 series.getData().clear();
                 lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
-                updateTechnicalAnalysis();
-                updateMetrics();
+                updateOrderPreview();
             }
         });
+
+        txtQty.textProperty().addListener((obs, old, newVal) -> updateOrderPreview());
     }
 
-    // RÉCUPÉRATION RÉELLE DEPUIS LA DB
-    private void loadRealWalletData() {
+    private void loadWalletsFromDatabase() {
         try {
-            // On cherche l'ID de la monnaie USDT en base
-            int usdtId = wcService.getCurrencyIdByName("USDT");
-
-            // On récupère la ligne de solde pour ce wallet et cette monnaie
-            usdtWallet = wcService.getWalletCurrencyByWalletAndId(currentWalletId, usdtId);
-
-            if (usdtWallet != null) {
-                refreshBalanceUI();
-            } else {
-                lblBalance.setText("0.00 USDT");
-                lblBalanceTND.setText("Vérifiez votre table wallet_currency");
+            List<wallet> allWallets = walletService.SelectAll();
+            for (wallet w : allWallets) {
+                if (w.getIdWallet() == 3) userWallet = w;
+                if (w.getIdWallet() == 4) marketWallet = w;
             }
         } catch (SQLException e) {
-            System.err.println("Erreur SQL lors du chargement du solde : " + e.getMessage());
+            showNotification("DB Error", "Error loading wallets: " + e.getMessage());
         }
     }
 
-    private void refreshBalanceUI() {
-        double solde = usdtWallet.getSolde();
-        lblBalance.setText(String.format("%.2f USDT", solde));
-        lblBalanceTND.setText(String.format("≈ %.3f TND", solde * TND_RATE));
+    private void refreshWalletUI() {
+        if (userWallet == null) return;
+        try {
+            wallet_currency wc = wcService.getWalletCurrencyByWalletAndId(userWallet.getIdWallet(), USDT_ID);
+            if (wc != null) {
+                double solde = wc.getSolde();
+                lblBalance.setText(String.format("%.2f USDT", solde));
+                lblBalanceTND.setText(String.format("≈ %.3f TND", solde * 3.25));
+                lblEquity.setText(String.format("%.2f USDT", solde));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    /**
+     * Logic for Real-time PnL Calculation
+     */
+    private void calculatePnL() {
+        if (selectedAsset != null && initialEntryPrice > 0) {
+            double currentPrice = selectedAsset.getCurrentPrice();
+            double pnlPercent = ((currentPrice - initialEntryPrice) / initialEntryPrice) * 100;
+
+            lblPnL.setText(String.format("%.2f %%", pnlPercent));
+
+            // Color coding: Green for profit, Red for loss
+            if (pnlPercent >= 0) {
+                lblPnL.setStyle("-fx-text-fill: #00ff88; -fx-font-weight: bold;");
+            } else {
+                lblPnL.setStyle("-fx-text-fill: #f23645; -fx-font-weight: bold;");
+            }
+        }
+    }
+
+    @FXML
+    private void handleTrade(typeTransaction type) {
+        if (selectedAsset == null || txtQty.getText().isEmpty() || userWallet == null) {
+            showNotification("Warning", "Please select an asset and quantity.");
+            return;
+        }
+
+        try {
+            double totalCost = Double.parseDouble(txtQty.getText()) * selectedAsset.getCurrentPrice();
+            transaction t = new transaction();
+
+            // Respecting the colleague's Service constraints
+            if (type == typeTransaction.ACHAT) {
+                t.setIdWalletSource(userWallet.getIdWallet());
+                t.setIdWalletDestination(marketWallet.getIdWallet());
+                t.setType(typeTransaction.ACHAT);
+            } else {
+                t.setIdWalletSource(marketWallet.getIdWallet());
+                t.setIdWalletDestination(userWallet.getIdWallet());
+                t.setType(typeTransaction.VENTE);
+            }
+
+            t.setMontant(totalCost);
+            t.setCurrencyId(USDT_ID);
+            t.setStatut(StatutTransaction.Completed);
+            t.setDateTransaction(LocalDateTime.now());
+
+            // EXECUTION & DB RECORDING
+            transService.insertOne(t);
+
+            refreshWalletUI();
+            showNotification("Trade Successful", "Order registered in Database!");
+
+        } catch (Exception e) {
+            showNotification("Transaction Error", e.getMessage());
+        }
     }
 
     private void startLiveEngine() {
-        // Mise à jour des prix toutes les 2 secondes
         Timeline engine = new Timeline(new KeyFrame(Duration.seconds(2), e -> {
-            tableAssets.getItems().forEach(a -> {
-                double newPrice = marketApi.fetchPrice(a.getSymbol());
-                a.setCurrentPrice(newPrice);
-                if (selectedAsset != null && a.getId() == selectedAsset.getId()) {
-                    updateChart(newPrice);
-                    updateMetrics();
-                }
+            tableAssets.getItems().forEach(asset -> {
+                double livePrice = marketApi.fetchPrice(asset.getSymbol());
+                asset.setCurrentPrice(livePrice);
             });
             tableAssets.refresh();
-        }));
 
-        // Mise à jour Analyse Technique toutes les 10 secondes
-        Timeline taEngine = new Timeline(new KeyFrame(Duration.seconds(10), e -> updateTechnicalAnalysis()));
-
-        engine.setCycleCount(Animation.INDEFINITE);
-        taEngine.setCycleCount(Animation.INDEFINITE);
-        engine.play();
-        taEngine.play();
-    }
-
-    @FXML
-    private void onBuy() {
-        handleTrade(TradeType.BUY);
-    }
-
-    @FXML
-    private void onSell() {
-        handleTrade(TradeType.SELL);
-    }
-
-    private void handleTrade(TradeType type) {
-        if (selectedAsset == null || txtQty.getText().isEmpty() || usdtWallet == null) return;
-
-        try {
-            double qty = Double.parseDouble(txtQty.getText());
-            double price = selectedAsset.getCurrentPrice();
-            double totalCost = qty * price;
-
-            // Vérification solde réel
-            if (type == TradeType.BUY && totalCost > usdtWallet.getSolde()) {
-                showAlert(Alert.AlertType.ERROR, "Solde insuffisant !");
-                return;
+            if (selectedAsset != null) {
+                updateChart(selectedAsset.getCurrentPrice());
+                calculatePnL(); // Update PnL every 2 seconds
+                updateOrderPreview();
             }
-
-            // 1. Mise à jour de l'objet solde
-            double nouveauSolde = (type == TradeType.BUY)
-                    ? usdtWallet.getSolde() - totalCost
-                    : usdtWallet.getSolde() + totalCost;
-
-            usdtWallet.setSolde(nouveauSolde);
-
-            // 2. SAUVEGARDE RÉELLE DANS LA BASE (via le service de ta collègue)
-            wcService.updateOne(usdtWallet);
-
-            // 3. Enregistrement du Trade (ton service)
-            Trade t = new Trade(0, currentWalletId, selectedAsset.getId(), type, comboMode.getValue(), price, qty,
-                    TradingEngine.resolveStatus(comboMode.getValue()), LocalDateTime.now(), LocalDateTime.now());
-            tradeService.insertOne(t);
-
-            // 4. Mise à jour Interface
-            refreshBalanceUI();
-            showAlert(Alert.AlertType.INFORMATION, "Ordre " + type + " effectué avec succès !");
-
-        } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "Erreur : " + e.getMessage());
-        }
+        }));
+        engine.setCycleCount(Animation.INDEFINITE);
+        engine.play();
     }
 
-    // Méthodes utilitaires
+    private void setupTable() {
+        colSymbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
+        colPrice.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
+        try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) { e.printStackTrace(); }
+    }
+
     private void updateChart(double price) {
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         series.getData().add(new XYChart.Data<>(time, price));
         if (series.getData().size() > 15) series.getData().remove(0);
     }
 
-    private void updateTechnicalAnalysis() {
-        if (selectedAsset == null) return;
-        double rsi = taApi.fetchRSI(selectedAsset.getSymbol());
-        lblRSI.setText(String.format("RSI (14): %.2f", rsi));
-        lblSignal.setText(taApi.getAdvice(rsi));
+    private void updateOrderPreview() {
+        try {
+            double q = Double.parseDouble(txtQty.getText());
+            lblTotal.setText(String.format("Total: %.2f USDT", q * selectedAsset.getCurrentPrice()));
+        } catch (Exception e) { lblTotal.setText("Total: 0.00 USDT"); }
     }
 
-    private void updateMetrics() {
-        if (selectedAsset == null || txtQty.getText().isEmpty()) return;
-        double q = Double.parseDouble(txtQty.getText());
-        lblTotal.setText(String.format("Total: %.2f USDT", q * selectedAsset.getCurrentPrice()));
-    }
+    @FXML private void onBuyAction() { handleTrade(typeTransaction.ACHAT); }
+    @FXML private void onSellAction() { handleTrade(typeTransaction.VENTE); }
 
-    private void loadInitialAssets() {
-        try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    private void showAlert(Alert.AlertType type, String content) {
-        new Alert(type, content).show();
+    private void showNotification(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }
