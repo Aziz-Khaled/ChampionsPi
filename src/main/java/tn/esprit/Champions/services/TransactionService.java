@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentCreateParams;
 
 public class TransactionService implements CRUD<transaction> {
 
@@ -243,31 +245,144 @@ public class TransactionService implements CRUD<transaction> {
     public List<transaction> getTransactionsByWallet(int walletId) throws SQLException {
         List<transaction> transactions = new ArrayList<>();
 
-        String query = "SELECT * FROM transaction WHERE id_wallet_source = ? OR id_wallet_destination = ?";
-        PreparedStatement ps = cnx.prepareStatement(query);
-        ps.setInt(1, walletId);
-        ps.setInt(2, walletId);
+        // 🔹 Requête pour récupérer toutes les colonnes nécessaires + id_card
+        String query = """
+        SELECT t.id_transaction,
+               t.id_wallet_source,
+               t.id_wallet_destination,
+               t.montant,
+               t.id_currency,
+               t.type,
+               t.statut,
+               t.date_transaction,
+               t.id_card
+        FROM transaction t
+        WHERE t.id_wallet_source = ? OR t.id_wallet_destination = ?
+    """;
 
-        ResultSet rs = ps.executeQuery();
+        try (PreparedStatement ps = cnx.prepareStatement(query)) {
+            ps.setInt(1, walletId);
+            ps.setInt(2, walletId);
 
-        while (rs.next()) {
-            transaction t = new transaction();
-            t.setIdTransaction(rs.getInt("id_transaction"));
-            t.setIdWalletSource(rs.getInt("id_wallet_source"));
-            t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
-            t.setMontant(rs.getDouble("montant"));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    transaction t = new transaction();
 
+                    // 🔹 Remplissage des champs
+                    t.setIdTransaction(rs.getInt("id_transaction"));
+                    t.setIdWalletSource(rs.getInt("id_wallet_source"));
+                    t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+                    t.setMontant(rs.getDouble("montant"));
+                    t.setCurrencyId(rs.getInt("id_currency"));
 
-            String typeStr = rs.getString("type").trim(); // supprimer espaces éventuels
-            t.setType(typeTransaction.valueOf(typeStr));
+                    String typeStr = rs.getString("type").trim();
+                    t.setType(typeTransaction.valueOf(typeStr));
 
-            String statutStr = rs.getString("statut").trim();
-            t.setStatut(StatutTransaction.valueOf(statutStr));
+                    String statutStr = rs.getString("statut").trim();
+                    t.setStatut(StatutTransaction.valueOf(statutStr));
 
-            t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
-            t.setCurrencyId(rs.getInt("id_currency"));
-            transactions.add(t);
+                    t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
+
+                    // 🔹 Très important : id_card pour les recharges
+                    t.setId_card(rs.getInt("id_card"));
+
+                    transactions.add(t);
+                }
+            }
         }
+
         return transactions;
+    }
+
+
+    public PaymentIntent createStripePayment(double
+                                                     amount, String currency) throws Exception {
+
+        PaymentIntentCreateParams params =
+                PaymentIntentCreateParams.builder()
+                        .setAmount((long)(amount * 100)) // Stripe travaille en centimes
+                        .setCurrency(currency.toLowerCase())
+                        .setAutomaticPaymentMethods(
+                                PaymentIntentCreateParams.AutomaticPaymentMethods
+                                        .builder()
+                                        .setEnabled(true)
+                                        .build()
+                        )
+                        .build();
+
+        return PaymentIntent.create(params);
+    }
+    public void insertRechargeTransaction(
+            int walletDestinationId,
+            int currencyId,
+            double amount,
+            String stripeStatus,
+            int creditCardId
+    ) throws SQLException {
+
+        StatutTransaction statut;
+
+        // 🔹 Déterminer le statut de la transaction à partir du statut Stripe
+        switch (stripeStatus) {
+            case "succeeded" -> statut = StatutTransaction.Completed;
+            case "processing", "requires_action" -> statut = StatutTransaction.Processing;
+            case "canceled" -> statut = StatutTransaction.Cancelled;
+            case "requires_payment_method", "requires_confirmation" -> statut = StatutTransaction.Pending;
+            default -> statut = StatutTransaction.Failed;
+        }
+
+        boolean previousAutoCommit = cnx.getAutoCommit();
+        try {
+            cnx.setAutoCommit(false);
+
+            // 🔹 Créditer le wallet destination
+            wallet_currency destCurrency = walletCurrencyService
+                    .getWalletCurrencyByWalletAndId(walletDestinationId, currencyId);
+
+            if (destCurrency == null) {
+                destCurrency = new wallet_currency();
+                destCurrency.setId_wallet(walletDestinationId);
+                destCurrency.setId_currency(currencyId);
+                destCurrency.setSolde(amount);
+                walletCurrencyService.insertOne(destCurrency);
+            } else {
+                destCurrency.setSolde(destCurrency.getSolde() + amount);
+                walletCurrencyService.updateOne(destCurrency);
+            }
+
+            // 🔹 Insérer la transaction RECHARGE (id_wallet_source = NULL, id_card = carte utilisée)
+            String sql = """
+            INSERT INTO transaction
+            (id_wallet_source, id_card, id_wallet_destination, montant, `type`, statut, date_transaction, id_currency)
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
+        """;
+
+            try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+                pst.setNull(1, Types.INTEGER);       // Wallet source = NULL pour recharge
+                pst.setInt(2, creditCardId);         // Carte bancaire utilisée
+                pst.setInt(3, walletDestinationId);  // Wallet destination
+                pst.setDouble(4, amount);            // Montant
+                pst.setString(5, typeTransaction.RECHARGE.name()); // Type
+                pst.setString(6, statut.name());     // Statut
+                pst.setInt(7, currencyId);           // Devise
+                pst.executeUpdate();
+            }
+
+            // 🔹 Mettre à jour la date de modification du wallet destination
+            String updateWalletSql = "UPDATE wallet SET date_derniere_modification = NOW() WHERE id_wallet = ?";
+            try (PreparedStatement pst = cnx.prepareStatement(updateWalletSql)) {
+                pst.setInt(1, walletDestinationId);
+                pst.executeUpdate();
+            }
+
+            cnx.commit();
+            System.out.println("Recharge enregistrée avec succès dans transaction.");
+
+        } catch (SQLException e) {
+            cnx.rollback();
+            throw e;
+        } finally {
+            cnx.setAutoCommit(previousAutoCommit);
+        }
     }
 }

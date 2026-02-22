@@ -7,7 +7,7 @@ public class Utilisateur {
     private Role role ;
 
 
-    public Utilisateur(int id_user, String nom, String prenom, String mot_de_passe, String telephone, String piece_identite, String user_image, Role role) {
+    public Utilisateur() {
         this.id_user = id_user;
         this.nom = nom;
         this.prenom = prenom;

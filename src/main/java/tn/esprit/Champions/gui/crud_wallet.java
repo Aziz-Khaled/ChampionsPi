@@ -1,10 +1,16 @@
 package tn.esprit.Champions.gui;
 
+import com.stripe.exception.StripeException;
+import com.stripe.model.Customer;
+import com.stripe.model.PaymentIntent;
+import com.stripe.model.PaymentMethod;
+import com.stripe.param.*;
 import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -17,28 +23,25 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
-import tn.esprit.Champions.services.CurrencyService;
-import tn.esprit.Champions.services.TransactionService;
-import tn.esprit.Champions.services.WalletService;
-import tn.esprit.Champions.services.wallet_currencyService;
+import tn.esprit.Champions.services.*;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -86,6 +89,12 @@ public class crud_wallet {
     private Button btnSignOut;
     @FXML
     private PieChart currencyChart; // Assure-toi que l'ID dans le FXML est bien currencyChart
+    @FXML private VBox cardForm;
+    @FXML private TextField cardHolderField, cardNumberField, expMonthField, expYearField;
+    @FXML private Label nom;
+    @FXML private Label rib;
+    @FXML
+    private Label cardErrorLabel;
 
 
 
@@ -106,6 +115,8 @@ public class crud_wallet {
     private WalletService walletService;
     private wallet_currencyService walletCurrencyService;
     private CurrencyService currencyService;
+
+
 
     private wallet selectedWallet; // wallet sélectionné
 
@@ -158,6 +169,7 @@ public class crud_wallet {
                 }
             });
             updateGlobalCurrencyChart();
+            loadCard();
         }
 
 
@@ -173,6 +185,7 @@ public class crud_wallet {
                 });
             }
         });
+
     }
     private boolean isWalletForm(Node node) {
         while (node != null) {
@@ -755,7 +768,7 @@ public class crud_wallet {
         try {
             List<wallet> wallets = walletService.SelectAll();
             displayWallets(wallets);
-            updateGlobalCurrencyChart();
+//
         } catch (SQLException e) {
             e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement des wallets !").show();
@@ -873,7 +886,7 @@ public class crud_wallet {
         lblTransactions.setStyle("-fx-font-size: 16px; -fx-text-fill: black; -fx-cursor: hand;");
 
         // ----------- Flèche pour le verso -----------
-        Label lblDates = new Label("⬆️");
+        Label lblDates = new Label("\uD83D\uDD04");
         lblDates.setStyle("-fx-font-size: 18px; -fx-cursor: hand;");
 
         HBox topBar = new HBox(10, lblTransactions, lblDates);
@@ -954,76 +967,106 @@ public class crud_wallet {
         lblTransactions.setOnMouseClicked(e -> {
             try {
                 TransactionService transactionService = new TransactionService();
-                List<transaction> transactions =
-                        transactionService.getTransactionsByWallet(w.getIdWallet());
+                CreditCardService creditCardService = new CreditCardService();
 
+                List<transaction> transactions = transactionService.getTransactionsByWallet(w.getIdWallet());
                 int walletId = w.getIdWallet();
 
                 TableView<transaction> table = new TableView<>();
 
+                // 🔹 Colonne Source
                 TableColumn<transaction, String> sourceCol = new TableColumn<>("Source");
-                sourceCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(
-                                walletService.SelectById(
-                                        cell.getValue().getIdWalletSource()
-                                ).getRib()
-                        )
-                );
+                sourceCol.setCellValueFactory(cell -> {
+                    transaction t = cell.getValue();
+                    String display = "A/N"; // valeur par défaut
 
-                TableColumn<transaction, String> destCol = new TableColumn<>("Destination");
-                destCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(
-                                walletService.SelectById(
-                                        cell.getValue().getIdWalletDestination()
-                                ).getRib()
-                        )
-                );
-
-                TableColumn<transaction, String> currencyCol =
-                        new TableColumn<>("Currency");
-                currencyCol.setCellValueFactory(cell -> {
-                    try {
-                        String name =
-                                currencyService.getCurrencyNameById(
-                                        cell.getValue().getCurrencyId()
-                                );
-                        return new SimpleStringProperty(name);
-                    } catch (SQLException ex) {
-                        return new SimpleStringProperty("N/A");
+                    if (t.getType() != null) {
+                        switch (t.getType()) {
+                            case TRANSFERT, RETRAIT, ACHAT -> {
+                                // Affiche le RIB du wallet source
+                                try {
+                                    display = walletService.SelectById(t.getIdWalletSource()).getRib();
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                            case RECHARGE -> {
+                                // Affiche les 4 derniers chiffres de la carte
+                                int cardId = t.getId_card();
+                                if (cardId > 0) {
+                                    try {
+                                        CreditCard c = creditCardService.getCardById(cardId);
+                                        if (c != null && c.getLast4Digits() != null) {
+                                            display = c.getLast4Digits();
+                                        } else {
+                                            display = "A/N";
+                                        }
+                                    } catch (Exception ex) {
+                                        ex.printStackTrace();
+                                        display = "A/N";
+                                    }
+                                }
+                            }
+                            default -> display = "A/N";
+                        }
                     }
+
+                    return new SimpleStringProperty(display);
+                });
+                // 🔹 Colonne Destination
+                TableColumn<transaction, String> destCol = new TableColumn<>("Destination");
+                destCol.setCellValueFactory(cell -> {
+                    String display = "N/A";
+                    try {
+                        display = walletService.SelectById(cell.getValue().getIdWalletDestination()).getRib();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return new SimpleStringProperty(display);
                 });
 
-                TableColumn<transaction, Double> montantCol =
-                        new TableColumn<>("Montant");
-                montantCol.setCellValueFactory(
-                        new PropertyValueFactory<>("montant"));
+                // 🔹 Colonne Montant
+                TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
+                montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
 
-                TableColumn<transaction, LocalDateTime> dateCol =
-                        new TableColumn<>("Date");
-                dateCol.setCellValueFactory(
-                        new PropertyValueFactory<>("dateTransaction"));
+                // 🔹 Colonne Currency
+                TableColumn<transaction, String> currencyCol = new TableColumn<>("Currency");
+                currencyCol.setCellValueFactory(cell -> {
+                    String name = "N/A";
+                    try {
+                        name = currencyService.getCurrencyNameById(cell.getValue().getCurrencyId());
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return new SimpleStringProperty(name);
+                });
 
-                // 🗑 Delete
-                TableColumn<transaction, Void> deleteCol =
-                        new TableColumn<>("Delete");
+                // 🔹 Colonne Date
+                TableColumn<transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
+                dateCol.setCellValueFactory(new PropertyValueFactory<>("dateTransaction"));
 
+                // 🔹 Colonne Type
+                TableColumn<transaction, String> typeCol = new TableColumn<>("Type");
+                typeCol.setCellValueFactory(cell ->
+                        new SimpleStringProperty(cell.getValue().getType().name())
+                );
+
+                // 🔹 Colonne Delete
+                TableColumn<transaction, Void> deleteCol = new TableColumn<>("Delete");
                 deleteCol.setCellFactory(col -> new TableCell<>() {
                     private final Label trash = new Label("🗑");
-
                     {
                         trash.setStyle("-fx-text-fill: red; -fx-cursor: hand;");
                         trash.setOnMouseClicked(ev -> {
-                            transaction t =
-                                    getTableView().getItems().get(getIndex());
+                            transaction t = getTableView().getItems().get(getIndex());
                             try {
                                 transactionService.deleteOne(t);
                                 getTableView().getItems().remove(t);
-                            } catch (SQLException ex) {
+                            } catch (Exception ex) {
                                 ex.printStackTrace();
                             }
                         });
                     }
-
                     @Override
                     protected void updateItem(Void item, boolean empty) {
                         super.updateItem(item, empty);
@@ -1031,17 +1074,13 @@ public class crud_wallet {
                     }
                 });
 
-                table.getColumns().addAll(
-                        sourceCol, destCol, montantCol,
-                        currencyCol, dateCol, deleteCol
-                );
+                table.getColumns().addAll(sourceCol, destCol, montantCol, currencyCol, dateCol, typeCol, deleteCol);
 
-                // 🔴🟢 Couleur ligne
+                // 🔴🟢 Couleur ligne selon wallet
                 table.setRowFactory(tv -> new TableRow<>() {
                     @Override
                     protected void updateItem(transaction item, boolean empty) {
                         super.updateItem(item, empty);
-
                         if (item == null || empty) {
                             setStyle("");
                         } else if (item.getIdWalletSource() == walletId) {
@@ -1059,15 +1098,14 @@ public class crud_wallet {
                 Stage stage = new Stage();
                 VBox root = new VBox(table);
                 root.setPadding(new Insets(10));
-                stage.setScene(new Scene(root, 700, 400));
+                stage.setScene(new Scene(root, 800, 400));
                 stage.setTitle("Transactions Wallet RIB: " + w.getRib());
                 stage.show();
 
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
-
         // ----------- Clic sur la flèche verso pour afficher les dates sur la carte -----------
         lblDates.setOnMouseClicked(e -> {
             try {
@@ -1081,7 +1119,7 @@ public class crud_wallet {
                 rotateOut.setOnFinished(ev -> {
 
                     // Contenu verso
-                    Label lblBack = new Label("⬅️");
+                    Label lblBack = new Label("\uD83D\uDD04");
                     lblBack.setStyle("-fx-font-size: 20px; -fx-cursor: hand;");
 
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy - HH:mm");
@@ -1103,9 +1141,33 @@ public class crud_wallet {
                     lblModifValue.setStyle("-fx-font-size: 16px; -fx-text-fill: #1a5f7a;");
                     VBox modifBox = new VBox(2, lblModifTitle, lblModifValue);
                     modifBox.setAlignment(Pos.CENTER);
+                    // ----------- Bouton Recharger 💰 -----------
+                    Button btnRecharge = null;
 
-// Verso complet avec la flèche pour retourner
-                    VBox verso = new VBox(15, lblBack, creationBox, modifBox);
+                    if (wUpdated.getTypeWallet() == typeWallet.fiat
+                            && wUpdated.getStatut() == statutWallet.actif) {
+
+                        btnRecharge = new Button("💰 Recharger");
+                        btnRecharge.setPrefWidth(145);
+                        btnRecharge.setPrefHeight(35);
+                        btnRecharge.setStyle(
+                                "-fx-background-color: #10b981;" +
+                                        "-fx-background-radius: 5;" +
+                                        "-fx-text-fill: white;" +
+                                        "-fx-cursor: hand;" +
+                                        "-fx-font-weight: bold;"
+                        );
+
+                        btnRecharge.setOnAction(ev2 -> openRechargeForm(w));
+                    }
+
+
+                    VBox verso;
+                    if (btnRecharge != null) {
+                        verso = new VBox(15, lblBack, creationBox, modifBox, btnRecharge);
+                    } else {
+                        verso = new VBox(15, lblBack, creationBox, modifBox);
+                    }
                     verso.setAlignment(Pos.TOP_CENTER);
                     verso.setPadding(new Insets(20));
                     card.getChildren().clear();
@@ -1198,7 +1260,7 @@ public class crud_wallet {
             if (currencyChart != null) {
                 Platform.runLater(() -> {
                     currencyChart.setData(pieChartData);
-                   
+
                 });
             }
 
@@ -1207,4 +1269,372 @@ public class crud_wallet {
             e.printStackTrace();
         }
     }
-}
+
+        private final int USER_ID = 1;
+
+        private CreditCardService cardService = new CreditCardService();
+
+
+    private void setErrorStyle(TextField field) {
+        field.setStyle("-fx-border-color: red; -fx-border-width: 2; -fx-border-radius: 5;");
+    }
+
+    private void setSuccessStyle(TextField field) {
+        field.setStyle("-fx-border-color: #10b981; -fx-border-width: 2; -fx-border-radius: 5;");
+    }
+
+    private void resetStyles() {
+        cardHolderField.setStyle(null);
+        cardNumberField.setStyle(null);
+        expMonthField.setStyle(null);
+        expYearField.setStyle(null);
+    }
+
+    private void showError(String message) {
+        cardErrorLabel.setText(message);
+        cardErrorLabel.setTextFill(javafx.scene.paint.Color.RED);
+        cardErrorLabel.setVisible(true);
+        cardErrorLabel.setManaged(true);
+    }
+
+    private void showSuccess(String message) {
+        cardErrorLabel.setText(message);
+        cardErrorLabel.setTextFill(javafx.scene.paint.Color.GREEN);
+        cardErrorLabel.setVisible(true);
+        cardErrorLabel.setManaged(true);
+    }
+
+    @FXML
+    private void handleSave() {
+        try {
+            resetStyles();
+            cardErrorLabel.setVisible(false);
+            cardErrorLabel.setManaged(false);
+
+            String holder = cardHolderField.getText();
+            String number = cardNumberField.getText();
+            String monthText = expMonthField.getText();
+            String yearText = expYearField.getText();
+
+            // ================= CHAMPS VIDES =================
+            if (holder.isBlank() || number.isBlank() || monthText.isBlank() || yearText.isBlank()) {
+                showError("⚠ Tous les champs sont obligatoires");
+                if (holder.isBlank()) setErrorStyle(cardHolderField);
+                if (number.isBlank()) setErrorStyle(cardNumberField);
+                if (monthText.isBlank()) setErrorStyle(expMonthField);
+                if (yearText.isBlank()) setErrorStyle(expYearField);
+                return;
+            }
+
+            // ================= VALIDATION NUMÉRO =================
+            if (!number.matches("\\d{16}")) {
+                showError("⚠ Le numéro de carte doit contenir 16 chiffres");
+                setErrorStyle(cardNumberField);
+                return;
+            }
+            setSuccessStyle(cardNumberField);
+
+            // ================= VALIDATION MOIS =================
+            int month = Integer.parseInt(monthText);
+            if (month < 1 || month > 12) {
+                showError("⚠ Le mois doit être entre 1 et 12");
+                setErrorStyle(expMonthField);
+                return;
+            }
+            setSuccessStyle(expMonthField);
+
+            // ================= VALIDATION ANNÉE =================
+            int year = Integer.parseInt(yearText);
+            int currentYear = LocalDate.now().getYear();
+            if (year < currentYear) {
+                showError("⚠ L'année doit être ≥ " + currentYear);
+                setErrorStyle(expYearField);
+                return;
+            }
+            setSuccessStyle(expYearField);
+
+            if (year == currentYear && month < LocalDate.now().getMonthValue()) {
+                showError("⚠ La date d'expiration est invalide");
+                setErrorStyle(expMonthField);
+                setErrorStyle(expYearField);
+                return;
+            }
+
+            // ================= STRIPE =================
+            CreditCard existing = cardService.getCardByUserId(USER_ID);
+            CreditCard card = existing != null ? existing : new CreditCard();
+            card.setIdUser(USER_ID);
+            card.setCardHolderName(holder);
+            card.setLast4Digits(number.substring(number.length() - 4));
+            card.setExpiryMonth(month);
+            card.setExpiryYear(year);
+
+            // 1️⃣ Création Customer Stripe si pas déjà
+            if (card.getStripeCustomerId() == null) {
+                Map<String, Object> customerParams = new HashMap<>();
+                customerParams.put("name", holder);
+                customerParams.put("email", "eya.bouraoui2005@gmail.com"); // utiliser email réel
+                com.stripe.model.Customer stripeCustomer = com.stripe.model.Customer.create(customerParams);
+                card.setStripeCustomerId(stripeCustomer.getId());
+            }
+
+            // 2️⃣ Création PaymentMethod Stripe en test avec token
+            Map<String, Object> paymentMethodParams = new HashMap<>();
+            paymentMethodParams.put("type", "card");
+            paymentMethodParams.put("card", Map.of("token", "tok_visa")); // token de test Stripe
+            com.stripe.model.PaymentMethod paymentMethod = com.stripe.model.PaymentMethod.create(paymentMethodParams);
+            card.setStripePaymentMethodId(paymentMethod.getId());
+
+            // 3️⃣ Sauvegarde dans la DB
+            cardService.insertOrUpdateCard(card);
+
+            showSuccess("✅ Carte enregistrée et configurée sur Stripe avec succès !");
+            cardForm.setVisible(false);
+            cardForm.setManaged(false);
+            loadCard();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Erreur inattendue ! " + e.getMessage());
+        }
+    }
+        public void refreshCard() {
+            loadCard();
+        }
+
+
+
+    private void loadCard() {
+
+        CreditCard card = cardService.getCardByUserId(USER_ID);
+
+        if (card != null) {
+
+            rib.setText("**** **** **** " + card.getLast4Digits());
+            nom.setText(card.getCardHolderName());
+
+        } else {
+
+            rib.setText("**** **** **** ----");
+            nom.setText("NOM");
+        }
+    }
+
+    @FXML
+    private void handleInfosCarte() {
+
+        // cacher wallet
+        walletForm.setVisible(false);
+        walletForm.setManaged(false);
+
+        // afficher card form
+        cardForm.setVisible(true);
+        cardForm.setManaged(true);
+
+        loadCardInForm();
+    }
+    private void loadCardInForm() {
+
+        CreditCard card = cardService.getCardByUserId(USER_ID);
+
+        if (card != null) {
+
+            cardHolderField.setText(card.getCardHolderName());
+
+            // ⚠️ Ne pas mettre **** ici
+            cardNumberField.setText(card.getLast4Digits());
+
+            expMonthField.setText(String.valueOf(card.getExpiryMonth()));
+            expYearField.setText(String.valueOf(card.getExpiryYear()));
+
+        } else {
+
+            cardHolderField.clear();
+            cardNumberField.clear();
+            expMonthField.clear();
+            expYearField.clear();
+        }
+    }
+    @FXML
+    private void handleRecharge(wallet w, currency selectedCurrency, String amountText, Stage stage) {
+
+        // 1️⃣ Vérifier la devise
+        if (selectedCurrency == null) {
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez choisir une devise.");
+            return;
+        }
+
+        // 2️⃣ Vérifier le montant
+        double amount;
+        try {
+            amount = Double.parseDouble(amountText);
+            if (amount <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Montant invalide.");
+            return;
+        }
+
+        try {
+            // 3️⃣ Récupérer la carte du user
+            CreditCard card = cardService.getCardByUserId(USER_ID);
+            if (card == null || card.getStripePaymentMethodId() == null || card.getStripeCustomerId() == null) {
+                showAlert(Alert.AlertType.ERROR,
+                        "Erreur",
+                        "Aucune carte valide disponible. Ajoutez une carte d'abord.");
+                return;
+            }
+
+            // 4️⃣ Devise Stripe
+            String stripeCurrency = selectedCurrency.getNom().toLowerCase();
+
+            // 5️⃣ Création du PaymentIntent Stripe
+            Map<String, Object> params = new HashMap<>();
+            params.put("amount", (long) (amount * 100)); // centimes
+            params.put("currency", stripeCurrency);
+            params.put("customer", card.getStripeCustomerId());
+            params.put("payment_method", card.getStripePaymentMethodId());
+            params.put("confirm", true);
+            params.put("payment_method_types", List.of("card"));
+
+            com.stripe.model.PaymentIntent intent = com.stripe.model.PaymentIntent.create(params);
+
+            // 6️⃣ Enregistrer la transaction + créditer le wallet
+            TransactionService transactionService = new TransactionService();
+            transactionService.insertRechargeTransaction(
+                    w.getIdWallet(),                   // wallet destination
+                    selectedCurrency.getId_currency(), // currency
+                    amount,                            // montant
+                    intent.getStatus(),                // statut Stripe
+                    card.getIdCard()                   // carte utilisée
+            );
+
+            // 7️⃣ Message utilisateur
+            if ("succeeded".equals(intent.getStatus())) {
+                showAlert(Alert.AlertType.INFORMATION,
+                        "Succès",
+                        "Wallet rechargé avec succès 💰");
+                stage.close();
+            } else {
+                showAlert(Alert.AlertType.WARNING,
+                        "Paiement en cours",
+                        "Statut du paiement : " + intent.getStatus());
+            }
+
+        } catch (com.stripe.exception.StripeException se) {
+            se.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur Stripe", se.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Erreur lors de la recharge : " + e.getMessage());
+        }
+    }
+
+    // Méthode showAlert
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    // Formulaire de recharge
+    private void openRechargeForm(wallet w) {
+
+        Stage stage = new Stage();
+        stage.setTitle("Recharger Wallet - RIB : " + w.getRib());
+
+        VBox root = new VBox(20);
+        root.setPadding(new Insets(30));
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #f4f6f9;");
+
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(25));
+        card.setAlignment(Pos.CENTER);
+        card.setPrefWidth(350);
+        card.setStyle(
+                "-fx-background-color: white;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0.2, 0, 4);"
+        );
+
+        Label title = new Label("Recharger votre Wallet");
+        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label lblCurrency = new Label("Devise");
+        ComboBox<currency> currencyComboBox = new ComboBox<>();
+        currencyComboBox.setPrefWidth(250);
+
+        try {
+            List<currency> allCurrencies = currencyService.SelectAll();
+            List<currency> filteredCurrencies = allCurrencies.stream()
+                    .filter(c -> {
+                        if (w.getTypeWallet() == typeWallet.trading)
+                            return c.getType_currency() == typeCurrency.crypto && c.isIs_trading();
+                        else if (w.getTypeWallet() == typeWallet.crypto)
+                            return c.getType_currency() == typeCurrency.crypto;
+                        else if (w.getTypeWallet() == typeWallet.fiat)
+                            return c.getType_currency() == typeCurrency.fiat;
+                        return false;
+                    })
+                    .collect(Collectors.toList());
+
+            currencyComboBox.setItems(FXCollections.observableArrayList(filteredCurrencies));
+            currencyComboBox.setPromptText("Sélectionner une devise");
+
+            currencyComboBox.setCellFactory(lv -> new ListCell<currency>() {
+                @Override
+                protected void updateItem(currency item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty || item == null ? null : item.getNom());
+                }
+            });
+
+            currencyComboBox.setButtonCell(new ListCell<currency>() {
+                @Override
+                protected void updateItem(currency item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty || item == null ? null : item.getNom());
+                }
+            });
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        Label lblAmount = new Label("Montant");
+        TextField txtAmount = new TextField();
+        txtAmount.setPromptText("Ex: 100.00");
+        txtAmount.setPrefWidth(250);
+
+        Button btnConfirm = new Button("Valider la recharge");
+        btnConfirm.setPrefWidth(250);
+        btnConfirm.setOnAction(e ->
+                handleRecharge(
+                        w,
+                        currencyComboBox.getValue(),
+                        txtAmount.getText(),
+                        stage
+                )
+        );
+
+        card.getChildren().addAll(title, lblCurrency, currencyComboBox, lblAmount, txtAmount, btnConfirm);
+        root.getChildren().add(card);
+
+        stage.setScene(new Scene(root, 400, 450));
+        stage.show();
+    }
+    @FXML
+    private void handleCloseCardForm() {
+
+        // Masquer le formulaire d'ajout de carte
+        cardForm.setVisible(false);
+        cardForm.setManaged(false);
+
+        // Afficher à nouveau le formulaire Wallet
+        walletForm.setVisible(true);
+        walletForm.setManaged(true);
+    }
+    }
