@@ -13,6 +13,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
+import tn.esprit.Champions.services.RiskAnalysisService;
 import tn.esprit.Champions.services.projetService;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class DetailsCreditController {
     private credit currentCredit;
     private final projetService ps = new projetService();
     private wallet userWallet;
+    private final RiskAnalysisService expertIA = new RiskAnalysisService();
 
     public void initData(credit c) {
         if (c == null) return;
@@ -88,14 +90,19 @@ public class DetailsCreditController {
     }
 
     @FXML
-    private void genererEtudePro() {
-        if (reportContainer == null) return;
+    public void genererEtudePro() {
+        // Afficher un message de chargement
+        lblDescription.setText("L'IA analyse votre dossier...");
 
-        reportContainer.getChildren().clear();
-        if (lblScoreRisque != null) lblScoreRisque.setText("⌛ Analyse...");
+        // Lancer l'appel API (dans un nouveau thread pour ne pas freezer l'appli)
+        new Thread(() -> {
+            String resultIA = expertIA.getAiAnalysis(currentCredit, userWallet);
 
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1.0), e -> construireRapport()));
-        timeline.play();
+            // Revenir sur le thread principal pour mettre à jour l'UI
+            javafx.application.Platform.runLater(() -> {
+                lblDescription.setText(resultIA);
+            });
+        }).start();
     }
 
     private void construireRapport() {
