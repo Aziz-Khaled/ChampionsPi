@@ -1,17 +1,12 @@
 package tn.esprit.Champions.gui.invest;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
-import javafx.collections.FXCollections;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
-import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.RiskAnalysisService;
 import tn.esprit.Champions.services.projetService;
@@ -21,119 +16,97 @@ import java.sql.SQLException;
 
 public class DetailsCreditController {
 
-    @FXML private Label lblTitle, lblDescription, lblSecteurBadge, lblScoreRisque, lblWalletSolde;
-    @FXML private Label lblSimulatedAmount, lblEstimatedProfit;
-    @FXML private Slider investmentSlider;
-    @FXML private VBox reportContainer;
+    @FXML private Label lblTitle, lblSecteurBadge, lblWalletSolde;
+    @FXML private Label lblDescription;
+    @FXML private Label lblMontant, lblTaux, lblDuree, lblProfit;
+    @FXML private Label lblProjetDescription, lblProjetStatut;
     @FXML private ImageView imgLarge;
-    @FXML private PieChart riskChart;
-    @FXML private Button btnInvestir;
 
-    private double currentTaux = 0.0;
     private credit currentCredit;
-    private final projetService ps = new projetService();
     private wallet userWallet;
     private final RiskAnalysisService expertIA = new RiskAnalysisService();
+    private final projetService ps = new projetService();
 
     public void initData(credit c) {
         if (c == null) return;
         this.currentCredit = c;
-        this.currentTaux = c.getTaux();
 
+        // 1. Remplissage Crédit (Sécurisé)
+        if (lblMontant != null) lblMontant.setText(String.format("%.2f TND", c.getMontant()));
+        if (lblTaux != null) lblTaux.setText(String.format("%.1f %%", c.getTaux()));
+        if (lblDuree != null) lblDuree.setText(c.getDuree() + " Mois");
+
+        double profitTotal = (c.getMontant() * c.getTaux()) / 100;
+        if (lblProfit != null) lblProfit.setText(String.format("+ %.2f TND", profitTotal));
+
+        // 2. Remplissage Projet et Wallet
         try {
-            // 1. Initialisation du Wallet Partenaire (Statique comme demandé)
             userWallet = new wallet(1, 101, typeWallet.FIAT, "Principal", 25000.0, statutWallet.actif);
-            if (lblWalletSolde != null) {
-                lblWalletSolde.setText(String.format("Solde Wallet: %.2f TND", userWallet.getSolde()));
-            }
+            if (lblWalletSolde != null) lblWalletSolde.setText(String.format("Solde: %.2f TND", userWallet.getSolde()));
 
-            // 2. Chargement des données projet
             projet p = ps.findById(c.getProject_id());
             if (p != null) {
                 if (lblTitle != null) lblTitle.setText(p.getTitle());
-                if (lblDescription != null) lblDescription.setText(p.getDescription());
                 if (lblSecteurBadge != null) lblSecteurBadge.setText(p.getSecteur().toUpperCase());
+                if (lblProjetDescription != null) lblProjetDescription.setText(p.getDescription());
+                if (lblProjetStatut != null) lblProjetStatut.setText(p.getSecteur());
 
                 if (imgLarge != null && p.getImageUrl() != null && !p.getImageUrl().isEmpty()) {
-                    try {
-                        imgLarge.setImage(new Image(p.getImageUrl(), true));
-                    } catch (Exception e) {
-                        System.err.println("Erreur image : " + e.getMessage());
-                    }
+                    imgLarge.setImage(new Image(p.getImageUrl(), true));
                 }
             }
+        } catch (SQLException e) { e.printStackTrace(); }
 
-            // 3. Configuration du simulateur
-            if (investmentSlider != null) {
-                investmentSlider.setMin(0);
-                investmentSlider.setMax(userWallet.getSolde());
-                investmentSlider.setValue(Math.min(1000, userWallet.getSolde()));
-                investmentSlider.valueProperty().addListener((obs, oldVal, newVal) -> updateSimulation(newVal.doubleValue()));
-                updateSimulation(investmentSlider.getValue());
-            }
-
-            // 4. Lancement de l'étude IA
-            genererEtudePro();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        lancerExpertiseIA();
     }
 
-    private void updateSimulation(double amount) {
-        if (lblSimulatedAmount != null) lblSimulatedAmount.setText(String.format("%.0f TND", amount));
-        double profit = amount * (currentTaux / 100);
-        if (lblEstimatedProfit != null) lblEstimatedProfit.setText(String.format("+ %.2f TND", profit));
-
-        // Sécurité : bloquer l'investissement si le solde est dépassé
-        if (btnInvestir != null) btnInvestir.setDisable(amount <= 0 || amount > userWallet.getSolde());
-    }
-
-    @FXML
-    public void genererEtudePro() {
-        // Afficher un message de chargement
-        lblDescription.setText("L'IA analyse votre dossier...");
-
-        // Lancer l'appel API (dans un nouveau thread pour ne pas freezer l'appli)
+    private void lancerExpertiseIA() {
+        if (lblDescription != null) lblDescription.setText("L'Expert Mistral analyse le dossier... ⌛");
         new Thread(() -> {
             String resultIA = expertIA.getAiAnalysis(currentCredit, userWallet);
-
-            // Revenir sur le thread principal pour mettre à jour l'UI
-            javafx.application.Platform.runLater(() -> {
-                lblDescription.setText(resultIA);
+            Platform.runLater(() -> {
+                if (lblDescription != null) lblDescription.setText(resultIA);
             });
         }).start();
     }
 
-    private void construireRapport() {
-        double reliability = 70 + (Math.random() * 25);
-        if (lblScoreRisque != null) lblScoreRisque.setText(String.format("%.1f%%", reliability));
+    @FXML
+    private void negocierCredit() {
+        try {
+            // 1. Charger le fichier FXML de la négociation
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/Negociation.fxml"));
+            Parent root = loader.load();
 
-        if (riskChart != null) {
-            riskChart.setData(FXCollections.observableArrayList(
-                    new PieChart.Data("Fiabilité", reliability),
-                    new PieChart.Data("Risque", 100 - reliability)
-            ));
+            // 2. Récupérer le contrôleur de la page de négociation
+            NegociationController controller = loader.getController();
+
+            // 3. Lui passer le crédit actuel pour qu'il sache de quoi on discute
+            controller.initData(currentCredit);
+
+            // 4. Afficher la nouvelle interface dans la même fenêtre
+            lblTitle.getScene().setRoot(root);
+
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'ouverture de la négociation : " + e.getMessage());
+            e.printStackTrace();
         }
-
-        ajouterLigneRapport("📊 Analyse de Marché", "Le secteur " + lblSecteurBadge.getText() + " présente une stabilité confirmée.");
-
-        double impact = (investmentSlider.getValue() / userWallet.getSolde()) * 100;
-        String avis = impact < 15 ? "Risque de capital : Faible" : "Risque de capital : Modéré";
-        ajouterLigneRapport("💳 Impact Portefeuille", avis + " (" + String.format("%.1f%%", impact) + " du solde).");
-
-        ajouterLigneRapport("🛡️ Garantie Partenaire", "Projet éligible au fonds de garantie Champions PI.");
     }
 
-    private void ajouterLigneRapport(String titre, String texte) {
-        VBox ligne = new VBox(2);
-        Label lTitre = new Label(titre);
-        lTitre.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #2d3436;");
-        Label lTexte = new Label(texte);
-        lTexte.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72;");
-        lTexte.setWrapText(true);
-        ligne.getChildren().addAll(lTitre, lTexte);
-        reportContainer.getChildren().add(ligne);
+    @FXML
+    private void investirCredit() {
+        if (userWallet.getSolde() < currentCredit.getMontant()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Solde Insuffisant");
+            alert.setContentText("Votre solde actuel ne permet pas cet investissement.");
+            alert.showAndWait();
+        } else {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Confirmer l'investissement de " + lblMontant.getText() + " ?", ButtonType.YES, ButtonType.NO);
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.YES) {
+                    System.out.println("Action : Investissement enregistré !");
+                }
+            });
+        }
     }
 
     @FXML
@@ -141,8 +114,6 @@ public class DetailsCreditController {
         try {
             Parent root = FXMLLoader.load(getClass().getResource("/invest/Marketplace.fxml"));
             lblTitle.getScene().setRoot(root);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 }
