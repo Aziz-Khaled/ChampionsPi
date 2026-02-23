@@ -213,14 +213,23 @@ public class TradingDashboard {
     @FXML
     private void openBotWindow() {
         try {
+            // Charge le fichier FXML du Bot
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/BotView.fxml"));
             Parent root = loader.load();
+
+            // Créer une nouvelle scène
             Stage stage = new Stage();
             stage.setTitle("🤖 FinTech Autonomous Bot");
             stage.setScene(new Scene(root));
+
+            // Optionnel : Garder la fenêtre au-dessus pour surveiller pendant qu'on trade
             stage.setAlwaysOnTop(true);
             stage.show();
-        } catch (IOException e) { e.printStackTrace(); }
+
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'ouverture du Bot : " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void updateChart(double price) {

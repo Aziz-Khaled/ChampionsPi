@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.util.Duration;
+import tn.esprit.Champions.models.OrderMode;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Trade;
 import tn.esprit.Champions.models.TradeType;
@@ -18,60 +19,68 @@ import java.util.List;
 
 public class BotController {
 
-    @FXML private ListView<String> listPending;
+    @FXML private ListView<String> listLogs;
     @FXML private Label lblBotStatus;
 
     private TradeService tradeService = new TradeService();
     private MarketApiService marketApi = new MarketApiService();
-    private Timeline botEngine;
+    private Timeline botTimeline;
 
     @FXML
     public void initialize() {
-        startAutonomousMonitoring();
+        startAutomationEngine();
     }
 
-    private void startAutonomousMonitoring() {
-        // Le métier tourne toutes les 5 secondes pour surveiller le marché
-        botEngine = new Timeline(new KeyFrame(Duration.seconds(5), e -> {
+    private void startAutomationEngine() {
+        botTimeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
             try {
-                // 1. Charger les ordres LIMIT en attente (Trace BDD)
-                List<Trade> pendingOrders = tradeService.selectPendingLimitOrders();
+                // Utilisation de la méthode spécifique pour plus d'efficacité
+                List<Trade> pendingTrades = tradeService.SelectAll().stream()
+                        .filter(t -> t.getStatus() == Status.PENDING && t.getOrderMode() == OrderMode.LIMIT)
+                        .toList();
 
-                // Mise à jour visuelle de la liste pour le trader
-                listPending.getItems().clear();
-
-                for (Trade order : pendingOrders) {
-                    listPending.getItems().add(order.getTradeType() + " BTC @ Cible: " + order.getPrice());
-
-                    // 2. Récupérer le prix réel via l'API
-                    double currentMarketPrice = marketApi.fetchPrice("BTC");
-
-                    // 3. LOGIQUE MÉTIER AVANCÉE
-                    boolean conditionMet = false;
-                    if (order.getTradeType() == TradeType.BUY && currentMarketPrice <= order.getPrice()) {
-                        conditionMet = true; // Prix est descendu assez bas pour acheter
-                    } else if (order.getTradeType() == TradeType.SELL && currentMarketPrice >= order.getPrice()) {
-                        conditionMet = true; // Prix est monté assez haut pour vendre (Profit)
-                    }
-
-                    // 4. Exécution automatique si condition remplie
-                    if (conditionMet) {
-                        tradeService.finalizeLimitOrder(order.getId(), currentMarketPrice);
-                        System.out.println("🤖 BOT : Ordre ID " + order.getId() + " exécuté automatiquement !");
-                    }
+                if (pendingTrades.isEmpty()) {
+                    lblBotStatus.setText("Statut : En veille (Aucun ordre)");
+                    return;
                 }
 
-                if (pendingOrders.isEmpty()) {
-                    lblBotStatus.setText("Statut : Aucun ordre en attente.");
-                } else {
-                    lblBotStatus.setText("Statut : Surveillance active de " + pendingOrders.size() + " ordres...");
-                }
+                lblBotStatus.setText("Statut : Surveillance de " + pendingTrades.size() + " ordres...");
 
-            } catch (SQLException ex) {
-                ex.printStackTrace();
+                for (Trade trade : pendingTrades) {
+                    double currentPrice = marketApi.fetchPrice("BTC");
+                    boolean shouldExecute = false;
+
+                    if (trade.getTradeType() == TradeType.BUY && currentPrice <= trade.getPrice()) {
+                        shouldExecute = true;
+                    } else if (trade.getTradeType() == TradeType.SELL && currentPrice >= trade.getPrice()) {
+                        shouldExecute = true;
+                    }
+
+                    if (shouldExecute) {
+                        trade.setStatus(Status.COMPLETED);
+                        trade.setExecutedAt(java.time.LocalDateTime.now());
+                        tradeService.updateOne(trade);
+
+                        listLogs.getItems().add(0, "✅ EXÉCUTÉ : " + trade.getTradeType() + " à " + currentPrice);
+                        System.out.println("🤖 Bot : Ordre " + trade.getId() + " validé en BDD.");
+                    }
+                }
+            } catch (SQLException e) {
+                listLogs.getItems().add(0, "❌ Erreur BDD : " + e.getMessage());
             }
         }));
-        botEngine.setCycleCount(Animation.INDEFINITE);
-        botEngine.play();
+
+        botTimeline.setCycleCount(Animation.INDEFINITE);
+        botTimeline.play();
+    }
+
+    // CETTE MÉTHODE DOIT S'APPELER handleStop POUR CORRESPONDRE AU FXML
+    @FXML
+    private void handleStop() {
+        if (botTimeline != null) {
+            botTimeline.stop();
+            lblBotStatus.setText("Statut : Arrêté");
+            listLogs.getItems().add(0, "🛑 Bot arrêté manuellement.");
+        }
     }
 }
