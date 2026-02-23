@@ -176,10 +176,27 @@
                             </StackPane>
                             <HBox alignment="CENTER" spacing="10.0">
 
-                                <Button fx:id="btnInfosCarte" onAction="#handleInfosCarte" prefHeight="35.0" prefWidth="145.0" style="-fx-background-color: transparent;                    -fx-border-color: #1a5f7a;                    -fx-border-radius: 5;                    -fx-text-fill: #1a5f7a;                    -fx-cursor: hand;" text="💳 Infos Carte">
-                                </Button>
+                                <!-- Bouton Infos Carte -->
+                                <Button fx:id="btnInfosCarte"
+                                        onAction="#handleInfosCarte"
+                                        prefHeight="35.0" prefWidth="145.0"
+                                        style="-fx-background-color: transparent;
+                   -fx-border-color: #1a5f7a;
+                   -fx-border-radius: 5;
+                   -fx-text-fill: #1a5f7a;
+                   -fx-cursor: hand;"
+                                        text="💳 Infos Carte" />
 
-
+                                <!-- Bouton Delete Carte -->
+                                <Button fx:id="btnDeleteCarte"
+                                        onAction="#handleDeleteCarte"
+                                        prefHeight="35.0" prefWidth="145.0"
+                                        style="-fx-background-color: transparent;
+                   -fx-border-color: #e74c3c;
+                   -fx-border-radius: 5;
+                   -fx-text-fill: #e74c3c;
+                   -fx-cursor: hand;"
+                                        text="🗑 Supprimer" />
 
                             </HBox>
                         </VBox>

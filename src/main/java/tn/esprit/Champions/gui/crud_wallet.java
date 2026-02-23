@@ -1304,6 +1304,7 @@ public class crud_wallet {
         cardErrorLabel.setManaged(true);
     }
 
+
     @FXML
     private void handleSave() {
         try {
@@ -1317,22 +1318,12 @@ public class crud_wallet {
             String yearText = expYearField.getText();
 
             // ================= CHAMPS VIDES =================
-            if (holder.isBlank() || number.isBlank() || monthText.isBlank() || yearText.isBlank()) {
+            if (monthText.isBlank() || yearText.isBlank()) {
                 showError("⚠ Tous les champs sont obligatoires");
-                if (holder.isBlank()) setErrorStyle(cardHolderField);
-                if (number.isBlank()) setErrorStyle(cardNumberField);
                 if (monthText.isBlank()) setErrorStyle(expMonthField);
                 if (yearText.isBlank()) setErrorStyle(expYearField);
                 return;
             }
-
-            // ================= VALIDATION NUMÉRO =================
-            if (!number.matches("\\d{16}")) {
-                showError("⚠ Le numéro de carte doit contenir 16 chiffres");
-                setErrorStyle(cardNumberField);
-                return;
-            }
-            setSuccessStyle(cardNumberField);
 
             // ================= VALIDATION MOIS =================
             int month = Integer.parseInt(monthText);
@@ -1360,8 +1351,45 @@ public class crud_wallet {
                 return;
             }
 
+            // ================= GESTION ACTIVE CARD =================
+            CreditCard activeCard = cardService.getActiveCardByUserId(USER_ID);
+
+            if (activeCard == null) {
+                // Pas de carte active → insertion depuis le formulaire
+                if (holder.isBlank() || number.isBlank()) {
+                    showError("⚠ Le numéro et le nom de la carte sont obligatoires pour créer une nouvelle carte");
+                    if (holder.isBlank()) setErrorStyle(cardHolderField);
+                    if (number.isBlank()) setErrorStyle(cardNumberField);
+                    return;
+                }
+                if (!number.matches("\\d{16}")) {
+                    showError("⚠ Le numéro de carte doit contenir 16 chiffres");
+                    setErrorStyle(cardNumberField);
+                    return;
+                }
+                setSuccessStyle(cardNumberField);
+
+                CreditCard newCard = new CreditCard();
+                newCard.setIdUser(USER_ID);
+                newCard.setCardHolderName(holder);
+                newCard.setLast4Digits(number.substring(number.length() - 4)); // seulement 4 derniers chiffres
+                newCard.setExpiryMonth(month);
+                newCard.setExpiryYear(year);
+
+                cardService.insertCard(newCard); // méthode d'insertion
+                showSuccess("✅ Carte ajoutée avec succès !");
+            } else {
+                // Carte active existante → mise à jour uniquement mois, année et champs Stripe
+                activeCard.setExpiryMonth(month);
+                activeCard.setExpiryYear(year);
+
+                cardService.updateCard(activeCard); // update mois/année + Stripe
+                showSuccess("✅ Carte mise à jour avec succès !");
+            }
+            loadCard();
+
             // ================= STRIPE =================
-            CreditCard existing = cardService.getCardByUserId(USER_ID);
+            CreditCard existing = cardService.getActiveCardByUserId(USER_ID);
             CreditCard card = existing != null ? existing : new CreditCard();
             card.setIdUser(USER_ID);
             card.setCardHolderName(holder);
@@ -1386,7 +1414,7 @@ public class crud_wallet {
             card.setStripePaymentMethodId(paymentMethod.getId());
 
             // 3️⃣ Sauvegarde dans la DB
-            cardService.insertOrUpdateCard(card);
+            cardService.updateCard(card);
 
             showSuccess("✅ Carte enregistrée et configurée sur Stripe avec succès !");
             cardForm.setVisible(false);
@@ -1406,16 +1434,13 @@ public class crud_wallet {
 
 
     private void loadCard() {
-
-        CreditCard card = cardService.getCardByUserId(USER_ID);
+        // ✅ Récupérer uniquement la carte active
+        CreditCard card = cardService.getActiveCardByUserId(USER_ID);
 
         if (card != null) {
-
             rib.setText("**** **** **** " + card.getLast4Digits());
             nom.setText(card.getCardHolderName());
-
         } else {
-
             rib.setText("**** **** **** ----");
             nom.setText("NOM");
         }
@@ -1423,7 +1448,6 @@ public class crud_wallet {
 
     @FXML
     private void handleInfosCarte() {
-
         // cacher wallet
         walletForm.setVisible(false);
         walletForm.setManaged(false);
@@ -1432,28 +1456,36 @@ public class crud_wallet {
         cardForm.setVisible(true);
         cardForm.setManaged(true);
 
-        loadCardInForm();
+        // charger la carte ACTIVE si elle existe
+        CreditCard card = cardService.getActiveCardByUserId(USER_ID);
+
+        loadCardInForm(card);
     }
-    private void loadCardInForm() {
-
-        CreditCard card = cardService.getCardByUserId(USER_ID);
-
+    private void loadCardInForm(CreditCard card) {
         if (card != null) {
-
             cardHolderField.setText(card.getCardHolderName());
+            cardHolderField.setDisable(true); // impossible de modifier
 
-            // ⚠️ Ne pas mettre **** ici
             cardNumberField.setText(card.getLast4Digits());
+            cardNumberField.setDisable(true); // impossible de modifier
 
             expMonthField.setText(String.valueOf(card.getExpiryMonth()));
+            expMonthField.setDisable(false); // modifiable
+
             expYearField.setText(String.valueOf(card.getExpiryYear()));
-
+            expYearField.setDisable(false); // modifiable
         } else {
-
             cardHolderField.clear();
+            cardHolderField.setDisable(false); // peut saisir le nom
+
             cardNumberField.clear();
+            cardNumberField.setDisable(false); // peut saisir les 4 derniers chiffres
+
             expMonthField.clear();
+            expMonthField.setDisable(false);
+
             expYearField.clear();
+            expYearField.setDisable(false);
         }
     }
 
@@ -1513,7 +1545,7 @@ public class crud_wallet {
 
         try {
             // 3️⃣ Récupérer la carte de l'utilisateur
-            CreditCard card = cardService.getCardByUserId(USER_ID);
+            CreditCard card = cardService.getActiveCardByUserId(USER_ID);
             if (card == null) {
                 showAlert(Alert.AlertType.ERROR,
                         "Erreur",
@@ -1529,7 +1561,7 @@ public class crud_wallet {
                                 .build()
                 );
                 card.setStripeCustomerId(customer.getId());
-                cardService.insertOrUpdateCard(card);
+                cardService.updateCard(card);
             }
 
             // 5️⃣ Attacher la carte si nécessaire
@@ -1693,5 +1725,30 @@ public class crud_wallet {
         // Afficher à nouveau le formulaire Wallet
         walletForm.setVisible(true);
         walletForm.setManaged(true);
+    }
+    @FXML
+    private void handleDeleteCarte() {
+        try {
+            // 1️⃣ Récupérer la carte active
+            CreditCard card = cardService.getActiveCardByUserId(USER_ID);
+            if (card == null) {
+                Platform.runLater(() -> showError("Aucune carte active trouvée."));
+                return;
+            }
+
+            // 2️⃣ Appeler le service pour "supprimer" la carte (changer le statut)
+            cardService.deleteCard(card.getIdCard());
+
+            // 3️⃣ Vider les champs visibles dans la carte transaction
+            rib.setText("**** **** **** ****");
+            nom.setText("");
+
+            // 4️⃣ Afficher le message de succès sur le thread UI
+            Platform.runLater(() -> showSuccess("✅ Carte supprimée avec succès (statut DELETED)."));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Platform.runLater(() -> showError("Erreur lors de la suppression de la carte : " + e.getMessage()));
+        }
     }
     }

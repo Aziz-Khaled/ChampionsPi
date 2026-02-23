@@ -10,6 +10,7 @@ public class CreditCard {
     private String stripeCustomerId;
     private String stripePaymentMethodId;
     private String dateAjout;
+    private StatutCreditCard statut;
 
     public int getIdCard() {
         return idCard;
@@ -83,5 +84,11 @@ public class CreditCard {
         this.dateAjout = dateAjout;
     }
 
+    public StatutCreditCard getStatut() {
+        return statut;
+    }
 
+    public void setStatut(StatutCreditCard statut) {
+        this.statut = statut;
+    }
 }
