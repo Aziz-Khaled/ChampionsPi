@@ -205,15 +205,18 @@ public class UtilisateurService implements CRUD<Utilisateur>{
     }
 
 
-    public void completeKYC(int userId, String phone, String idPath, String imagePath) throws SQLException {
-        String query = "UPDATE utilisateur SET telephone = ?, piece_identite = ?, user_image = ?, statut = ? WHERE id_user = ?";
+    public void completeKYC(int userId, String phone, String idFileName, String imgFileName, String role) throws SQLException {
+        // We update 5 fields: telephone, piece_identite, user_image, role, and statut
+        String query = "UPDATE utilisateur SET telephone = ?, piece_identite = ?, user_image = ?, role = ?, statut = ? WHERE id_user = ?";
 
         try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
             ps.setString(1, phone);
-            ps.setString(2, idPath);
-            ps.setString(3, imagePath);
-            ps.setString(4, "PENDING"); // Set back to pending for Admin review
-            ps.setInt(5, userId);
+            ps.setString(2, idFileName);
+            ps.setString(3, imgFileName);
+            ps.setString(4, role);
+            ps.setString(5, "PENDING"); // Account waits for admin approval after KYC
+            ps.setInt(6, userId);
+
             ps.executeUpdate();
         }
     }
