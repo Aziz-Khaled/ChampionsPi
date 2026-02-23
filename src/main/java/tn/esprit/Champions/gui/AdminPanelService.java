@@ -5,9 +5,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
@@ -16,155 +19,157 @@ import tn.esprit.Champions.utils.UserSession;
 
 import java.awt.Desktop;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class AdminPanelService {
 
+    // Navigation and Layout
+    @FXML private Button btnOverview;
     @FXML private Button btnGestionUsers;
     @FXML private Button btnListeUsers;
-    @FXML private VBox mainContent;
+    @FXML private Button btnCourses;
     @FXML private Button btnLogout;
+    @FXML private VBox mainContent;
     @FXML private Label lblTitle;
+
+    // Dashboard Components (Injected from FXML)
+    @FXML private StackPane chartContainer;
+    @FXML private StackPane pieChartContainer;
+    @FXML private VBox recentActivityList;
 
     private final UtilisateurService userService = new UtilisateurService();
 
+    // NEW: Variable to store the dashboard layout (ScrollPane)
+    private Node dashboardView;
+
     @FXML
     private void initialize() {
+        // 1. IMPORTANT: Capture the dashboard UI (the ScrollPane) before it's cleared
+        if (mainContent != null && !mainContent.getChildren().isEmpty()) {
+            dashboardView = mainContent.getChildren().get(0);
+        }
 
+        // Session Check
         Utilisateur currentUser = UserSession.getLoggedInUser();
         if (currentUser != null) {
-            lblTitle.setText("Hello, " + currentUser.getNom());
+            lblTitle.setText("Welcome, " + currentUser.getNom());
         }
-        showGestionUsers();
+
+        // Set Default View
+        showDashboard();
+
+        // Navigation Handlers
+        btnOverview.setOnAction(e -> showDashboard());
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
 
         if (btnLogout != null) {
-            btnLogout.setOnAction(e -> {
-
-                UserSession.clearSession();
-
-                try {
-                    javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/LoginPage.fxml"));
-                    javafx.scene.Parent root = loader.load();
-                    javafx.stage.Stage stage = (javafx.stage.Stage) btnLogout.getScene().getWindow();
-                    stage.setScene(new javafx.scene.Scene(root));
-                    stage.setTitle("Login - Champions");
-                    stage.show();
-                } catch (java.io.IOException ex) {
-                    ex.printStackTrace();
-                }
-            });
+            btnLogout.setOnAction(e -> handleLogout());
         }
     }
 
-    private void setActiveButton(Button activeBtn) {
-        btnGestionUsers.getStyleClass().remove("nav-button-active");
-        btnListeUsers.getStyleClass().remove("nav-button-active");
-        activeBtn.getStyleClass().add("nav-button-active");
+    // --- DASHBOARD LOGIC ---
+
+    private void showDashboard() {
+        setActiveButton(btnOverview);
+        lblTitle.setText("System Overview");
+
+        // 2. Restore the original dashboard UI to the mainContent
+        if (dashboardView != null) {
+            mainContent.getChildren().clear();
+            mainContent.getChildren().add(dashboardView);
+        }
+
+        setupLineChart();
+        setupPieChart();
+        setupActivityPulse();
     }
 
+    private void setupLineChart() {
+        if (chartContainer == null) return;
+        chartContainer.getChildren().clear();
 
-    private void renderTable(TableView<Utilisateur> table) {
-        mainContent.getChildren().clear();
-        mainContent.setSpacing(15);
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        LineChart<String, Number> lineChart = new LineChart<>(xAxis, yAxis);
+        lineChart.setLegendVisible(false);
+        lineChart.setAnimated(true);
 
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.getData().add(new XYChart.Data<>("Mon", 12));
+        series.getData().add(new XYChart.Data<>("Tue", 25));
+        series.getData().add(new XYChart.Data<>("Wed", 18));
+        series.getData().add(new XYChart.Data<>("Thu", 45));
+        series.getData().add(new XYChart.Data<>("Fri", 35));
+        series.getData().add(new XYChart.Data<>("Sat", 65));
+        series.getData().add(new XYChart.Data<>("Sun", 58));
 
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search by name or email...");
-        searchField.setPrefWidth(300);
-        searchField.getStyleClass().add("search-field");
-
-
-        ComboBox<Object> roleFilter = new ComboBox<>();
-        roleFilter.setPromptText("Filter by Role");
-        roleFilter.getStyleClass().add("filter-combo");
-        roleFilter.setPrefWidth(160);
-        roleFilter.getItems().add("All Roles");
-        roleFilter.getItems().addAll((Object[]) tn.esprit.Champions.models.Role.values());
-        roleFilter.getSelectionModel().selectFirst();
-
-
-        ComboBox<Object> statusFilter = new ComboBox<>();
-        statusFilter.setPromptText("Filter by Status");
-        statusFilter.getStyleClass().add("filter-combo");
-        statusFilter.setPrefWidth(160);
-
-        statusFilter.getItems().add("All Statuses");
-
-
-        java.util.Arrays.stream(tn.esprit.Champions.models.Status.values())
-                .filter(s -> s != tn.esprit.Champions.models.Status.PENDING)
-                .forEach(statusFilter.getItems()::add);
-
-        statusFilter.getSelectionModel().selectFirst();
-
-
-        HBox filterBar = new HBox(15, searchField, roleFilter, statusFilter);
-        filterBar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-
-
-        ObservableList<Utilisateur> masterData = table.getItems();
-        FilteredList<Utilisateur> filteredData = new FilteredList<>(masterData, p -> true);
-
-
-        Runnable updateFilter = () -> {
-            String searchText = (searchField.getText() == null) ? "" : searchField.getText().toLowerCase();
-            Object selectedRole = roleFilter.getValue();
-            Object selectedStatus = statusFilter.getValue();
-
-            filteredData.setPredicate(user -> {
-
-                String fullName = (user.getNom() + " " + user.getPrenom()).toLowerCase();
-                boolean matchesText = fullName.contains(searchText) ||
-                        user.getEmail().toLowerCase().contains(searchText);
-
-
-                boolean matchesRole = (selectedRole == null || selectedRole.equals("All Roles")) ||
-                        user.getRole().equals(selectedRole);
-
-
-                boolean matchesStatus = (selectedStatus == null || selectedStatus.equals("All Statuses")) ||
-                        user.getStatut().equals(selectedStatus);
-
-
-                return matchesText && matchesRole && matchesStatus;
-            });
-        };
-
-
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
-        roleFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
-        statusFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
-
-
-        table.setItems(filteredData);
-        mainContent.getChildren().addAll(filterBar, table);
-        VBox.setVgrow(table, Priority.ALWAYS);
+        lineChart.getData().add(series);
+        chartContainer.getChildren().add(lineChart);
     }
 
+    private void setupPieChart() {
+        if (pieChartContainer == null) return;
+        pieChartContainer.getChildren().clear();
+
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
+                new PieChart.Data("Active", 1284),
+                new PieChart.Data("Pending", 43),
+                new PieChart.Data("Rejected", 12)
+        );
+
+        PieChart pieChart = new PieChart(pieData);
+        pieChart.setLabelsVisible(false);
+        pieChart.setLegendVisible(true);
+        pieChartContainer.getChildren().add(pieChart);
+    }
+
+    private void setupActivityPulse() {
+        if (recentActivityList == null) return;
+        recentActivityList.getChildren().clear();
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+
+        addLogEntry("System Scan Completed", "Security Health: 100%", time);
+        addLogEntry("User 'Ahmed' requested verification", "Pending Review", time);
+        addLogEntry("New Course Added: 'Blockchain 101'", "Content Update", time);
+    }
+
+    private void addLogEntry(String action, String type, String time) {
+        HBox row = new HBox(15);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        row.setStyle("-fx-padding: 10; -fx-background-color: rgba(255,255,255,0.02); -fx-background-radius: 10;");
+
+        Label lblTime = new Label(time);
+        lblTime.setStyle("-fx-text-fill: #2E5BFF; -fx-font-weight: bold; -fx-font-size: 11;");
+
+        VBox texts = new VBox(2);
+        Label lblAction = new Label(action);
+        lblAction.setStyle("-fx-text-fill: white; -fx-font-size: 13; -fx-font-weight: bold;");
+        Label lblType = new Label(type);
+        lblType.setStyle("-fx-text-fill: #8E8E93; -fx-font-size: 11;");
+
+        texts.getChildren().addAll(lblAction, lblType);
+        row.getChildren().addAll(lblTime, texts);
+        recentActivityList.getChildren().add(row);
+    }
+
+    // --- USER MANAGEMENT LOGIC ---
 
     private void showGestionUsers() {
         setActiveButton(btnGestionUsers);
         lblTitle.setText("Pending Verification");
         try {
             ObservableList<Utilisateur> users = FXCollections.observableArrayList(userService.SelectAll());
-
-            TableView<Utilisateur> table = new TableView<>(users);
-            table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-            TableColumn<Utilisateur, String> colName = new TableColumn<>("Nom & Prenom");
-            colName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNom() + " " + data.getValue().getPrenom()));
-
-            TableColumn<Utilisateur, String> colEmail = new TableColumn<>("Email");
-            colEmail.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
+            TableView<Utilisateur> table = createBaseTable(users);
 
             TableColumn<Utilisateur, Void> colIdentity = new TableColumn<>("Identity File");
             colIdentity.setCellFactory(param -> new TableCell<>() {
                 private final Hyperlink link = new Hyperlink();
                 { link.setOnAction(e -> openFile(getTableView().getItems().get(getIndex()).getPiece_identite())); }
-                @Override
-                protected void updateItem(Void item, boolean empty) {
+                @Override protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
                     if (empty) setGraphic(null);
                     else {
@@ -191,30 +196,17 @@ public class AdminPanelService {
                 }
             });
 
-            table.getColumns().addAll(colName, colEmail, colIdentity, colActions);
-
-
+            table.getColumns().addAll(colIdentity, colActions);
             renderTable(table);
-
         } catch (SQLException e) { e.printStackTrace(); }
     }
-
-
 
     private void showAllUsers() {
         setActiveButton(btnListeUsers);
         lblTitle.setText("All Platform Users");
         try {
             ObservableList<Utilisateur> users = FXCollections.observableArrayList(userService.getAllUsers());
-
-            TableView<Utilisateur> table = new TableView<>(users);
-            table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-            TableColumn<Utilisateur, String> colName = new TableColumn<>("Nom & Prenom");
-            colName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getNom() + " " + data.getValue().getPrenom()));
-
-            TableColumn<Utilisateur, String> colEmail = new TableColumn<>("Email");
-            colEmail.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
+            TableView<Utilisateur> table = createBaseTable(users);
 
             TableColumn<Utilisateur, String> colRole = new TableColumn<>("Role");
             colRole.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getRole().name()));
@@ -239,70 +231,105 @@ public class AdminPanelService {
                 }
             });
 
-            table.getColumns().addAll(colName, colEmail, colRole, colStatus, colActions);
-
+            table.getColumns().addAll(colRole, colStatus, colActions);
             renderTable(table);
-
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
+    private TableView<Utilisateur> createBaseTable(ObservableList<Utilisateur> data) {
+        TableView<Utilisateur> table = new TableView<>(data);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
+        TableColumn<Utilisateur, String> colName = new TableColumn<>("Nom & Prenom");
+        colName.setCellValueFactory(dataCell -> new SimpleStringProperty(dataCell.getValue().getNom() + " " + dataCell.getValue().getPrenom()));
+
+        TableColumn<Utilisateur, String> colEmail = new TableColumn<>("Email");
+        colEmail.setCellValueFactory(dataCell -> new SimpleStringProperty(dataCell.getValue().getEmail()));
+
+        table.getColumns().addAll(colName, colEmail);
+        return table;
+    }
+
+    private void renderTable(TableView<Utilisateur> table) {
+        mainContent.getChildren().clear();
+        mainContent.setSpacing(15);
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search by name or email...");
+        searchField.getStyleClass().add("text-field");
+
+        FilteredList<Utilisateur> filteredData = new FilteredList<>(table.getItems(), p -> true);
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            filteredData.setPredicate(user -> {
+                if (newVal == null || newVal.isEmpty()) return true;
+                String lowerCaseFilter = newVal.toLowerCase();
+                return user.getNom().toLowerCase().contains(lowerCaseFilter) ||
+                        user.getEmail().toLowerCase().contains(lowerCaseFilter);
+            });
+        });
+
+        table.setItems(filteredData);
+        mainContent.getChildren().addAll(searchField, table);
+        VBox.setVgrow(table, Priority.ALWAYS);
+    }
+
+    // --- UTILS & CRUD ACTIONS ---
 
     private void confirmAndUpdate(Utilisateur user, Status status) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Confirmation");
-        confirm.setHeaderText(null);
-        confirm.setContentText("Are you sure you want to " + status + " this user?");
+        confirm.setContentText("Set " + user.getNom() + " status to " + status + "?");
         confirm.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) updateStatus(user, status);
+            if (response == ButtonType.OK) {
+                try {
+                    user.setStatut(status);
+                    userService.updateOne(user);
+                    showGestionUsers();
+                } catch (SQLException e) { e.printStackTrace(); }
+            }
         });
-    }
-
-    private void updateStatus(Utilisateur user, Status status) {
-        try {
-            user.setStatut(status);
-            userService.updateOne(user);
-            showGestionUsers();
-        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void openFile(String fileName) {
         try {
             File file = new File("src/main/resources/assets/" + fileName);
-            if (file.exists()) {
-                Desktop.getDesktop().open(file);
-            } else {
-                Alert error = new Alert(Alert.AlertType.ERROR, "File not found: " + fileName);
-                error.show();
-            }
-        } catch (Exception e) { e.printStackTrace(); }
+            if (file.exists()) Desktop.getDesktop().open(file);
+        } catch (IOException e) { e.printStackTrace(); }
+    }
+
+    private void setActiveButton(Button activeBtn) {
+        btnOverview.getStyleClass().remove("nav-button-active");
+        btnGestionUsers.getStyleClass().remove("nav-button-active");
+        btnListeUsers.getStyleClass().remove("nav-button-active");
+        activeBtn.getStyleClass().add("nav-button-active");
+    }
+
+    private void handleLogout() {
+        UserSession.clearSession();
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/LoginPage.fxml"));
+            javafx.scene.Parent root = loader.load();
+            javafx.stage.Stage stage = (javafx.stage.Stage) btnLogout.getScene().getWindow();
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.show();
+        } catch (IOException ex) { ex.printStackTrace(); }
     }
 
     private void deleteUser(Utilisateur user) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Delete User");
-        confirm.setContentText("Are you sure you want to delete this user?");
-        confirm.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                try {
-                    userService.deleteOne(user);
-                    showAllUsers();
-                } catch (SQLException e) { e.printStackTrace(); }
-            }
-        });
+        try {
+            userService.deleteOne(user);
+            showAllUsers();
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void updateUser(Utilisateur user) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Update User");
 
-
         DialogPane dialogPane = dialog.getDialogPane();
         dialogPane.setPrefWidth(500);
 
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dialogPane.getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
-
 
         TextField tfNom = new TextField(user.getNom());
         tfNom.setMaxWidth(Double.MAX_VALUE);
@@ -323,7 +350,6 @@ public class AdminPanelService {
         cbStatus.getStyleClass().add("filter-combo");
         cbStatus.setMaxWidth(Double.MAX_VALUE);
 
-
         VBox content = new VBox(12,
                 new Label("Nom"), tfNom,
                 new Label("Prenom"), tfPrenom,
@@ -332,10 +358,8 @@ public class AdminPanelService {
                 new Label("Status"), cbStatus
         );
 
-
         content.setStyle("-fx-padding: 25; -fx-font-size: 14px;");
         content.setFillWidth(true);
-
         dialogPane.setContent(content);
 
         dialog.showAndWait().ifPresent(response -> {

@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class UtilisateurService implements CRUD<Utilisateur>{
     @Override
@@ -134,6 +135,87 @@ public class UtilisateurService implements CRUD<Utilisateur>{
         }
 
         return users;
+    }
+
+    /**
+     * Logic for syncing Auth0/Google users with the local database.
+     * Returns the user object (either existing or newly created).
+     */
+    public Utilisateur handleLocalUserSync(String email, String name) throws SQLException {
+        Utilisateur user = getUserByEmail(email);
+
+        if (user == null) {
+            // 1. Split name into First and Last name
+            String[] nameParts = name.split(" ", 2);
+            String firstName = nameParts[0];
+            String lastName = (nameParts.length > 1) ? nameParts[1] : "User";
+
+            // 2. Updated Query to include mandatory fields
+            String query = """
+            INSERT INTO utilisateur 
+            (nom, prenom, email, mot_de_passe, telephone, role, statut, 
+             piece_identite, user_image, date_de_creation) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            """;
+
+            try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+                ps.setString(1, lastName);
+                ps.setString(2, firstName);
+                ps.setString(3, email);
+                // Random password since they login via Google
+                ps.setString(4, "OAUTH_" + UUID.randomUUID().toString().substring(0, 8));
+
+                // 3. Provide default empty strings for mandatory fields to satisfy MySQL
+                ps.setString(5, "00000000");      // Default telephone
+                ps.setString(6, Role.CLIENT.name());
+                ps.setString(7, Status.PENDING.name()); // Or PENDING if you want to verify them
+                ps.setString(8, "NOT_PROVIDED");  // Default piece_identite
+                ps.setString(9, "default_user.png"); // Default image
+
+                ps.executeUpdate();
+            }
+            // Return the newly created user
+            return getUserByEmail(email);
+        }
+        return user;
+    }
+
+    public Utilisateur getUserByEmail(String email) throws SQLException {
+        String query = "SELECT * FROM utilisateur WHERE email = ?";
+        try (PreparedStatement ps = tn.esprit.Champions.utils.DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ps.setString(1, email);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return new Utilisateur(
+                        rs.getInt("id_user"),
+                        rs.getString("nom"),
+                        rs.getString("prenom"),
+                        rs.getString("email"),
+                        rs.getString("mot_de_passe"),
+                        rs.getString("telephone"),
+                        rs.getString("piece_identite"),
+                        rs.getString("user_image"),
+                        tn.esprit.Champions.models.Status.valueOf(rs.getString("statut")),
+                        tn.esprit.Champions.models.Role.valueOf(rs.getString("role"))
+                );
+            }
+            return null;
+        }
+    }
+
+
+    public void completeKYC(int userId, String phone, String idPath, String imagePath) throws SQLException {
+        String query = "UPDATE utilisateur SET telephone = ?, piece_identite = ?, user_image = ?, statut = ? WHERE id_user = ?";
+
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ps.setString(1, phone);
+            ps.setString(2, idPath);
+            ps.setString(3, imagePath);
+            ps.setString(4, "PENDING"); // Set back to pending for Admin review
+            ps.setInt(5, userId);
+            ps.executeUpdate();
+        }
     }
 
 }

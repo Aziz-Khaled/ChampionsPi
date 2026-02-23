@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+
+<HBox prefHeight="800.0" prefWidth="1100.0" styleClass="main-container" stylesheets="@/Styles/Styless.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.KYCController">
+    <children>
+        <VBox alignment="CENTER_LEFT" prefWidth="420.0" spacing="35.0" styleClass="brand-section" HBox.hgrow="NEVER">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                    <children>
+                        <StackPane prefHeight="45" prefWidth="45" styleClass="logo-box">
+                            <children>
+                                <Label style="-fx-font-family: 'System'; -fx-font-style: italic; -fx-font-weight: 900; -fx-font-size: 22;" text="C" textFill="WHITE" />
+                            </children>
+                        </StackPane>
+                        <Label styleClass="brand-title" text="CHAMPIONS." />
+                    </children>
+                </HBox>
+                <VBox spacing="15.0">
+                    <children>
+                        <Label styleClass="brand-headline" text="Identity Verification." wrapText="true" />
+                        <Label styleClass="brand-subtext" text="To comply with financial regulations, we need to verify your identity before you can access your wallet." wrapText="true" />
+                    </children>
+                </VBox>
+                <Region VBox.vgrow="ALWAYS" />
+                <Label styleClass="brand-subtext" text="© 2026 Champions Platform" />
+            </children>
+        </VBox>
+
+        <VBox alignment="CENTER" styleClass="form-section" HBox.hgrow="ALWAYS">
+            <children>
+                <VBox maxWidth="550.0" spacing="35.0" styleClass="form-content-area">
+                    <children>
+                        <VBox spacing="10.0">
+                            <children>
+                                <Label style="-fx-font-size: 32;" styleClass="brand-title" text="Complete Profile" />
+                                <Label styleClass="brand-subtext" text="Final step to secure your fintech account." />
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="25">
+                            <children>
+                                <VBox spacing="8.0">
+                                    <children>
+                                        <Label styleClass="input-label" text="Phone Number" />
+                                        <TextField fx:id="TF_Telephone" promptText="+216 22 333 444" />
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="12.0">
+                                    <children>
+                                        <Label styleClass="input-label" text="Required Documents" />
+                                        <HBox spacing="15.0">
+                                            <children>
+                                                <VBox alignment="CENTER" spacing="15.0" styleClass="file-upload-box" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <Label fx:id="icon_id" style="-fx-font-size: 30;" text="🪪" />
+                                                        <VBox alignment="CENTER" spacing="2.0">
+                                                            <Label style="-fx-font-size: 13;" styleClass="input-label" text="National ID" />
+                                                            <Label fx:id="label_id_status" style="-fx-font-size: 10;" styleClass="brand-subtext" text="Not selected" />
+                                                        </VBox>
+                                                        <Button onAction="#uploadID" styleClass="button-upload" text="Choose File" />
+                                                    </children>
+                                                </VBox>
+
+                                                <VBox alignment="CENTER" spacing="15.0" styleClass="file-upload-box" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <Label fx:id="icon_photo" style="-fx-font-size: 30;" text="📸" />
+                                                        <VBox alignment="CENTER" spacing="2.0">
+                                                            <Label style="-fx-font-size: 13;" styleClass="input-label" text="Selfie Photo" />
+                                                            <Label fx:id="label_photo_status" style="-fx-font-size: 10;" styleClass="brand-subtext" text="Clear Face" />
+                                                        </VBox>
+                                                        <Button onAction="#uploadPhoto" styleClass="button-upload" text="Choose File" />
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+
+                                <Button fx:id="btn_submit" maxWidth="Infinity" onAction="#submitKYC" styleClass="button-primary" text="Submit for Verification →" />
+
+                                <Button maxWidth="Infinity" onAction="#logout" styleClass="button-secondary" text="Cancel and Logout" />
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </children>
+</HBox>
