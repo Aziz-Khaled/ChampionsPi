@@ -7,6 +7,7 @@ import tn.esprit.Champions.utils.DbConnection;
 import tn.esprit.Champions.models.Status;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,6 +116,51 @@ public class TradeService implements CRUD<Trade> {
         }
 
         return trades;
+    }
+
+    // Utilisé par le BOT pour mettre à jour la trace d'exécution
+    public void finalizeLimitOrder(int tradeId, double execPrice) throws SQLException {
+        String req = "UPDATE `trade` SET status = 'COMPLETED', executed_at = ?, price = ? WHERE id = ?";
+        PreparedStatement ps = cnx.prepareStatement(req);
+        ps.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+        ps.setDouble(2, execPrice);
+        ps.setInt(3, tradeId);
+        ps.executeUpdate();
+    }
+
+    public List<Trade> selectAll() throws SQLException {
+        List<Trade> trades = new ArrayList<>();
+        String req = "SELECT * FROM `trade` ORDER BY created_at DESC";
+        ResultSet rs = cnx.createStatement().executeQuery(req);
+        while (rs.next()) {
+            trades.add(mapRowToTrade(rs));
+        }
+        return trades;
+    }
+
+    public List<Trade> selectPendingLimitOrders() throws SQLException {
+        List<Trade> trades = new ArrayList<>();
+        String req = "SELECT * FROM `trade` WHERE status = 'PENDING' AND order_mode = 'LIMIT'";
+        ResultSet rs = cnx.createStatement().executeQuery(req);
+        while (rs.next()) {
+            trades.add(mapRowToTrade(rs));
+        }
+        return trades;
+    }
+
+    private Trade mapRowToTrade(ResultSet rs) throws SQLException {
+        return new Trade(
+                rs.getInt("id"),
+                rs.getInt("user_id"),
+                rs.getInt("asset_id"),
+                TradeType.valueOf(rs.getString("trade_type")),
+                OrderMode.valueOf(rs.getString("order_mode")),
+                rs.getDouble("price"),
+                rs.getDouble("quantity"),
+                Status.valueOf(rs.getString("status")),
+                rs.getTimestamp("created_at").toLocalDateTime(),
+                rs.getTimestamp("executed_at") != null ? rs.getTimestamp("executed_at").toLocalDateTime() : null
+        );
     }
 
 
