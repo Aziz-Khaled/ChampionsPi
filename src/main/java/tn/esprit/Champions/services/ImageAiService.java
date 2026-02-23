@@ -1,5 +1,6 @@
 package tn.esprit.Champions.services;
 
+import io.github.cdimascio.dotenv.Dotenv; // Import de la bibliothèque Dotenv
 import org.json.JSONArray;
 import org.json.JSONObject;
 import javax.imageio.ImageIO;
@@ -12,16 +13,24 @@ import java.util.Scanner;
 
 public class ImageAiService {
 
-    private static final String GEMINI_KEY = "AIzaSyAN9AvnxAemMENR0gr14tboXjkHDB1NZpI";
-    private static final String HF_TOKEN = "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";
+    // Chargement du fichier .env situé à la racine du projet
+    private static final Dotenv dotenv = Dotenv.load();
+
+    // Récupération des clés depuis le fichier .env
+    private static final String GEMINI_KEY = dotenv.get("GEMINI_KEY");
+    private static final String HF_TOKEN = dotenv.get("HF_TOKEN");
 
     private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_KEY;
-
-    // Utilisation du point de terminaison OpenAI-compatible via Together AI
     private static final String HF_ROUTER_URL = "https://router.huggingface.co/together/v1/images/generations";
 
     public static String generateAndSaveAiImage(String title, String description) {
         try {
+            // Vérification si les clés sont bien chargées
+            if (GEMINI_KEY == null || HF_TOKEN == null) {
+                System.err.println("ERREUR : Clés API manquantes dans le fichier .env");
+                return "/images/default_project.png";
+            }
+
             // 1. Obtention du prompt visuel via Gemini
             String smartPrompt = getPromptFromGemini(title, description);
             System.out.println("Prompt IA généré : " + smartPrompt);
@@ -45,13 +54,10 @@ public class ImageAiService {
             int responseCode = conn.getResponseCode();
 
             if (responseCode == 200) {
-                // --- ÉTAPE CORRIGÉE : LECTURE DU JSON ---
                 Scanner s = new Scanner(conn.getInputStream()).useDelimiter("\\A");
                 String responseBody = s.hasNext() ? s.next() : "";
-
                 JSONObject jsonResponse = new JSONObject(responseBody);
 
-                // Extraction de l'URL de l'image stockée dans l'objet "data" du JSON
                 String distantImageUrl = jsonResponse.getJSONArray("data")
                         .getJSONObject(0)
                         .getString("url");
@@ -72,9 +78,6 @@ public class ImageAiService {
         return "/images/default_project.png";
     }
 
-    /**
-     * Télécharge l'image depuis l'URL temporaire fournie par l'IA et la sauve en PNG localement.
-     */
     private static String downloadAndSaveFinalImage(String distantUrl) {
         try {
             URL url = new URL(distantUrl);
@@ -82,14 +85,10 @@ public class ImageAiService {
 
             if (bufferedImage != null) {
                 String fileName = "ai_flux_" + System.currentTimeMillis() + ".png";
-
-                // Chemin vers ton dossier de ressources
                 File dir = new File("src/main/resources/uploads");
                 if (!dir.exists()) dir.mkdirs();
 
                 File outputFile = new File(dir, fileName);
-
-                // Réencodage en PNG standard pour éviter les formats corrompus
                 boolean success = ImageIO.write(bufferedImage, "png", outputFile);
 
                 if (success) {
