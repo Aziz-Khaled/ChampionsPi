@@ -1391,7 +1391,8 @@ public class crud_wallet {
             showSuccess("✅ Carte enregistrée et configurée sur Stripe avec succès !");
             cardForm.setVisible(false);
             cardForm.setManaged(false);
-            loadCard();
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -1455,8 +1456,44 @@ public class crud_wallet {
             expYearField.clear();
         }
     }
+
+    public PaymentIntent createStripePayment(
+            double amount,
+            String currency,
+            String stripeCustomerId,
+            String stripePaymentMethodId
+    ) throws StripeException {
+
+        // Stripe attend le montant en centimes
+        long amountInCents = (long) (amount * 100);
+
+        // Création du PaymentIntent (paiement immédiat)
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                .setAmount(amountInCents)
+                .setCurrency(currency.toLowerCase())
+                .setCustomer(stripeCustomerId)
+                .setPaymentMethod(stripePaymentMethodId)
+                .setConfirm(true) // paiement immédiat
+                .setAutomaticPaymentMethods(
+                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                .setEnabled(true)
+                                .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                .build()
+                )
+                .build();
+
+        PaymentIntent paymentIntent = PaymentIntent.create(params);
+
+        System.out.println("PaymentIntent créé : " + paymentIntent.getId() +
+                ", statut : " + paymentIntent.getStatus());
+
+        return paymentIntent;
+    }
     @FXML
-    private void handleRecharge(wallet w, currency selectedCurrency, String amountText, Stage stage) {
+    private void handleRecharge(wallet w,
+                                currency selectedCurrency,
+                                String amountText,
+                                Stage stage) {
 
         // 1️⃣ Vérifier la devise
         if (selectedCurrency == null) {
@@ -1475,60 +1512,80 @@ public class crud_wallet {
         }
 
         try {
-            // 3️⃣ Récupérer la carte du user
+            // 3️⃣ Récupérer la carte de l'utilisateur
             CreditCard card = cardService.getCardByUserId(USER_ID);
-            if (card == null || card.getStripePaymentMethodId() == null || card.getStripeCustomerId() == null) {
+            if (card == null) {
                 showAlert(Alert.AlertType.ERROR,
                         "Erreur",
-                        "Aucune carte valide disponible. Ajoutez une carte d'abord.");
+                        "Aucune carte disponible. Ajoutez une carte d'abord.");
                 return;
             }
 
-            // 4️⃣ Devise Stripe
-            String stripeCurrency = selectedCurrency.getNom().toLowerCase();
+            // 4️⃣ Créer Customer Stripe si nécessaire
+            if (card.getStripeCustomerId() == null || card.getStripeCustomerId().isEmpty()) {
+                Customer customer = Customer.create(
+                        CustomerCreateParams.builder()
+                                .setEmail("eya.bouraoui2005@gmail.com")
+                                .build()
+                );
+                card.setStripeCustomerId(customer.getId());
+                cardService.insertOrUpdateCard(card);
+            }
 
-            // 5️⃣ Création du PaymentIntent Stripe
-            Map<String, Object> params = new HashMap<>();
-            params.put("amount", (long) (amount * 100)); // centimes
-            params.put("currency", stripeCurrency);
-            params.put("customer", card.getStripeCustomerId());
-            params.put("payment_method", card.getStripePaymentMethodId());
-            params.put("confirm", true);
-            params.put("payment_method_types", List.of("card"));
+            // 5️⃣ Attacher la carte si nécessaire
+            PaymentMethod pm = PaymentMethod.retrieve(card.getStripePaymentMethodId());
+            if (pm.getCustomer() == null) {
+                pm.attach(PaymentMethodAttachParams.builder()
+                        .setCustomer(card.getStripeCustomerId())
+                        .build());
+            }
 
-            com.stripe.model.PaymentIntent intent = com.stripe.model.PaymentIntent.create(params);
+            // 6️⃣ Créer PaymentIntent sécurisé
+            long amountInCents = (long) (amount * 100);
+            PaymentIntent intent = createStripePayment(amount,
+                    selectedCurrency.getNom(),
+                    card.getStripeCustomerId(),
+                    card.getStripePaymentMethodId());
 
-            // 6️⃣ Enregistrer la transaction + créditer le wallet
+            // 7️⃣ Enregistrer la transaction
             TransactionService transactionService = new TransactionService();
             transactionService.insertRechargeTransaction(
-                    w.getIdWallet(),                   // wallet destination
-                    selectedCurrency.getId_currency(), // currency
-                    amount,                            // montant
-                    intent.getStatus(),                // statut Stripe
-                    card.getIdCard()                   // carte utilisée
+                    w.getIdWallet(),
+                    selectedCurrency.getId_currency(),
+                    amount,
+                    intent.getStatus(),
+                    card.getIdCard()
             );
 
-            // 7️⃣ Message utilisateur
+            // 8️⃣ Mettre à jour l'UI directement
             if ("succeeded".equals(intent.getStatus())) {
-                showAlert(Alert.AlertType.INFORMATION,
-                        "Succès",
-                        "Wallet rechargé avec succès 💰");
-                stage.close();
+                Platform.runLater(() -> {
+                    showAlert(Alert.AlertType.INFORMATION,
+                            "Succès",
+                            "Wallet rechargé avec succès 💰");
+
+                    updateGlobalCurrencyChart();
+                    loadWallets();
+
+                    stage.close();
+                });
             } else {
                 showAlert(Alert.AlertType.WARNING,
                         "Paiement en cours",
                         "Statut du paiement : " + intent.getStatus());
             }
 
-        } catch (com.stripe.exception.StripeException se) {
+        } catch (StripeException se) {
             se.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Erreur Stripe", se.getMessage());
+        } catch (SQLException sqlEx) {
+            sqlEx.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur BD", "Impossible d'enregistrer la transaction : " + sqlEx.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Erreur", "Erreur lors de la recharge : " + e.getMessage());
         }
     }
-
     // Méthode showAlert
     private void showAlert(Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type);

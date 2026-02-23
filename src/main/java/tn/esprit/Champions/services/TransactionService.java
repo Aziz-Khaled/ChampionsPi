@@ -295,23 +295,7 @@ public class TransactionService implements CRUD<transaction> {
     }
 
 
-    public PaymentIntent createStripePayment(double
-                                                     amount, String currency) throws Exception {
 
-        PaymentIntentCreateParams params =
-                PaymentIntentCreateParams.builder()
-                        .setAmount((long)(amount * 100)) // Stripe travaille en centimes
-                        .setCurrency(currency.toLowerCase())
-                        .setAutomaticPaymentMethods(
-                                PaymentIntentCreateParams.AutomaticPaymentMethods
-                                        .builder()
-                                        .setEnabled(true)
-                                        .build()
-                        )
-                        .build();
-
-        return PaymentIntent.create(params);
-    }
     public void insertRechargeTransaction(
             int walletDestinationId,
             int currencyId,
