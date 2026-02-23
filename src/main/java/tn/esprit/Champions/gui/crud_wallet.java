@@ -1545,7 +1545,7 @@ public class crud_wallet {
 
         try {
             // 3️⃣ Récupérer la carte de l'utilisateur
-            CreditCard card = cardService.getActiveCardByUserId(USER_ID);
+            CreditCard card = cardService.getCardByUserId(USER_ID);
             if (card == null) {
                 showAlert(Alert.AlertType.ERROR,
                         "Erreur",
@@ -1740,7 +1740,7 @@ public class crud_wallet {
             cardService.deleteCard(card.getIdCard());
 
             // 3️⃣ Vider les champs visibles dans la carte transaction
-            rib.setText("**** **** **** ****");
+            rib.setText("");
             nom.setText("");
 
             // 4️⃣ Afficher le message de succès sur le thread UI
