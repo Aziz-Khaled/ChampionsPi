@@ -35,7 +35,6 @@ public class AjouterProjetController implements Initializable {
         comboStatus.getItems().setAll(projetStatus.values());
         comboStatus.setValue(projetStatus.ACTIVE);
         dateDebut.setValue(LocalDate.now());
-        // Optionnel : mettre une date de fin par défaut à +30 jours
         dateFin.setValue(LocalDate.now().plusDays(30));
     }
 
@@ -55,38 +54,42 @@ public class AjouterProjetController implements Initializable {
     private void enregistrer() {
         if (estValide()) {
             try {
+                // 1. Création de l'instance
                 projet p = new projet();
-
-                // 1. Données de base
                 p.setTitle(txtTitre.getText().trim());
                 p.setDescription(txtDescription.getText().trim());
                 p.setTarget_amount(Double.parseDouble(txtMontant.getText()));
                 p.setStatus(comboStatus.getValue());
-
-                // 2. Conversion des dates (LocalDate -> Timestamp pour la DB)
                 p.setStart_date(Timestamp.valueOf(dateDebut.getValue().atStartOfDay()));
                 p.setEnd_date(Timestamp.valueOf(dateFin.getValue().atStartOfDay()));
-
-                // 3. --- GÉNÉRATION IMAGE IA ---
-                // On utilise le titre et la description pour que l'IA choisisse la bonne image
-                String imageUrl = ImageAiService.generateProjectImageUrl(p.getTitle(), p.getDescription());
-                p.setImageUrl(imageUrl);
-                // ------------------------------
-
-                // 4. Propriétaire
                 p.setOwner_id(this.connectedOwner);
 
-                // 5. Sauvegarde
+                // 2. --- GÉNÉRATION & SAUVEGARDE IMAGE IA ---
+                // On affiche une petite info car l'IA peut prendre quelques secondes
+                System.out.println("Génération de l'image IA en cours...");
+
+                // Appel au nouveau service Gemini + Flux
+                // Cette méthode sauvegarde le .png dans /uploads/ et retourne le chemin relatif
+                String imagePath = ImageAiService.generateAndSaveAiImage(p.getTitle(), p.getDescription());
+
+                p.setImageUrl(imagePath);
+                // --------------------------------------------
+
+                // 3. Sauvegarde en Base de Données
                 ps.insertOne(p);
+                // Optionnel : Forcer le rafraîchissement si tu restes sur la même page
+                System.out.println("Image générée avec succès à l'emplacement : " + p.getImageUrl());
 
                 afficherAlerte(Alert.AlertType.INFORMATION, "Succès",
-                        "Projet '" + p.getTitle() + "' créé avec succès !\nUne image IA a été assignée automatiquement.");
+                        "Projet '" + p.getTitle() + "' créé avec succès !\n" +
+                                "Une image unique a été générée par l'IA et enregistrée.");
 
-                annuler(); // Ferme la fenêtre après succès
+                annuler();
 
             } catch (Exception e) {
                 e.printStackTrace();
-                afficherAlerte(Alert.AlertType.ERROR, "Erreur de sauvegarde", "Impossible d'enregistrer le projet : " + e.getMessage());
+                afficherAlerte(Alert.AlertType.ERROR, "Erreur de sauvegarde",
+                        "Impossible de créer le projet : " + e.getMessage());
             }
         }
     }
@@ -95,10 +98,15 @@ public class AjouterProjetController implements Initializable {
         StringBuilder erreurs = new StringBuilder();
 
         if (connectedOwner == null) {
-            erreurs.append("- Propriétaire non défini (vérifiez la session).\n");
+            // Pour le test, on peut simuler un utilisateur si besoin,
+            // mais en production, la session doit être active.
+            erreurs.append("- Session utilisateur introuvable.\n");
         }
         if (txtTitre.getText().trim().isEmpty()) {
             erreurs.append("- Le titre est obligatoire.\n");
+        }
+        if (txtDescription.getText().trim().length() < 10) {
+            erreurs.append("- La description doit être plus détaillée pour l'IA.\n");
         }
         if (txtMontant.getText().isEmpty()) {
             erreurs.append("- Le montant cible est obligatoire.\n");
@@ -106,11 +114,11 @@ public class AjouterProjetController implements Initializable {
         if (dateDebut.getValue() == null || dateFin.getValue() == null) {
             erreurs.append("- Les dates sont obligatoires.\n");
         } else if (dateFin.getValue().isBefore(dateDebut.getValue())) {
-            erreurs.append("- La date de fin ne peut pas être antérieure à la date de début.\n");
+            erreurs.append("- La date de fin est invalide.\n");
         }
 
         if (erreurs.length() > 0) {
-            afficherAlerte(Alert.AlertType.WARNING, "Validation", erreurs.toString());
+            afficherAlerte(Alert.AlertType.WARNING, "Champs requis", erreurs.toString());
             return false;
         }
         return true;

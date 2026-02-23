@@ -14,6 +14,9 @@ import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.services.projetService;
 
+import java.io.File;
+import java.net.URL;
+
 public class CreditCardController {
 
     @FXML private VBox cardRoot;
@@ -35,9 +38,8 @@ public class CreditCardController {
                 lblTitle.setText(p.getTitle());
                 if (lblSecteurBadge != null) lblSecteurBadge.setText(p.getSecteur());
 
-                if (p.getImageUrl() != null && !p.getImageUrl().isEmpty()) {
-                    imgProject.setImage(new Image(p.getImageUrl(), true));
-                }
+                // --- GESTION DES IMAGES IA & LOCALES ---
+                chargerImageDynamique(p.getImageUrl());
             }
 
             // Formatage monétaire
@@ -47,11 +49,54 @@ public class CreditCardController {
             // Style dynamique du Risque/Status
             configurerBadgeRisque(c);
 
-            // Animation de la barre de progression (Simulée à 65% ou basée sur une data réelle)
+            // Animation de la barre de progression
             animerProgression(0.65);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Erreur chargement CreditCard: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Charge l'image intelligemment selon qu'il s'agisse d'une URL web
+     * ou d'un fichier généré localement par l'IA.
+     */
+    private void chargerImageDynamique(String path) {
+        if (path == null || path.isEmpty()) {
+            chargerImageParDefaut();
+            return;
+        }
+
+        try {
+            if (path.startsWith("http")) {
+                // Cas : URL Web (Anciennes images ou web)
+                imgProject.setImage(new Image(path, true));
+            } else {
+                // Cas : Image générée par Gemini/Flux stockée dans /uploads/
+                // On pointe vers src/main/resources + le chemin stocké (/uploads/...)
+                File file = new File("src/main/resources" + path);
+
+                if (file.exists()) {
+                    // toURI().toString() est obligatoire pour transformer le chemin disque en URL JavaFX valide
+                    imgProject.setImage(new Image(file.toURI().toString()));
+                } else {
+                    chargerImageParDefaut();
+                }
+            }
+        } catch (Exception e) {
+            chargerImageParDefaut();
+        }
+    }
+
+    private void chargerImageParDefaut() {
+        try {
+            // Chargement depuis le classpath (ressources internes)
+            URL res = getClass().getResource("/images/default_project.png");
+            if (res != null) {
+                imgProject.setImage(new Image(res.toExternalForm()));
+            }
+        } catch (Exception e) {
+            System.err.println("Image par défaut introuvable dans les ressources.");
         }
     }
 
@@ -59,7 +104,6 @@ public class CreditCardController {
         String status = c.getStatus() != null ? c.getStatus().name() : "OPEN";
         lblRisque.setText(status);
 
-        // Changement de couleur dynamique selon le risque/taux
         if (c.getTaux() > 10) {
             lblRisque.setStyle("-fx-background-color: #FFEBEE; -fx-text-fill: #C62828; -fx-padding: 4 10; -fx-background-radius: 10; -fx-font-weight: bold;");
         } else {
@@ -76,8 +120,6 @@ public class CreditCardController {
         timeline.play();
         if(lblPercentage != null) lblPercentage.setText((int)(valeurCible * 100) + "%");
     }
-
-    // --- GESTION DES ANIMATIONS DE SURVOL (HOVER) ---
 
     @FXML
     private void onHoverEnter() {
@@ -99,7 +141,6 @@ public class CreditCardController {
 
     @FXML
     private void handleInvest() {
-        // Cette méthode est liée au bouton "Détails →"
-        System.out.println("Navigation vers les détails du crédit : " + currentCredit.getId());
+        System.out.println("Navigation vers les détails : " + currentCredit.getId());
     }
 }

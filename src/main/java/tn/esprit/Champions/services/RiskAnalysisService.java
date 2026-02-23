@@ -11,7 +11,7 @@ import tn.esprit.Champions.models.wallet;
 import java.time.Duration;
 
 public class RiskAnalysisService {
-    private static final String HF_TOKEN = "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";
+    private static final String HF_TOKEN = "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";
     // NOUVELLE URL d'après ton guide (Endpoint OpenAI compatible)
     private static final String API_URL = "https://router.huggingface.co/v1/chat/completions";
 
