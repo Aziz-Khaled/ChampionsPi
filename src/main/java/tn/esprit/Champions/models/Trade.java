@@ -17,7 +17,16 @@ public class Trade {
     private LocalDateTime executedAt;
 
 
-    public Trade(int CURRENT_USER_ID, int id, TradeType tType, double price, double qty, Status completed) {
+    // Remplacez votre premier constructeur par celui-ci :
+    public Trade(int user_id, int asset_id, TradeType tradeType, OrderMode orderMode, double price, double quantity, Status status) {
+        this.id_user = user_id;
+        this.asset_id = asset_id;
+        this.tradeType = tradeType;
+        this.orderMode = orderMode;
+        this.price = price;
+        this.quantity = quantity;
+        this.status = status;
+        this.createdAt = LocalDateTime.now(); // Important pour ne pas avoir de null dans la DB
     }
 
     public Trade(

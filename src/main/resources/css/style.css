@@ -1,0 +1,31 @@
+/* Style pour ressembler à la capture d'écran */
+.chart {
+    -fx-background-color: #0b0e11;
+}
+
+.chart-content {
+    -fx-padding: 10px;
+}
+
+.chart-series-line {
+    -fx-stroke: #fcd535; /* Ligne jaune Binance */
+    -fx-stroke-width: 2px;
+}
+
+.axis {
+    -fx-tick-label-fill: #848e9c;
+    -fx-axis-label-fill: #848e9c;
+}
+
+.axis-tick-mark {
+    -fx-stroke: #2b3139;
+}
+
+.chart-vertical-grid-lines {
+    -fx-stroke: #2b3139;
+    -fx-stroke-dash-array: 2 2;
+}
+
+.chart-horizontal-grid-lines {
+    -fx-stroke: #2b3139;
+}
