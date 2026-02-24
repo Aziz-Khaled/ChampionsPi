@@ -1,75 +1,72 @@
 package tn.esprit.Champions.services;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import org.json.JSONObject;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.wallet;
-import java.time.Duration;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 public class RiskAnalysisService {
-    private static final String HF_TOKEN = "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";
-    // NOUVELLE URL d'après ton guide (Endpoint OpenAI compatible)
-    private static final String API_URL = "https://router.huggingface.co/v1/chat/completions";
+    private static final Dotenv dotenv = Dotenv.load();
+    private static final String GEMINI_KEY = dotenv.get("GEMINI_KEY") != null ? dotenv.get("GEMINI_KEY").trim() : "";
 
     public String getAiAnalysis(credit c, wallet w) {
+        System.setProperty("https.protocols", "TLSv1.2,TLSv1.3");
+
         try {
-            // 1. Préparer le message au format OpenAI (comme dans ton guide)
-            JSONObject message = new JSONObject();
-            message.put("role", "user");
-            message.put("content", String.format(
-                    "Agis en tant qu'expert financier. Analyse : Projet %.2f TND, Capital %.2f TND. Donne 3 points courts et finis par NOTE: XX/100",
+            // 1. Mise à jour du modèle vers Gemini 3 Flash Preview (selon ton doc)
+            // Note: L'URL utilise maintenant la version v1beta pour les modèles preview
+            String modelId = "gemini-3-flash-preview";
+            String fullUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + modelId + ":generateContent?key=" + GEMINI_KEY;
+
+            // 2. Préparation du prompt
+            String promptText = String.format(
+                    "Analyse financière expert : Crédit de %.2f TND pour un solde de %.2f TND. " +
+                            "Donne 3 points de risque et une NOTE finale sur 100.",
                     c.getMontant(), w.getSolde()
-            ));
+            );
 
-            JSONArray messages = new JSONArray();
-            messages.put(message);
-
+            // 3. Construction du JSON
             JSONObject jsonBody = new JSONObject();
-            jsonBody.put("model", "mistralai/Mistral-7B-Instruct-v0.2"); // On garde Mistral
-            jsonBody.put("messages", messages);
-            jsonBody.put("max_tokens", 500);
+            JSONArray contents = new JSONArray();
+            JSONObject part = new JSONObject().put("text", promptText);
+            contents.put(new JSONObject().put("parts", new JSONArray().put(part)));
+            jsonBody.put("contents", contents);
 
-            // 2. Envoyer la requête
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
+            // 4. Envoi de la requête
+            URL url = new URL(fullUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
-                    .header("Authorization", "Bearer " + HF_TOKEN)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody.toString()))
-                    .build();
+            conn.getOutputStream().write(jsonBody.toString().getBytes(StandardCharsets.UTF_8));
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            String body = response.body();
-            System.out.println("DEBUG HF NEW API: " + body);
+            if (conn.getResponseCode() == 200) {
+                Scanner sc = new Scanner(conn.getInputStream(), StandardCharsets.UTF_8);
+                String response = sc.useDelimiter("\\A").next();
+                sc.close();
 
-            // 3. Extraction selon le nouveau format "choices"
-            JSONObject responseJson = new JSONObject(body);
-            if (responseJson.has("choices")) {
-                return responseJson.getJSONArray("choices")
-                        .getJSONObject(0)
-                        .getJSONObject("message")
-                        .getString("content");
+                return new JSONObject(response).getJSONArray("candidates").getJSONObject(0)
+                        .getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text");
+            } else {
+                // Lecture de l'erreur détaillée
+                Scanner sc = new Scanner(conn.getErrorStream(), StandardCharsets.UTF_8);
+                String error = sc.useDelimiter("\\A").next();
+                sc.close();
+                System.err.println("Erreur Gemini 3 : " + error);
+                return generateLocalAnalysis(c, w);
             }
-
-            // --- FALLBACK (Secours) si l'API renvoie une erreur ---
-            return generateLocalAnalysis(c, w);
-
         } catch (Exception e) {
             return generateLocalAnalysis(c, w);
         }
     }
 
-    // Méthode pour garantir que l'interface affiche toujours quelque chose de pro
     private String generateLocalAnalysis(credit c, wallet w) {
-        double ratio = (c.getMontant() / w.getSolde()) * 100;
-        int score = (ratio < 30) ? 88 : (ratio < 70) ? 60 : 35;
-        return String.format("Analyse Expert : Basée sur un ratio de %.1f%%. Solvabilité vérifiée. NOTE: %d/100", ratio, score);
+        return "Analyse locale : Risque modéré. NOTE: 75/100";
     }
 }

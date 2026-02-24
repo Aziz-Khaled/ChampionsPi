@@ -227,15 +227,33 @@ public class AfficherCreditsController implements Initializable {
     }
 
     private void ouvrirNegociationEmprunteur(credit c) {
+        if (c == null) return;
+
         try {
+            // 1. Extraire le titre du projet depuis ton cache existant
+            String titreDuProjet = projetCache.getOrDefault(c.getProject_id(), "Projet #" + c.getProject_id());
+
+            // 2. Charger le FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/GestionNegociation.fxml"));
             Parent root = loader.load();
+
+            // 3. Récupérer le contrôleur de la fenêtre de négociation
             NegociationController controller = loader.getController();
-            controller.setCreditSelectionne(c);
+
+            // 4. ✅ Appel de la méthode corrigée (credit + titre)
+            controller.setCreditSelectionne(c, titreDuProjet);
+
+            // 5. Affichage en mode Pop-up (Modale)
             Stage stage = new Stage();
+            stage.setTitle("Offres pour : " + titreDuProjet);
+            stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
             stage.show();
-        } catch (IOException e) { afficherErreur("Erreur : " + e.getMessage()); }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            afficherErreur("Erreur lors de l'ouverture : " + e.getMessage());
+        }
     }
 
     private void afficherErreur(String message) {

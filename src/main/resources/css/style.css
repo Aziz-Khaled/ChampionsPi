@@ -1,147 +1,38 @@
-/* --- VARIABLES DE DESIGN ATOMIQUE --- */
-.root {
-    /* Gradient de signature : Deep Ocean to Royal Blue */
-    -fx-accent-main: linear-gradient(to bottom right, #1e3799, #0984e3);
-    -fx-accent-light: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
-
-    /* Couleurs de fond avec texture */
-    -fx-base-color: #f8faff;
-    -fx-sidebar-color: #0c1220;
-
-    /* Ombres complexes (Layered Shadows) */
-    -fx-shadow-soft: dropshadow(three-pass-box, rgba(0,0,0,0.06), 20, 0, 0, 10);
-    -fx-shadow-strong: dropshadow(three-pass-box, rgba(9, 132, 227, 0.25), 15, 0, 0, 8);
-}
-
-/* --- LE CONTENEUR PRINCIPAL --- */
+/* Fond principal avec un dégradé Bleu Nuit profond */
 .main-container {
-    -fx-background-color: -fx-base-color;
+    -fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);
 }
 
-/* --- SIDEBAR : EFFET "CYBER-MINIMAL" --- */
-.sidebar {
-    -fx-background-color: -fx-sidebar-color;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 15, 0, 0, 0);
+/* Cartes avec effet Glassmorphism */
+.card-item {
+    -fx-background-color: rgba(255, 255, 255, 0.05); /* Blanc transparent */
+    -fx-background-radius: 15;
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-radius: 15;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 15, 0, 0, 10);
 }
 
-.sidebar-btn {
-    -fx-background-color: transparent;
-    -fx-text-fill: #636e72;
-    -fx-font-size: 15px;
-    -fx-font-family: "Segoe UI Semibold";
-    -fx-padding: 18 30;
+/* Boutons Modernes */
+.button-primary {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #0f172a;
+    -fx-background-radius: 8;
+    -fx-font-weight: bold;
     -fx-cursor: hand;
-    -fx-background-radius: 12;
-    -fx-margin: 5 15;
 }
 
-.sidebar-btn:hover {
-    -fx-text-fill: #dfe6e9;
-    -fx-background-color: rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-btn-active {
-    -fx-background-color: rgba(9, 132, 227, 0.15);
-    -fx-text-fill: #00d2ff;
-    -fx-border-color: #00d2ff;
-    -fx-border-width: 0 0 0 4;
-    -fx-font-weight: bold;
-}
-
-/* --- CARTES DE STATS : NEUROMORPHISME MODERNE --- */
-.stat-card {
-    -fx-background-color: white;
-    -fx-background-radius: 25;
-    -fx-padding: 25;
-    -fx-effect: -fx-shadow-soft;
-}
-
-.stat-card:hover {
-    -fx-effect: dropshadow(three-pass-box, rgba(9, 132, 227, 0.15), 30, 0, 0, 15);
-    -fx-translate-y: -8;
-}
-
-.stat-icon-bg {
-    -fx-background-color: rgba(9, 132, 227, 0.1);
-    -fx-background-radius: 50%;
-    -fx-min-width: 50;
-    -fx-min-height: 50;
-}
-
-/* --- TABLEAU : EFFET "GLASS LIST" --- */
-.table-view {
-    -fx-background-color: white;
-    -fx-background-radius: 20;
-    -fx-border-color: transparent;
-    -fx-padding: 10;
-    -fx-effect: -fx-shadow-soft;
-}
-
-/* En-tête futuriste */
-.table-view .column-header-background { -fx-background-color: transparent; }
-.table-view .column-header {
-    -fx-background-color: white;
-    -fx-text-fill: #a29bfe;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-border-width: 0 0 2 0;
-    -fx-border-color: transparent transparent #f1f2f6 transparent;
-    -fx-padding: 15;
-}
-
-/* Cellules espacées */
-.table-row-cell {
-    -fx-background-color: white;
-    -fx-background-insets: 4; /* Crée l'effet de lignes flottantes */
-    -fx-background-radius: 12;
-    -fx-cell-size: 60px;
-}
-
-.table-row-cell:hover {
-    -fx-background-color: #f8faff;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.03), 10, 0, 0, 5);
-}
-
-/* ✅ SÉLECTION "NEON GLOW" : Lisibilité Totale */
-.table-row-cell:selected {
-    -fx-background-color: -fx-accent-main;
-    -fx-background-radius: 12;
-    -fx-effect: -fx-shadow-strong;
-}
-
-/* Texte blanc pur sans ombre pour une lecture cristalline */
-.table-row-cell:selected .table-cell {
-    -fx-text-fill: white !important;
-    -fx-font-weight: bold;
-}
-
-/* --- CHAMP DE RECHERCHE TOP BAR --- */
-.search-bar {
-    -fx-background-color: white;
-    -fx-background-radius: 30;
-    -fx-border-color: #dfe6e9;
-    -fx-border-radius: 30;
-    -fx-padding: 10 20;
-    -fx-effect: inset 0 2 5 rgba(0,0,0,0.05);
-}
-
-.search-bar:focused {
-    -fx-border-color: #0984e3;
-    -fx-effect: dropshadow(three-pass-box, rgba(9, 132, 227, 0.1), 10, 0, 0, 0);
-}
-
-/* --- BOUTON ADDITIONNEL --- */
-.btn-premium {
-    -fx-background-color: -fx-accent-light;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-background-radius: 30;
-    -fx-padding: 12 30;
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 210, 255, 0.3), 15, 0, 0, 5);
-}
-
-.btn-premium:hover {
+.button-primary:hover {
+    -fx-background-color: #e2e8f0;
     -fx-scale-x: 1.05;
     -fx-scale-y: 1.05;
-    -fx-brightness: 1.1;
+}
+
+/* Textes */
+.title-text {
+    -fx-fill: #ffffff;
+    -fx-font-family: "Segoe UI Semibold";
+}
+
+.sub-text {
+    -fx-fill: #94a3b8; /* Gris bleuté doux */
 }

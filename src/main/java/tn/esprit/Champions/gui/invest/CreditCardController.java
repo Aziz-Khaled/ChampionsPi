@@ -1,5 +1,6 @@
 package tn.esprit.Champions.gui.invest;
 
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -21,11 +22,27 @@ public class CreditCardController {
 
     @FXML private VBox cardRoot;
     @FXML private ImageView imgProject;
-    @FXML private Label lblTitle, lblMontant, lblTaux, lblRisque, lblSecteurBadge, lblPercentage;
+    @FXML private Label lblTitle, lblMontant, lblTaux, lblRisque, lblProgressionText;
     @FXML private ProgressBar progressFinancement;
 
     private final projetService ps = new projetService();
     private credit currentCredit;
+
+    // Constantes de style pour éviter la répétition (Style Premium Dark)
+    private static final String STYLE_RISQUE_HAUT = "-fx-background-color: rgba(239, 68, 68, 0.1); -fx-text-fill: #ef4444; -fx-padding: 8 15; -fx-background-radius: 20; -fx-font-size: 10; -fx-font-weight: bold; -fx-border-color: rgba(239, 68, 68, 0.3); -fx-border-radius: 20;";
+    private static final String STYLE_RISQUE_BAS = "-fx-background-color: rgba(16, 185, 129, 0.1); -fx-text-fill: #10b981; -fx-padding: 8 15; -fx-background-radius: 20; -fx-font-size: 10; -fx-font-weight: bold; -fx-border-color: rgba(16, 185, 129, 0.3); -fx-border-radius: 20;";
+    private static final String STYLE_RISQUE_MOYEN = "-fx-background-color: rgba(245, 158, 11, 0.1); -fx-text-fill: #fbbf24; -fx-padding: 8 15; -fx-background-radius: 20; -fx-font-size: 10; -fx-font-weight: bold; -fx-border-color: rgba(245, 158, 11, 0.3); -fx-border-radius: 20;";
+
+    public void initialize() {
+        // Ajout des effets de survol via code pour plus de fluidité
+        setupHoverEffects();
+
+        // Petit effet d'apparition (Fade In) au chargement
+        cardRoot.setOpacity(0);
+        FadeTransition ft = new FadeTransition(Duration.millis(800), cardRoot);
+        ft.setToValue(1.0);
+        ft.play();
+    }
 
     public void setCreditData(credit c) {
         if (c == null) return;
@@ -33,51 +50,36 @@ public class CreditCardController {
 
         try {
             projet p = ps.findById(c.getProject_id());
-
             if (p != null) {
                 lblTitle.setText(p.getTitle());
-                if (lblSecteurBadge != null) lblSecteurBadge.setText(p.getSecteur());
-
-                // --- GESTION DES IMAGES IA & LOCALES ---
                 chargerImageDynamique(p.getImageUrl());
             }
 
-            // Formatage monétaire
-            lblMontant.setText(String.format("%.0f %s", c.getMontant(), c.getDevise()));
+            lblMontant.setText(String.format("%.0f %s", c.getMontant(), c.getDevise() != null ? c.getDevise() : "DT"));
             lblTaux.setText(c.getTaux() + "%");
 
-            // Style dynamique du Risque/Status
             configurerBadgeRisque(c);
 
-            // Animation de la barre de progression
-            animerProgression(0.65);
+            // On simule une progression aléatoire ou réelle si tu as le champ
+            double progression = 0.65;
+            animerProgression(progression);
 
         } catch (Exception e) {
             System.err.println("Erreur chargement CreditCard: " + e.getMessage());
         }
     }
 
-    /**
-     * Charge l'image intelligemment selon qu'il s'agisse d'une URL web
-     * ou d'un fichier généré localement par l'IA.
-     */
     private void chargerImageDynamique(String path) {
         if (path == null || path.isEmpty()) {
             chargerImageParDefaut();
             return;
         }
-
         try {
             if (path.startsWith("http")) {
-                // Cas : URL Web (Anciennes images ou web)
                 imgProject.setImage(new Image(path, true));
             } else {
-                // Cas : Image générée par Gemini/Flux stockée dans /uploads/
-                // On pointe vers src/main/resources + le chemin stocké (/uploads/...)
                 File file = new File("src/main/resources" + path);
-
                 if (file.exists()) {
-                    // toURI().toString() est obligatoire pour transformer le chemin disque en URL JavaFX valide
                     imgProject.setImage(new Image(file.toURI().toString()));
                 } else {
                     chargerImageParDefaut();
@@ -89,25 +91,21 @@ public class CreditCardController {
     }
 
     private void chargerImageParDefaut() {
-        try {
-            // Chargement depuis le classpath (ressources internes)
-            URL res = getClass().getResource("/images/default_project.png");
-            if (res != null) {
-                imgProject.setImage(new Image(res.toExternalForm()));
-            }
-        } catch (Exception e) {
-            System.err.println("Image par défaut introuvable dans les ressources.");
-        }
+        URL res = getClass().getResource("/images/default_project.png");
+        if (res != null) imgProject.setImage(new Image(res.toExternalForm()));
     }
 
     private void configurerBadgeRisque(credit c) {
-        String status = c.getStatus() != null ? c.getStatus().name() : "OPEN";
-        lblRisque.setText(status);
+        String status = c.getStatus() != null ? c.getStatus().name() : "MODÉRÉ";
+        lblRisque.setText("RISQUE : " + status);
 
-        if (c.getTaux() > 10) {
-            lblRisque.setStyle("-fx-background-color: #FFEBEE; -fx-text-fill: #C62828; -fx-padding: 4 10; -fx-background-radius: 10; -fx-font-weight: bold;");
+        // Logique de couleur selon le taux (Exemple Fintech)
+        if (c.getTaux() > 15) {
+            lblRisque.setStyle(STYLE_RISQUE_HAUT);
+        } else if (c.getTaux() > 8) {
+            lblRisque.setStyle(STYLE_RISQUE_MOYEN);
         } else {
-            lblRisque.setStyle("-fx-background-color: #E8F5E9; -fx-text-fill: #2E7D32; -fx-padding: 4 10; -fx-background-radius: 10; -fx-font-weight: bold;");
+            lblRisque.setStyle(STYLE_RISQUE_BAS);
         }
     }
 
@@ -115,32 +113,43 @@ public class CreditCardController {
         progressFinancement.setProgress(0);
         Timeline timeline = new Timeline(
                 new KeyFrame(Duration.ZERO, new KeyValue(progressFinancement.progressProperty(), 0)),
-                new KeyFrame(Duration.seconds(1.5), new KeyValue(progressFinancement.progressProperty(), valeurCible))
+                new KeyFrame(Duration.seconds(1.2), new KeyValue(progressFinancement.progressProperty(), valeurCible))
         );
         timeline.play();
-        if(lblPercentage != null) lblPercentage.setText((int)(valeurCible * 100) + "%");
+
+        if(lblProgressionText != null) {
+            lblProgressionText.setText((int)(valeurCible * 100) + "%");
+        }
     }
 
-    @FXML
-    private void onHoverEnter() {
-        cardRoot.setStyle("-fx-background-color: white; " +
-                "-fx-background-radius: 25; " +
-                "-fx-effect: dropshadow(three-pass-box, rgba(39, 174, 96, 0.25), 30, 0, 0, 15); " +
-                "-fx-translate-y: -10; " +
-                "-fx-cursor: hand;");
-    }
+    private void setupHoverEffects() {
+        cardRoot.setOnMouseEntered(e -> {
+            Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.millis(200),
+                            new KeyValue(cardRoot.translateYProperty(), -10),
+                            new KeyValue(cardRoot.scaleXProperty(), 1.02),
+                            new KeyValue(cardRoot.scaleYProperty(), 1.02)
+                    )
+            );
+            timeline.play();
+            cardRoot.setStyle(cardRoot.getStyle() + "-fx-effect: dropshadow(three-pass-box, rgba(56, 189, 248, 0.2), 30, 0, 0, 15);");
+        });
 
-    @FXML
-    private void onHoverExit() {
-        cardRoot.setStyle("-fx-background-color: white; " +
-                "-fx-background-radius: 25; " +
-                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 20, 0, 0, 10); " +
-                "-fx-translate-y: 0; " +
-                "-fx-cursor: hand;");
+        cardRoot.setOnMouseExited(e -> {
+            Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.millis(200),
+                            new KeyValue(cardRoot.translateYProperty(), 0),
+                            new KeyValue(cardRoot.scaleXProperty(), 1.0),
+                            new KeyValue(cardRoot.scaleYProperty(), 1.0)
+                    )
+            );
+            timeline.play();
+            cardRoot.setStyle(cardRoot.getStyle() + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 20, 0, 0, 15);");
+        });
     }
 
     @FXML
     private void handleInvest() {
-        System.out.println("Navigation vers les détails : " + currentCredit.getId());
+        System.out.println("Ouverture des détails pour le projet : " + lblTitle.getText());
     }
 }

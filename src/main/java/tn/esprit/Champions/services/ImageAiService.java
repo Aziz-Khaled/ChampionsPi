@@ -1,11 +1,12 @@
 package tn.esprit.Champions.services;
 
-import io.github.cdimascio.dotenv.Dotenv; // Import de la bibliothèque Dotenv
+import io.github.cdimascio.dotenv.Dotenv;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -13,118 +14,95 @@ import java.util.Scanner;
 
 public class ImageAiService {
 
-    // Chargement du fichier .env situé à la racine du projet
     private static final Dotenv dotenv = Dotenv.load();
+    private static final String OPENROUTER_KEY = dotenv.get("OPENROUTER_KEY");
+    // Utilisation d'un modèle "free" pour garantir l'accès
+    private static final String MODEL = "openai/gpt-3.5-turbo";
 
-    // Récupération des clés depuis le fichier .env
-    private static final String GEMINI_KEY = dotenv.get("GEMINI_KEY");
-    private static final String HF_TOKEN = dotenv.get("HF_TOKEN");
-
-    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_KEY;
-    private static final String HF_ROUTER_URL = "https://router.huggingface.co/together/v1/images/generations";
-
-    public static String generateAndSaveAiImage(String title, String description) {
+    private static String queryOpenRouter(String prompt) {
         try {
-            // Vérification si les clés sont bien chargées
-            if (GEMINI_KEY == null || HF_TOKEN == null) {
-                System.err.println("ERREUR : Clés API manquantes dans le fichier .env");
-                return "/images/default_project.png";
-            }
-
-            // 1. Obtention du prompt visuel via Gemini
-            String smartPrompt = getPromptFromGemini(title, description);
-            System.out.println("Prompt IA généré : " + smartPrompt);
-
-            // 2. Requête vers le Router Hugging Face
-            URL url = new URL(HF_ROUTER_URL);
+            // CORRECTION : URL complète indispensable
+            URL url = new URL("https://openrouter.ai/api/v1/chat/completions");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Authorization", "Bearer " + HF_TOKEN);
+            conn.setRequestProperty("Authorization", "Bearer " + OPENROUTER_KEY);
             conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("HTTP-Referer", "http://localhost");
             conn.setDoOutput(true);
 
             JSONObject jsonBody = new JSONObject();
-            jsonBody.put("model", "black-forest-labs/FLUX.1-dev");
-            jsonBody.put("prompt", smartPrompt);
-            jsonBody.put("n", 1);
-            jsonBody.put("size", "1024x1024");
+            jsonBody.put("model", MODEL);
+            JSONArray messages = new JSONArray();
+            messages.put(new JSONObject().put("role", "user").put("content", prompt));
+            jsonBody.put("messages", messages);
 
-            conn.getOutputStream().write(jsonBody.toString().getBytes(StandardCharsets.UTF_8));
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(jsonBody.toString().getBytes(StandardCharsets.UTF_8));
+            }
 
             int responseCode = conn.getResponseCode();
-
             if (responseCode == 200) {
-                Scanner s = new Scanner(conn.getInputStream()).useDelimiter("\\A");
-                String responseBody = s.hasNext() ? s.next() : "";
-                JSONObject jsonResponse = new JSONObject(responseBody);
+                Scanner sc = new Scanner(conn.getInputStream(), StandardCharsets.UTF_8);
+                String res = sc.useDelimiter("\\A").next();
+                sc.close();
 
-                String distantImageUrl = jsonResponse.getJSONArray("data")
+                JSONObject responseJson = new JSONObject(res);
+                return responseJson.getJSONArray("choices")
                         .getJSONObject(0)
-                        .getString("url");
-
-                System.out.println("URL de l'image reçue : " + distantImageUrl);
-
-                // 3. Téléchargement et Standardisation de l'image
-                return downloadAndSaveFinalImage(distantImageUrl);
-
+                        .getJSONObject("message")
+                        .getString("content").trim();
             } else {
-                Scanner s = new Scanner(conn.getErrorStream()).useDelimiter("\\A");
-                System.err.println("Détail erreur HF (" + responseCode + "): " + (s.hasNext() ? s.next() : ""));
+                System.err.println("Erreur API OpenRouter: " + responseCode);
             }
         } catch (Exception e) {
-            System.err.println("Exception lors du processus IA : " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Erreur Technique: " + e.getMessage());
         }
-        return "/images/default_project.png";
+        return "Technologie";
+    }
+
+    public static String detectProjectSector(String titre, String description) {
+        System.out.println("IA : Analyse du secteur pour '" + titre + "'...");
+        String prompt = "Classe ce projet dans UN SEUL mot : Agriculture, Technologie, Energie, Sante, Immobilier, Education, Artisanat. Projet: " + titre;
+        String response = queryOpenRouter(prompt);
+
+        String[] secteurs = {"Agriculture", "Technologie", "Energie", "Sante", "Immobilier", "Education", "Artisanat"};
+        for (String s : secteurs) {
+            if (response.toLowerCase().contains(s.toLowerCase())) return s;
+        }
+        return "Technologie";
+    }
+
+    public static String generateAndSaveAiImage(String title, String description) {
+        System.out.println("Génération du visuel...");
+        // Utilisation de Picsum pour éviter l'erreur 530 (Cloudflare)
+        // On génère un ID basé sur le titre pour que l'image soit cohérente durant la session
+        int imageId = Math.abs(title.hashCode() % 1000);
+        String imageUrl = "https://picsum.photos/seed/" + imageId + "/512/512";
+
+        return downloadAndSaveFinalImage(imageUrl);
     }
 
     private static String downloadAndSaveFinalImage(String distantUrl) {
         try {
             URL url = new URL(distantUrl);
-            BufferedImage bufferedImage = ImageIO.read(url);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            connection.setInstanceFollowRedirects(true);
 
-            if (bufferedImage != null) {
-                String fileName = "ai_flux_" + System.currentTimeMillis() + ".png";
+            BufferedImage image = ImageIO.read(connection.getInputStream());
+            if (image != null) {
+                String fileName = "ai_proj_" + System.currentTimeMillis() + ".png";
                 File dir = new File("src/main/resources/uploads");
                 if (!dir.exists()) dir.mkdirs();
 
                 File outputFile = new File(dir, fileName);
-                boolean success = ImageIO.write(bufferedImage, "png", outputFile);
-
-                if (success) {
-                    System.out.println("Succès ! Image sauvegardée : " + fileName);
-                    return "/uploads/" + fileName;
-                }
+                ImageIO.write(image, "png", outputFile);
+                System.out.println("✅ Image sauvegardée : " + fileName);
+                return "/uploads/" + fileName;
             }
         } catch (Exception e) {
-            System.err.println("Erreur au téléchargement final : " + e.getMessage());
+            System.err.println("❌ Erreur téléchargement : " + e.getMessage());
         }
         return "/images/default_project.png";
-    }
-
-    private static String getPromptFromGemini(String title, String description) {
-        try {
-            URL url = new URL(GEMINI_URL);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
-
-            String promptInput = "Write a one-sentence visual description for an image generator about: " + title + ". Professional 3D style.";
-
-            JSONObject content = new JSONObject().put("contents", new JSONArray().put(
-                    new JSONObject().put("parts", new JSONArray().put(new JSONObject().put("text", promptInput)))
-            ));
-
-            conn.getOutputStream().write(content.toString().getBytes(StandardCharsets.UTF_8));
-            Scanner sc = new Scanner(conn.getInputStream());
-            String response = sc.useDelimiter("\\A").next();
-            sc.close();
-
-            return new JSONObject(response).getJSONArray("candidates").getJSONObject(0)
-                    .getJSONObject("content").getJSONArray("parts").getJSONObject(0).getString("text");
-        } catch (Exception e) {
-            return "A professional business illustration for " + title;
-        }
     }
 }

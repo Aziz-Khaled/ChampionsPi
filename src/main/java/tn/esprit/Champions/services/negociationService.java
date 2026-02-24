@@ -70,6 +70,26 @@ public class negociationService implements CRUD<Negociation> {
         pst.setInt(1, id);
         pst.executeUpdate();
     }
+    // Dans negociationService.java
+    public List<Negociation> getOffersByCredit(int creditId) throws SQLException {
+        List<Negociation> list = new ArrayList<>();
+        String req = "SELECT * FROM `negociation` WHERE `credit_id` = ?";
+        PreparedStatement pst = cnx.prepareStatement(req);
+        pst.setInt(1, creditId);
+        ResultSet rs = pst.executeQuery();
+
+        while (rs.next()) {
+            Negociation n = new Negociation(
+                    rs.getInt("id_negociation"),
+                    rs.getInt("credit_id"),
+                    rs.getInt("investor_id"),
+                    rs.getDouble("montant"),
+                    rs.getDouble("taux_propose")
+            );
+            list.add(n);
+        }
+        return list;
+    }
 
     @Override
     public List<Negociation> SelectAll() throws SQLException {

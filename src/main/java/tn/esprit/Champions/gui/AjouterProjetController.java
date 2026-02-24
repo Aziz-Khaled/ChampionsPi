@@ -1,5 +1,6 @@
 package tn.esprit.Champions.gui;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -21,6 +22,7 @@ public class AjouterProjetController implements Initializable {
     @FXML private TextArea txtDescription;
     @FXML private ComboBox<projetStatus> comboStatus;
     @FXML private DatePicker dateDebut, dateFin;
+    @FXML private Button btnEnregistrer; // Ajouter l'id dans le FXML pour pouvoir le désactiver
 
     private final projetService ps = new projetService();
     private Utilisateur connectedOwner;
@@ -32,8 +34,10 @@ public class AjouterProjetController implements Initializable {
     }
 
     private void configurerFormulaire() {
+        // Remplissage du ComboBox avec les valeurs de l'Enum
         comboStatus.getItems().setAll(projetStatus.values());
         comboStatus.setValue(projetStatus.ACTIVE);
+
         dateDebut.setValue(LocalDate.now());
         dateFin.setValue(LocalDate.now().plusDays(30));
     }
@@ -43,6 +47,7 @@ public class AjouterProjetController implements Initializable {
     }
 
     private void appliquerControlesSaisieUX() {
+        // Restriction numérique pour le montant
         txtMontant.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*(\\.\\d*)?")) {
                 txtMontant.setText(oldVal);
@@ -53,72 +58,69 @@ public class AjouterProjetController implements Initializable {
     @FXML
     private void enregistrer() {
         if (estValide()) {
-            try {
-                // 1. Création de l'instance
-                projet p = new projet();
-                p.setTitle(txtTitre.getText().trim());
-                p.setDescription(txtDescription.getText().trim());
-                p.setTarget_amount(Double.parseDouble(txtMontant.getText()));
-                p.setStatus(comboStatus.getValue());
-                p.setStart_date(Timestamp.valueOf(dateDebut.getValue().atStartOfDay()));
-                p.setEnd_date(Timestamp.valueOf(dateFin.getValue().atStartOfDay()));
-                p.setOwner_id(this.connectedOwner);
+            // Verrouiller le bouton pour éviter les doubles clics pendant le travail de l'IA
+            btnEnregistrer.setDisable(true);
+            btnEnregistrer.setText("IA en cours...");
 
-                // 2. --- GÉNÉRATION & SAUVEGARDE IMAGE IA ---
-                // On affiche une petite info car l'IA peut prendre quelques secondes
-                System.out.println("Génération de l'image IA en cours...");
+            // Lancer le processus dans un thread séparé pour ne pas bloquer l'interface
+            new Thread(() -> {
+                try {
+                    // 1. Création de l'objet projet
+                    projet p = new projet();
+                    p.setTitle(txtTitre.getText().trim());
+                    p.setDescription(txtDescription.getText().trim());
+                    p.setTarget_amount(Double.parseDouble(txtMontant.getText()));
+                    p.setStatus(comboStatus.getValue());
+                    p.setStart_date(Timestamp.valueOf(dateDebut.getValue().atStartOfDay()));
+                    p.setEnd_date(Timestamp.valueOf(dateFin.getValue().atStartOfDay()));
+                    p.setOwner_id(this.connectedOwner);
 
-                // Appel au nouveau service Gemini + Flux
-                // Cette méthode sauvegarde le .png dans /uploads/ et retourne le chemin relatif
-                String imagePath = ImageAiService.generateAndSaveAiImage(p.getTitle(), p.getDescription());
+                    // 2. IA : Détection du secteur
+                    System.out.println("IA : Analyse du secteur...");
+                    String secteurDetecte = ImageAiService.detectProjectSector(p.getTitle(), p.getDescription());
+                    p.setSecteur(secteurDetecte);
 
-                p.setImageUrl(imagePath);
-                // --------------------------------------------
+                    // 3. IA : Génération de l'image
+                    System.out.println("IA : Génération de l'image via Flux...");
+                    String imagePath = ImageAiService.generateAndSaveAiImage(p.getTitle(), p.getDescription());
+                    p.setImageUrl(imagePath);
 
-                // 3. Sauvegarde en Base de Données
-                ps.insertOne(p);
-                // Optionnel : Forcer le rafraîchissement si tu restes sur la même page
-                System.out.println("Image générée avec succès à l'emplacement : " + p.getImageUrl());
+                    // 4. Sauvegarde Base de Données
+                    ps.insertOne(p);
 
-                afficherAlerte(Alert.AlertType.INFORMATION, "Succès",
-                        "Projet '" + p.getTitle() + "' créé avec succès !\n" +
-                                "Une image unique a été générée par l'IA et enregistrée.");
+                    // 5. Retour à l'interface (UI Thread)
+                    Platform.runLater(() -> {
+                        afficherAlerte(Alert.AlertType.INFORMATION, "Succès",
+                                "Projet créé avec succès !\nSecteur identifié : " + secteurDetecte);
+                        annuler();
+                    });
 
-                annuler();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                afficherAlerte(Alert.AlertType.ERROR, "Erreur de sauvegarde",
-                        "Impossible de créer le projet : " + e.getMessage());
-            }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Platform.runLater(() -> {
+                        afficherAlerte(Alert.AlertType.ERROR, "Erreur", "Échec de la création : " + e.getMessage());
+                        btnEnregistrer.setDisable(false);
+                        btnEnregistrer.setText("Enregistrer");
+                    });
+                }
+            }).start();
         }
     }
 
     private boolean estValide() {
         StringBuilder erreurs = new StringBuilder();
-
-        if (connectedOwner == null) {
-            // Pour le test, on peut simuler un utilisateur si besoin,
-            // mais en production, la session doit être active.
-            erreurs.append("- Session utilisateur introuvable.\n");
-        }
-        if (txtTitre.getText().trim().isEmpty()) {
-            erreurs.append("- Le titre est obligatoire.\n");
-        }
-        if (txtDescription.getText().trim().length() < 10) {
-            erreurs.append("- La description doit être plus détaillée pour l'IA.\n");
-        }
-        if (txtMontant.getText().isEmpty()) {
-            erreurs.append("- Le montant cible est obligatoire.\n");
-        }
+        if (connectedOwner == null) erreurs.append("- Erreur : Utilisateur non connecté.\n");
+        if (txtTitre.getText().trim().isEmpty()) erreurs.append("- Le titre est requis.\n");
+        if (txtDescription.getText().trim().length() < 10) erreurs.append("- Description trop courte.\n");
+        if (txtMontant.getText().isEmpty()) erreurs.append("- Montant requis.\n");
         if (dateDebut.getValue() == null || dateFin.getValue() == null) {
-            erreurs.append("- Les dates sont obligatoires.\n");
+            erreurs.append("- Dates requises.\n");
         } else if (dateFin.getValue().isBefore(dateDebut.getValue())) {
-            erreurs.append("- La date de fin est invalide.\n");
+            erreurs.append("- La date de fin doit être après le début.\n");
         }
 
         if (erreurs.length() > 0) {
-            afficherAlerte(Alert.AlertType.WARNING, "Champs requis", erreurs.toString());
+            afficherAlerte(Alert.AlertType.WARNING, "Vérification", erreurs.toString());
             return false;
         }
         return true;

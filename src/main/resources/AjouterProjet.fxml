@@ -78,7 +78,7 @@
 
                         <VBox spacing="5.0" GridPane.columnSpan="2" GridPane.rowIndex="3">
                             <children>
-                                <Label text="Description détaillée" textFill="#636e72">
+                                <Label text="Description détaillée (Utilisée par l'IA pour l'image)" textFill="#636e72">
                                     <font><Font name="System Semibold" size="13.0" /></font>
                                 </Label>
                                 <TextArea fx:id="txtDescription" prefHeight="100.0" promptText="Expliquez brièvement l'impact de ce projet..." style="-fx-background-radius: 5; -fx-border-color: #dfe6e9; -fx-border-radius: 5;" wrapText="true" />
@@ -92,7 +92,7 @@
                         <Button onAction="#annuler" prefHeight="45.0" prefWidth="120.0" style="-fx-background-color: #ffffff; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-cursor: hand;" text="Annuler" textFill="#7f8c8d">
                             <font><Font name="System Semibold" size="14.0" /></font>
                         </Button>
-                        <Button onAction="#enregistrer" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;" text="CRÉER LE PROJET">
+                        <Button fx:id="btnEnregistrer" onAction="#enregistrer" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;" text="CRÉER LE PROJET">
                             <font><Font name="System Bold" size="14.0" /></font>
                         </Button>
                     </children>

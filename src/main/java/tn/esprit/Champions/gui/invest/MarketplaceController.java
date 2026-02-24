@@ -1,18 +1,18 @@
 package tn.esprit.Champions.gui.invest;
 
+import javafx.animation.*;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.services.creditService;
@@ -28,16 +28,12 @@ import java.util.stream.Collectors;
 
 public class MarketplaceController implements Initializable {
 
-    // On change VBox par HBox car la racine du nouveau FXML est une HBox (Sidebar + Content)
     @FXML private HBox mainContainer;
     @FXML private FlowPane gridPane;
     @FXML private TextField txtSearch;
     @FXML private ComboBox<String> comboFilter;
     @FXML private Button btnRefresh;
-
-    // Nouveaux éléments pour les statistiques (Optionnel, si tu as gardé les IDs dans le FXML)
-    @FXML private Label lblTotalProjects;
-    @FXML private Label lblTotalVolume;
+    @FXML private Label lblTotalProjects, lblTotalVolume;
 
     private final creditService cs = new creditService();
     private final projetService ps = new projetService();
@@ -51,37 +47,41 @@ public class MarketplaceController implements Initializable {
         ));
         comboFilter.getSelectionModel().selectFirst();
 
-        // Listeners pour recherche en temps réel
+        // Animation d'entrée douce pour le container principal
+        mainContainer.setOpacity(0);
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(800), mainContainer);
+        fadeIn.setToValue(1.0);
+        fadeIn.play();
+
+        // Listeners pour filtrage automatique
         txtSearch.textProperty().addListener((obs, oldVal, newVal) -> filtrerDonnees());
         comboFilter.valueProperty().addListener((obs, oldVal, newVal) -> filtrerDonnees());
 
+        // Bouton de rafraîchissement
         btnRefresh.setOnAction(e -> chargerDonnees());
 
-        // Chargement initial
+        // Chargement différé pour laisser l'UI s'initialiser
         Platform.runLater(this::chargerDonnees);
     }
 
     private void chargerDonnees() {
         try {
             touteLaListe = cs.SelectAll();
+            majStatistiques();
             afficherCredits(touteLaListe);
-            majStatistiques(); // Met à jour les petits compteurs en haut
         } catch (SQLException e) {
-            System.err.println("Erreur SQL : " + e.getMessage());
+            System.err.println("Erreur SQL lors du chargement : " + e.getMessage());
         }
     }
 
     private void majStatistiques() {
         if (touteLaListe != null) {
-            // Met à jour le nombre réel de projets chargés depuis la DB
             if (lblTotalProjects != null) {
                 lblTotalProjects.setText(String.valueOf(touteLaListe.size()));
             }
-
-            // Calcule et affiche le volume réel
             if (lblTotalVolume != null) {
                 double volume = touteLaListe.stream().mapToDouble(credit::getMontant).sum();
-                lblTotalVolume.setText(String.format("%,.0f TND", volume));
+                lblTotalVolume.setText(String.format("%,.0f DT", volume));
             }
         }
     }
@@ -92,10 +92,11 @@ public class MarketplaceController implements Initializable {
 
         List<credit> filtree = touteLaListe.stream()
                 .filter(c -> {
-                    // Vérifie si la description ou le titre du projet correspond à la recherche
+                    // Recherche textuelle
                     boolean matchesSearch = recherche.isEmpty() ||
                             (c.getDescription() != null && c.getDescription().toLowerCase().contains(recherche));
 
+                    // Filtre par secteur
                     if (secteurFiltre == null || secteurFiltre.equals("Tous les secteurs")) return matchesSearch;
 
                     try {
@@ -109,47 +110,79 @@ public class MarketplaceController implements Initializable {
 
     private void afficherCredits(List<credit> liste) {
         gridPane.getChildren().clear();
+        int delayCounter = 0;
+
         for (credit c : liste) {
             try {
-                // Chargement de la carte stylisée
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/CreditCard.fxml"));
                 VBox card = loader.load();
 
                 CreditCardController ctrl = loader.getController();
                 ctrl.setCreditData(c);
 
-                // Navigation vers les détails au clic
+                // Événement de clic pour voir les détails
                 card.setOnMouseClicked(event -> ouvrirDetailsCredit(c));
 
                 gridPane.getChildren().add(card);
+
+                // --- ANIMATION EN CASCADE (Corrigée) ---
+                animerApparitionCarte(card, delayCounter++);
+
             } catch (IOException e) {
-                System.err.println("Erreur chargement carte : " + e.getMessage());
+                System.err.println("Erreur chargement carte FXML : " + e.getMessage());
             }
         }
     }
 
+    /**
+     * Gère l'animation de montée et d'opacité de chaque carte.
+     */
+    private void animerApparitionCarte(Node node, int index) {
+        node.setOpacity(0);
+        node.setTranslateY(40); // Départ 40 pixels plus bas
+
+        // Correction : Utilisation de setToY() au lieu de setToValue()
+        TranslateTransition tt = new TranslateTransition(Duration.millis(500), node);
+        tt.setToY(0);
+        tt.setInterpolator(Interpolator.EASE_OUT);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(500), node);
+        ft.setToValue(1.0);
+
+        // Groupe les deux animations
+        ParallelTransition parallel = new ParallelTransition(tt, ft);
+
+        // Applique un délai de 60ms multiplié par l'index de la carte (Cascade)
+        parallel.setDelay(Duration.millis(index * 60));
+        parallel.play();
+    }
+
     private void ouvrirDetailsCredit(credit c) {
         try {
-            // VÉRIFIE BIEN LE CHEMIN ICI : Doit pointer vers DetailsCredit.fxml
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/DetailsCredit.fxml"));
-            Parent root = loader.load();
+            // Animation de transition avant de changer de scène
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(300), mainContainer);
+            fadeOut.setToValue(0.1);
+            fadeOut.setOnFinished(e -> {
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/DetailsCredit.fxml"));
+                    Parent root = loader.load();
 
-            // C'est ici que l'erreur se produisait à la ligne 128
-            // Vérifie que dans DetailsCredit.fxml, l'attribut fx:controller
-            // est bien "tn.esprit.Champions.gui.invest.DetailsCreditController"
-            DetailsCreditController controller = loader.getController();
+                    DetailsCreditController controller = loader.getController();
+                    if (controller != null) {
+                        controller.initData(c);
+                    }
 
-            if (controller != null) {
-                controller.initData(c);
-            }
+                    // Remplace la racine de la scène actuelle
+                    mainContainer.getScene().setRoot(root);
+                } catch (IOException ex) {
+                    System.err.println("Impossible d'ouvrir DetailsCredit : " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            });
+            fadeOut.play();
 
-            mainContainer.getScene().setRoot(root);
-
-        } catch (IOException e) {
-            System.err.println("Erreur de chargement FXML : " + e.getMessage());
-        } catch (ClassCastException e) {
-            System.err.println("ERREUR CRITIQUE : Le fichier FXML chargé n'utilise pas DetailsCreditController !");
-            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la transition vers les détails : " + e.getMessage());
         }
     }
 }

@@ -3,64 +3,83 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Text?>
 
-<HBox fx:id="negocRoot" prefHeight="700.0" prefWidth="1000.0" style="-fx-background-color: #F5F6FA;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.invest.NegociationController">
+<HBox fx:id="negocRoot" prefHeight="750.0" prefWidth="1100.0" style="-fx-background-color: #0f172a;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.invest.NegociationController">
     <children>
-        <VBox maxWidth="300.0" minWidth="300.0" style="-fx-background-color: #2C3A47; -fx-padding: 20;">
+        <VBox maxWidth="320.0" minWidth="320.0" style="-fx-background-color: #020617; -fx-padding: 30;">
             <children>
-                <Button onAction="#retourDetails" style="-fx-background-color: transparent; -fx-text-fill: #F8C291; -fx-cursor: hand;" text="← Retour aux détails" />
-                <Label style="-fx-font-weight: bold; -fx-font-size: 18px; -fx-text-fill: white; -fx-padding: 20 0 10 0;" text="Résumé du Deal" />
-                <Separator opacity="0.2" />
+                <Button onAction="#retourDetails" style="-fx-background-color: rgba(255,255,255,0.05); -fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 10;" text="← Retour aux détails">
+                    <VBox.margin><Insets bottom="30.0" /></VBox.margin>
+                </Button>
 
-                <VBox spacing="15" style="-fx-padding: 20 0;">
+                <Label style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: white;" text="Résumé du Deal" />
+                <Separator opacity="0.1">
+                    <VBox.margin><Insets bottom="20.0" top="10.0" /></VBox.margin>
+                </Separator>
+
+                <VBox spacing="20" style="-fx-background-color: #1e293b; -fx-padding: 20; -fx-background-radius: 15; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 15;">
                     <children>
-                        <VBox>
-                            <Label text="MONTANT INITIAL" textFill="#BDC581" style="-fx-font-size: 10;" />
-                            <Label fx:id="lblMontantOrigine" text="0.00 TND" textFill="WHITE" style="-fx-font-weight: bold;" />
+                        <VBox spacing="5">
+                            <Label text="MONTANT INITIAL" textFill="#64748b" style="-fx-font-size: 10; -fx-font-weight: bold;" />
+                            <Label fx:id="lblMontantOrigine" text="0.00 TND" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 16;" />
                         </VBox>
-                        <VBox>
-                            <Label text="TAUX ACTUEL" textFill="#BDC581" style="-fx-font-size: 10;" />
-                            <Label fx:id="lblTauxOrigine" text="0.0 %" textFill="WHITE" style="-fx-font-weight: bold;" />
+                        <VBox spacing="5">
+                            <Label text="TAUX ACTUEL" textFill="#64748b" style="-fx-font-size: 10; -fx-font-weight: bold;" />
+                            <Label fx:id="lblTauxOrigine" text="0.0 %" textFill="#10b981" style="-fx-font-weight: bold; -fx-font-size: 16;" />
                         </VBox>
-                        <VBox>
-                            <Label text="DURÉE" textFill="#BDC581" style="-fx-font-size: 10;" />
-                            <Label fx:id="lblDureeOrigine" text="0 Mois" textFill="WHITE" style="-fx-font-weight: bold;" />
+                        <VBox spacing="5">
+                            <Label text="DURÉE" textFill="#64748b" style="-fx-font-size: 10; -fx-font-weight: bold;" />
+                            <Label fx:id="lblDureeOrigine" text="0 Mois" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 16;" />
                         </VBox>
                     </children>
                 </VBox>
 
                 <Region VBox.vgrow="ALWAYS" />
-                <VBox spacing="10" style="-fx-background-color: #3d4d5d; -fx-padding: 15; -fx-background-radius: 10;">
-                    <Label text="Statut de l'offre" textFill="#cad3d8" style="-fx-font-size: 11;" />
-                    <Label fx:id="lblStatutNegoc" text="EN NÉGOCIATION" textFill="#F8C291" style="-fx-font-weight: bold;" />
+
+                <VBox spacing="10" style="-fx-background-color: rgba(56, 189, 248, 0.1); -fx-padding: 20; -fx-background-radius: 15; -fx-border-color: rgba(56, 189, 248, 0.2); -fx-border-radius: 15;">
+                    <Label text="Statut de l'offre" textFill="#38bdf8" style="-fx-font-size: 11; -fx-font-weight: bold;" />
+                    <Label fx:id="lblStatutNegoc" text="EN NÉGOCIATION" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 13;" />
                 </VBox>
             </children>
         </VBox>
 
-        <VBox HBox.hgrow="ALWAYS" spacing="0">
+        <VBox HBox.hgrow="ALWAYS" spacing="0" style="-fx-background-color: #0f172a;">
             <children>
-                <HBox alignment="CENTER_LEFT" prefHeight="70.0" style="-fx-background-color: white; -fx-padding: 0 25; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, 1);">
+                <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #1e293b; -fx-padding: 0 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 2);">
                     <children>
-                        <Circle radius="20.0" fill="#27ae60" />
-                        <VBox alignment="CENTER_LEFT" style="-fx-padding: 0 15;">
-                            <Label fx:id="lblNomInterlocuteur" text="Porteur du Projet" style="-fx-font-weight: bold; -fx-font-size: 15;" />
-                            <Label text="En ligne" textFill="#27ae60" style="-fx-font-size: 12;" />
+                        <StackPane>
+                            <Circle radius="22.0" fill="#38bdf8" />
+                            <Label text="P" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 18;" />
+                        </StackPane>
+                        <VBox alignment="CENTER_LEFT" style="-fx-padding: 0 20;">
+                            <Label fx:id="lblNomInterlocuteur" text="Porteur du Projet" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 16;" />
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Circle radius="4" fill="#10b981" />
+                                <Label text="En ligne" textFill="#10b981" style="-fx-font-size: 12;" />
+                            </HBox>
                         </VBox>
                     </children>
                 </HBox>
 
-                <ScrollPane fx:id="scrollChat" fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent;">
+                <ScrollPane fx:id="scrollChat" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;">
                     <content>
-                        <VBox fx:id="chatBox" spacing="15.0" style="-fx-padding: 20;" />
+                        <VBox fx:id="chatBox" spacing="20.0" style="-fx-padding: 30; -fx-background-color: transparent;" />
                     </content>
                 </ScrollPane>
 
-                <VBox style="-fx-background-color: white; -fx-padding: 20; -fx-border-color: #eee; -fx-border-width: 1 0 0 0;">
+                <VBox style="-fx-background-color: #1e293b; -fx-padding: 25; -fx-border-color: rgba(255,255,255,0.05); -fx-border-width: 1 0 0 0;">
                     <children>
-                        <HBox spacing="10" alignment="CENTER">
-                            <TextField fx:id="txtMessage" promptText="Tapez votre message..." HBox.hgrow="ALWAYS" prefHeight="40.0" style="-fx-background-radius: 20;" />
-                            <Button onAction="#proposerOffre" prefHeight="40.0" style="-fx-background-color: #E056FD; -fx-text-fill: white; -fx-background-radius: 20; -fx-font-weight: bold;" text="Proposer un Taux" />
-                            <Button onAction="#envoyerMessage" prefHeight="40.0" prefWidth="80.0" style="-fx-background-color: #4834D4; -fx-text-fill: white; -fx-background-radius: 20;" text="Envoyer" />
+                        <HBox spacing="15" alignment="CENTER">
+                            <TextField fx:id="txtMessage" promptText="Discuter des termes du crédit..." HBox.hgrow="ALWAYS"
+                                       prefHeight="50.0" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-background-radius: 12; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 12; -fx-padding: 0 20;" />
+
+                            <Button onAction="#proposerOffre" prefHeight="50.0"
+                                    style="-fx-background-color: transparent; -fx-text-fill: #38bdf8; -fx-border-color: #38bdf8; -fx-border-radius: 12; -fx-background-radius: 12; -fx-font-weight: bold; -fx-cursor: hand;" text="Proposer Offre" />
+
+                            <Button onAction="#envoyerMessage" prefHeight="50.0" prefWidth="100.0"
+                                    style="-fx-background-color: #38bdf8; -fx-text-fill: #0f172a; -fx-background-radius: 12; -fx-font-weight: bold; -fx-cursor: hand;" text="Envoyer" />
                         </HBox>
                     </children>
                 </VBox>
