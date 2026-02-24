@@ -40,33 +40,29 @@ public class LoginService {
 
     private void handleAuth0Login() {
         try {
-            // 1. Generate PKCE Security keys
             generatePKCE();
             String challenge = getCodeChallenge();
 
-            // 2. Build the Authorization URL
-            // Note: %%20 is used to escape the % for String.format to result in %20 (space)
+            // ADDED: &prompt=select_account to the end of the URL
             String authUrl = String.format(
                     "https://%s/authorize?response_type=code&client_id=%s&redirect_uri=%s" +
                             "&scope=openid%%20profile%%20email&connection=google-oauth2&state=random_state" +
-                            "&code_challenge=%s&code_challenge_method=S256",
+                            "&code_challenge=%s&code_challenge_method=S256&prompt=select_account",
                     Auth0Config.DOMAIN,
                     Auth0Config.CLIENT_ID,
                     Auth0Config.REDIRECT_URI,
                     challenge
             );
 
-            // 3. Start local server to catch the callback
             startLocalCallbackServer();
 
-            // 4. Open the browser
             if (java.awt.Desktop.isDesktopSupported()) {
                 java.awt.Desktop.getDesktop().browse(new URI(authUrl));
             }
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Auth0 Error", "Could not initiate Google Login. Check if port 4242 is busy.");
+            showAlert(Alert.AlertType.ERROR, "Auth0 Error", "Could not initiate Google Login.");
         }
     }
 
