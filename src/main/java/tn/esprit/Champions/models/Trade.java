@@ -2,7 +2,7 @@ package tn.esprit.Champions.models;
 
 
 import java.time.LocalDateTime;
-import java.util.Objects;
+
 public class Trade {
     private int id;
     private int id_user;
@@ -17,7 +17,7 @@ public class Trade {
     private LocalDateTime executedAt;
 
 
-    public Trade() {
+    public Trade(int CURRENT_USER_ID, int id, TradeType tType, double price, double qty, Status completed) {
     }
 
     public Trade(

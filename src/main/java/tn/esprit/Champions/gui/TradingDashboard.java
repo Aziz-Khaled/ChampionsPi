@@ -6,7 +6,6 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
@@ -33,7 +32,7 @@ public class TradingDashboard {
     @FXML private TableColumn<Trade, Double> colHistQty, colHistPrice;
     @FXML private TableColumn<Trade, Status> colHistStatus;
 
-    @FXML private Label lblBalance, lblBalanceTND, lblSelected, lblTotal, lblPnL, lblAdvice;
+    @FXML private Label lblBalance, lblBalanceTND, lblSelected, lblPnL, lblAdvice, lblTotal;
     @FXML private TextField txtQty, txtTargetPrice;
     @FXML private ComboBox<String> comboOrderMode;
     @FXML private LineChart<String, Number> priceChart;
@@ -42,15 +41,17 @@ public class TradingDashboard {
     private XYChart.Series<String, Number> series = new XYChart.Series<>();
 
     // Services
-    private TransactionService transService = new TransactionService();
-    private TradeService tradeService = new TradeService();
-    private MarketApiService marketApi = new MarketApiService();
-    private TechnicalAnalysisService techService = new TechnicalAnalysisService();
-    private wallet_currencyService wcService = new wallet_currencyService();
-    private AssetService assetService = new AssetService();
+    private final TradeService tradeService = new TradeService();
+    private final MarketApiService marketApi = new MarketApiService();
+    private final TechnicalAnalysisService techService = new TechnicalAnalysisService();
+    private final wallet_currencyService wcService = new wallet_currencyService();
+    private final AssetService assetService = new AssetService();
+    private final TransactionService transService = new TransactionService();
 
     private Asset selectedAsset;
     private double initialEntryPrice = 0.0;
+    private final double USDT_TND_RATE = 3.12;
+
     private final int MY_WALLET_ID = 3;
     private final int MARKET_WALLET_ID = 4;
     private final int USDT_ID = 1;
@@ -59,194 +60,201 @@ public class TradingDashboard {
     @FXML
     public void initialize() {
         setupTables();
-        if (priceChart != null) priceChart.getData().add(series);
+        setupChart();
+
         if (comboOrderMode != null) comboOrderMode.setValue("MARKET");
 
-        loadBalance();
-        loadTradeHistory();
-        startTradingEngine();
+        // Écouteur pour le calcul du total en temps réel
+        txtQty.textProperty().addListener((obs, old, newVal) -> refreshTotalLabel());
 
-        // Listener pour la sélection d'actifs
+        // Listener sélection d'actif
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
                 selectedAsset = newVal;
                 initialEntryPrice = newVal.getCurrentPrice();
-                if (lblSelected != null) lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
+                lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
                 series.getData().clear();
-
-                // Analyse technique auto au clic
-                double rsi = techService.fetchRSI(newVal.getSymbol());
-                if (lblAdvice != null) lblAdvice.setText("RSI: " + techService.getAdvice(rsi));
+                refreshTotalLabel();
+                updateTechnicalAnalysis(newVal.getSymbol());
             }
         });
+
+        startTradingEngine();
     }
 
     private void setupTables() {
-        // Table des actifs (Prix live)
         colSymbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
         colPrice.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
 
-        // Table de l'historique (Trace des ordres)
         colHistSymbol.setCellValueFactory(new PropertyValueFactory<>("asset_id"));
         colHistQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         colHistPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
         colHistType.setCellValueFactory(new PropertyValueFactory<>("tradeType"));
         colHistStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        try {
-            List<Asset> assets = assetService.SelectAll();
-            tableAssets.getItems().setAll(assets);
-        } catch (Exception e) { System.err.println("Load Error: " + e.getMessage()); }
+        refreshAssetList();
     }
 
-    /**
-     * MOTEUR DE MISE À JOUR (Trading Engine)
-     * Rafraîchit les prix, le graphique et synchronise la trace BDD
-     */
+    private void setupChart() {
+        priceChart.getData().add(series);
+        priceChart.setCreateSymbols(false);
+        priceChart.setAnimated(false);
+    }
+
     private void startTradingEngine() {
         Timeline engine = new Timeline(new KeyFrame(Duration.seconds(2), e -> {
-            // 1. Mise à jour des prix des actifs
+            // 1. Mise à jour des prix live
             tableAssets.getItems().forEach(a -> a.setCurrentPrice(marketApi.fetchPrice(a.getSymbol())));
             tableAssets.refresh();
 
-            // 2. Si un actif est sélectionné, on met à jour le graph et le PnL
+            // 2. Mise à jour de l'UI si un actif est sélectionné
             if (selectedAsset != null) {
                 double livePrice = selectedAsset.getCurrentPrice();
                 updateChart(livePrice);
-
-                double pnl = RiskManager.calculatePnL(livePrice, initialEntryPrice);
-                lblPnL.setText(String.format("%.2f %%", pnl));
-                lblPnL.setStyle("-fx-text-fill: " + RiskManager.getPnLColor(pnl) + ";");
+                refreshTotalLabel(); // Le total change car le prix bouge
+                updatePnL(livePrice);
             }
 
-            // 3. MISE À JOUR DE LA TRACE : On recharge l'historique pour voir les ordres exécutés par le bot
-            Platform.runLater(this::loadTradeHistory);
-
+            // 3. Sync automatique (Actions du Bot en arrière-plan)
+            Platform.runLater(() -> {
+                loadBalance();
+                loadTradeHistory();
+            });
         }));
         engine.setCycleCount(Animation.INDEFINITE);
         engine.play();
     }
 
-    @FXML
-    private void handleAction(typeTransaction type) {
-        if (selectedAsset == null || txtQty.getText().isEmpty()) return;
-
-        try {
-            double qty = Double.parseDouble(txtQty.getText());
-            OrderMode mode = comboOrderMode.getValue().equals("LIMIT") ? OrderMode.LIMIT : OrderMode.MARKET;
-
-            if (mode == OrderMode.LIMIT) {
-                // LOGIQUE MÉTIER AVANCÉ : Ordre conditionnel (Trace PENDING)
-                double target = Double.parseDouble(txtTargetPrice.getText());
-                Trade limitOrder = new Trade();
-                limitOrder.setId_user(CURRENT_USER_ID);
-                limitOrder.setAsset_id(selectedAsset.getId());
-                limitOrder.setQuantity(qty);
-                limitOrder.setPrice(target);
-                limitOrder.setTradeType(type == typeTransaction.ACHAT ? TradeType.BUY : TradeType.SELL);
-                limitOrder.setOrderMode(OrderMode.LIMIT);
-                limitOrder.setStatus(Status.PENDING);
-                limitOrder.setCreatedAt(LocalDateTime.now());
-
-                tradeService.insertOne(limitOrder);
-                loadTradeHistory(); // Affiche immédiatement la trace "PENDING"
-                showNotification("Ordre Automatique", "Cible fixée à " + target + ". L'IA surveille le prix.");
-            } else {
-                // Ordre au marché immédiat
-                executeCoreTrade(type, qty, selectedAsset.getCurrentPrice());
+    private void refreshTotalLabel() {
+        if (selectedAsset != null && !txtQty.getText().isEmpty()) {
+            try {
+                double qty = Double.parseDouble(txtQty.getText());
+                double total = qty * selectedAsset.getCurrentPrice();
+                lblTotal.setText(String.format("%.2f USDT", total));
+            } catch (NumberFormatException e) {
+                lblTotal.setText("0.00 USDT");
             }
-        } catch (Exception e) {
-            showNotification("Erreur", "Saisie invalide.");
+        } else {
+            lblTotal.setText("0.00 USDT");
         }
     }
 
-    private void executeCoreTrade(typeTransaction type, double qty, double price) {
-        try {
-            double amount = qty * price;
-
-            // 1. Enregistrement Transaction
-            transaction t = new transaction();
-            t.setIdWalletSource(type == typeTransaction.ACHAT ? MY_WALLET_ID : MARKET_WALLET_ID);
-            t.setIdWalletDestination(type == typeTransaction.ACHAT ? MARKET_WALLET_ID : MY_WALLET_ID);
-            t.setMontant(amount);
-            t.setType(type);
-            t.setCurrencyId(USDT_ID);
-            t.setStatut(StatutTransaction.Completed);
-            t.setDateTransaction(LocalDateTime.now());
-            transService.insertOne(t);
-
-            // 2. Enregistrement Trace Trade (Status COMPLETED)
-            Trade trade = new Trade();
-            trade.setId_user(CURRENT_USER_ID);
-            trade.setAsset_id(selectedAsset.getId());
-            trade.setTradeType(type == typeTransaction.ACHAT ? TradeType.BUY : TradeType.SELL);
-            trade.setOrderMode(OrderMode.MARKET);
-            trade.setPrice(price);
-            trade.setQuantity(qty);
-            trade.setStatus(Status.COMPLETED);
-            trade.setCreatedAt(LocalDateTime.now());
-            trade.setExecutedAt(LocalDateTime.now());
-
-            tradeService.insertOne(trade);
-
-            loadBalance();
-            loadTradeHistory();
-            showNotification("Exécution", "Achat/Vente effectué au prix du marché.");
-        } catch (Exception e) { e.printStackTrace(); }
+    private void updatePnL(double currentPrice) {
+        double pnl = RiskManager.calculatePnL(currentPrice, initialEntryPrice);
+        lblPnL.setText(String.format("%.2f %%", pnl));
+        lblPnL.setStyle("-fx-text-fill: " + RiskManager.getPnLColor(pnl) + "; -fx-font-size: 24; -fx-font-weight: bold;");
     }
 
-    public void loadTradeHistory() {
+    private void updateTechnicalAnalysis(String symbol) {
+        double rsi = techService.fetchRSI(symbol);
+        lblAdvice.setText("RSI: " + String.format("%.2f", rsi) + " (" + techService.getAdvice(rsi) + ")");
+    }
+
+    @FXML
+    private void handleAction(typeTransaction type) {
+        if (selectedAsset == null || txtQty.getText().isEmpty()) {
+            showAlert("Action requise", "Sélectionnez un actif et une quantité.");
+            return;
+        }
+
         try {
-            // On récupère tous les trades (Limit et Market) pour voir la progression
-            List<Trade> history = tradeService.SelectAll();
-            tableHistory.getItems().setAll(history);
-        } catch (Exception e) { e.printStackTrace(); }
+            double qty = Double.parseDouble(txtQty.getText());
+            if (comboOrderMode.getValue().equals("LIMIT")) {
+                double target = Double.parseDouble(txtTargetPrice.getText());
+                placeLimitOrder(type, qty, target);
+            } else {
+                executeMarketTrade(type, qty);
+            }
+        } catch (Exception e) {
+            showAlert("Erreur", "Vérifiez vos saisies : " + e.getMessage());
+        }
+    }
+
+    private void executeMarketTrade(typeTransaction type, double qty) throws SQLException {
+        double price = selectedAsset.getCurrentPrice();
+        double total = qty * price;
+        TradeType tType = (type == typeTransaction.ACHAT) ? TradeType.BUY : TradeType.SELL;
+
+        // Débit/Crédit réel
+        wcService.updateBalanceAfterTrade(MY_WALLET_ID, USDT_ID, total, tType);
+
+        // Enregistrement du Trade
+        Trade trade = new Trade(CURRENT_USER_ID, selectedAsset.getId(), tType, price, qty, Status.COMPLETED);
+        trade.setOrderMode(OrderMode.MARKET);
+        trade.setCreatedAt(LocalDateTime.now());
+        tradeService.insertOne(trade);
+
+        saveTransactionRecord(type, total);
+        showAlert("Succès", "Ordre au marché exécuté !");
+    }
+
+    private void placeLimitOrder(typeTransaction type, double qty, double target) throws SQLException {
+        Trade limit = new Trade(CURRENT_USER_ID, selectedAsset.getId(),
+                (type == typeTransaction.ACHAT ? TradeType.BUY : TradeType.SELL), target, qty, Status.PENDING);
+        limit.setOrderMode(OrderMode.LIMIT);
+        limit.setCreatedAt(LocalDateTime.now());
+        tradeService.insertOne(limit);
+        showAlert("IA Activée", "Ordre placé. Le Bot surveille le prix cible.");
+    }
+
+    private void saveTransactionRecord(typeTransaction type, double amount) throws SQLException {
+        transaction t = new transaction();
+        t.setIdWalletSource(type == typeTransaction.ACHAT ? MY_WALLET_ID : MARKET_WALLET_ID);
+        t.setIdWalletDestination(type == typeTransaction.ACHAT ? MARKET_WALLET_ID : MY_WALLET_ID);
+        t.setMontant(amount);
+        t.setType(type);
+        t.setCurrencyId(USDT_ID);
+        t.setStatut(StatutTransaction.Completed);
+        t.setDateTransaction(LocalDateTime.now());
+        transService.insertOne(t);
     }
 
     private void loadBalance() {
         try {
-            wallet_currency wc = wcService.getWalletCurrencyByWalletAndId(MY_WALLET_ID, USDT_ID);
-            if (wc != null) lblBalance.setText(String.format("%.2f USDT", wc.getSolde()));
-        } catch (Exception e) {}
+            double usdt = wcService.getBalance(MY_WALLET_ID, USDT_ID);
+            lblBalance.setText(String.format("%.2f USDT", usdt));
+            lblBalanceTND.setText(String.format("%.2f TND", usdt * USDT_TND_RATE));
+        } catch (SQLException e) { /* Log error */ }
     }
 
-    @FXML
-    private void openBotWindow() {
+    public void loadTradeHistory() {
         try {
-            // Charge le fichier FXML du Bot
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/BotView.fxml"));
-            Parent root = loader.load();
+            tableHistory.getItems().setAll(tradeService.SelectAll());
+        } catch (SQLException e) { /* Log error */ }
+    }
 
-            // Créer une nouvelle scène
-            Stage stage = new Stage();
-            stage.setTitle("🤖 FinTech Autonomous Bot");
-            stage.setScene(new Scene(root));
-
-            // Optionnel : Garder la fenêtre au-dessus pour surveiller pendant qu'on trade
-            stage.setAlwaysOnTop(true);
-            stage.show();
-
-        } catch (IOException e) {
-            System.err.println("Erreur lors de l'ouverture du Bot : " + e.getMessage());
-            e.printStackTrace();
-        }
+    private void refreshAssetList() {
+        try {
+            tableAssets.getItems().setAll(assetService.SelectAll());
+        } catch (SQLException e) { /* Log error */ }
     }
 
     private void updateChart(double price) {
-        series.getData().add(new XYChart.Data<>(LocalDateTime.now().toString().substring(11, 19), price));
+        String time = LocalDateTime.now().toString().substring(11, 19);
+        series.getData().add(new XYChart.Data<>(time, price));
         if (series.getData().size() > 15) series.getData().remove(0);
     }
 
-    private void showNotification(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.show();
+    @FXML private void openBotWindow() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/BotView.fxml"));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(loader.load()));
+            stage.setTitle("🤖 Champions Bot Engine");
+            stage.show();
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     @FXML private void onBuy() { handleAction(typeTransaction.ACHAT); }
     @FXML private void onSell() { handleAction(typeTransaction.VENTE); }
     @FXML private void showMarket() { paneMarket.setVisible(true); paneHistory.setVisible(false); }
     @FXML private void showHistory() { paneMarket.setVisible(false); paneHistory.setVisible(true); loadTradeHistory(); }
+
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.show();
+    }
 }
