@@ -1,23 +1,22 @@
 package tn.esprit.Champions.gui;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.*;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List; // AJOUTÉ
 
 public class TradingDashboard {
 
@@ -34,7 +33,9 @@ public class TradingDashboard {
     @FXML private TextField txtQty, txtTargetPrice;
     @FXML private ComboBox<String> comboOrderMode;
     @FXML private LineChart<String, Number> priceChart;
-    @FXML private VBox paneMarket, paneHistory;
+    @FXML private VBox  paneHistory;
+    @FXML private Pane paneMarket;
+    @FXML private VBox vboxNews; // AJOUTÉ : Pour afficher les news dans l'UI
 
     private XYChart.Series<String, Number> series = new XYChart.Series<>();
 
@@ -44,14 +45,15 @@ public class TradingDashboard {
     private final wallet_currencyService wcService = new wallet_currencyService();
     private final AssetService assetService = new AssetService();
     private final TransactionService transService = new TransactionService();
+    private final NewsService newsService = new NewsService(); // AJOUTÉ
 
     // Configuration
     private Asset selectedAsset;
     private double initialEntryPrice = 0.0;
     private final double TND_RATE = 3.12;
-    private final int MY_WALLET_ID = 3;       // Votre Wallet ID
-    private final int MARKET_WALLET_ID = 4;   // ID du Wallet Marché/Système
-    private final int USDT_ID = 1;            // ID de la monnaie USDT
+    private final int MY_WALLET_ID = 3;
+    private final int MARKET_WALLET_ID = 4;
+    private final int USDT_ID = 1;
     private final int CURRENT_USER_ID = 1;
 
     @FXML
@@ -60,40 +62,81 @@ public class TradingDashboard {
         setupChart();
         setupOrderInputs();
 
+        // Écouteur de sélection d'actif
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
                 selectedAsset = newVal;
                 initialEntryPrice = newVal.getCurrentPrice();
                 lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
                 series.getData().clear();
+
+                // MISE À JOUR : On lance le flux WebSocket pour l'actif sélectionné
+                startLiveStreaming(newVal.getSymbol());
+
                 updateAISignal(newVal.getSymbol());
+
+                // AJOUTÉ : Charger les news CryptoPanic
+                updateNews(newVal.getSymbol());
             }
         });
 
         txtQty.textProperty().addListener((obs, old, newVal) -> calculateTotal());
-        startTradingEngine();
+
+        // On met à jour les soldes une première fois
+        updateBalances();
     }
 
-    private void setupOrderInputs() {
-        comboOrderMode.getItems().setAll("MARKET", "LIMIT");
-        comboOrderMode.setValue("MARKET");
-        txtTargetPrice.disableProperty().bind(comboOrderMode.valueProperty().isEqualTo("MARKET"));
+    // --- NOUVELLE MÉTHODE POUR CRYPTOPANIC ---
+    private void updateNews(String symbol) {
+        new Thread(() -> {
+            // On nettoie le symbole (ex: BTCUSDT -> BTC)
+            String cleanSymbol = symbol.toUpperCase().replace("USDT", "");
+            List<News> newsList = newsService.getLatestNews(cleanSymbol);
+
+            Platform.runLater(() -> {
+                if (vboxNews != null) {
+                    vboxNews.getChildren().clear();
+                    for (News n : newsList) {
+                        Label newsLabel = new Label("• " + n.getTitle());
+                        newsLabel.setWrapText(true);
+                        newsLabel.setPrefWidth(250); // Ajuste selon ton interface
+
+                        // Style selon le sentiment
+                        if ("bullish".equals(n.getSentiment())) {
+                            newsLabel.setStyle("-fx-text-fill: #2ecc71; -fx-font-weight: bold;");
+                        } else if ("bearish".equals(n.getSentiment())) {
+                            newsLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                        }
+
+                        vboxNews.getChildren().add(newsLabel);
+                    }
+                }
+            });
+        }).start();
     }
 
-    private void startTradingEngine() {
-        Timeline engine = new Timeline(new KeyFrame(Duration.seconds(2), e -> {
-            tableAssets.getItems().forEach(a -> a.setCurrentPrice(marketApi.fetchPrice(a.getSymbol())));
-            tableAssets.refresh();
-            if (selectedAsset != null) {
-                double livePrice = selectedAsset.getCurrentPrice();
-                updateLiveChart(livePrice);
-                updatePnL(livePrice);
-                calculateTotal();
-            }
-            Platform.runLater(this::updateBalances);
-        }));
-        engine.setCycleCount(Animation.INDEFINITE);
-        engine.play();
+    /**
+     * NOUVELLE MÉTHODE : Utilise le WebSocket au lieu du Timer
+     */
+    private void startLiveStreaming(String symbol) {
+        System.out.println("Starting WebSocket stream for: " + symbol);
+
+        marketApi.startPriceStream(symbol, (Double livePrice) -> {
+            // Le WebSocket est asynchrone, il faut forcer le retour sur le thread JavaFX
+            Platform.runLater(() -> {
+                if (selectedAsset != null && selectedAsset.getSymbol().equalsIgnoreCase(symbol)) {
+                    // 1. Mettre à jour l'objet et l'UI
+                    selectedAsset.setCurrentPrice(livePrice);
+                    tableAssets.refresh(); // Met à jour le prix dans le tableau
+
+                    // 2. Mettre à jour les indicateurs visuels
+                    updateLiveChart(livePrice);
+                    updatePnL(livePrice);
+                    calculateTotal();
+                    updateBalances();
+                }
+            });
+        });
     }
 
     private void updateBalances() {
@@ -107,9 +150,6 @@ public class TradingDashboard {
     @FXML private void onBuy() { processTrade(TradeType.BUY); }
     @FXML private void onSell() { processTrade(TradeType.SELL); }
 
-    /**
-     * MÉTHODE CORRIGÉE : Gère Trade ET Transaction (phpMyAdmin)
-     */
     private void processTrade(TradeType type) {
         if (selectedAsset == null || txtQty.getText().isEmpty()) {
             showAlert("Error", "Please select an asset and quantity.");
@@ -122,21 +162,19 @@ public class TradingDashboard {
             double price = mode == OrderMode.MARKET ? selectedAsset.getCurrentPrice() : Double.parseDouble(txtTargetPrice.getText());
             double totalAmount = qty * price;
 
-            // 1. Enregistrement de l'ORDRE (Table trade)
             Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty,
                     (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
                     LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
             tradeService.insertOne(trade);
 
-            // 2. Enregistrement du MOUVEMENT FINANCIER (Table transaction)
             if (mode == OrderMode.MARKET) {
                 transaction t = new transaction();
                 if (type == TradeType.BUY) {
-                    t.setIdWalletSource(MY_WALLET_ID);      // On paie
+                    t.setIdWalletSource(MY_WALLET_ID);
                     t.setIdWalletDestination(MARKET_WALLET_ID);
                     t.setType(typeTransaction.ACHAT);
                 } else {
-                    t.setIdWalletSource(MARKET_WALLET_ID);  // On reçoit
+                    t.setIdWalletSource(MARKET_WALLET_ID);
                     t.setIdWalletDestination(MY_WALLET_ID);
                     t.setType(typeTransaction.VENTE);
                 }
@@ -144,8 +182,6 @@ public class TradingDashboard {
                 t.setCurrencyId(USDT_ID);
                 t.setStatut(StatutTransaction.Completed);
                 t.setDateTransaction(LocalDateTime.now());
-
-                // Appel au service qui gère l'insertion et les updates de solde
                 transService.insertOne(t);
             }
 
@@ -156,7 +192,12 @@ public class TradingDashboard {
         }
     }
 
-    // --- Méthodes de support ---
+    private void setupOrderInputs() {
+        comboOrderMode.getItems().setAll("MARKET", "LIMIT");
+        comboOrderMode.setValue("MARKET");
+        txtTargetPrice.disableProperty().bind(comboOrderMode.valueProperty().isEqualTo("MARKET"));
+    }
+
     private void updateAISignal(String symbol) {
         new Thread(() -> {
             double rsi = marketApi.calculateRSI(symbol);
@@ -199,9 +240,10 @@ public class TradingDashboard {
     }
 
     private void updateLiveChart(double price) {
+        // Utilisation des secondes pour l'axe X
         String time = LocalDateTime.now().toString().substring(17, 19);
         series.getData().add(new XYChart.Data<>(time, price));
-        if (series.getData().size() > 20) series.getData().remove(0);
+        if (series.getData().size() > 30) series.getData().remove(0); // Garder 30 points
     }
 
     @FXML private void showMarket() { paneMarket.setVisible(true); paneHistory.setVisible(false); }
@@ -212,25 +254,17 @@ public class TradingDashboard {
     @FXML
     private void openBotWindow() {
         try {
-            System.out.println("Opening Bot Interface...");
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/BotView.fxml"));
+            Parent root = loader.load();
 
-            // 1. Charger le fichier FXML du Bot
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/BotView.fxml")
-            );
-            VBox botRoot = loader.load(); // Utilisez le type de layout racine de votre bot.fxml (VBox, AnchorPane, etc.)
-
-            // 2. Créer une nouvelle scène et une nouvelle fenêtre (Stage)
             Stage stage = new Stage();
             stage.setTitle("Trading Bot AI - Configuration");
-            stage.setScene(new Scene(botRoot));
-
-            // 3. Afficher la fenêtre
+            stage.setScene(new Scene(root));
             stage.show();
 
         } catch (IOException e) {
-            System.err.println("Erreur lors de l'ouverture de l'interface Bot : " + e.getMessage());
-            showAlert("Error", "Could not load Bot interface. Make sure bot.fxml exists.");
+            System.err.println("Failed to load Bot UI: " + e.getMessage());
+            showAlert("Error", "Could not load Bot interface.");
             e.printStackTrace();
         }
     }
