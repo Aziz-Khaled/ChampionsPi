@@ -12,7 +12,10 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.*;
-
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 
@@ -206,11 +209,29 @@ public class TradingDashboard {
     private void loadTradeHistory() { try { tableHistory.getItems().setAll(tradeService.SelectAll()); } catch (SQLException e) {} }
     private void showAlert(String title, String content) { Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(title); a.setContentText(content); a.show(); }
 
-    /**
-     * AJOUT : Résout l'erreur FXML LoadException
-     */
-    @FXML private void openBotWindow() {
-        System.out.println("Opening Bot Interface...");
-        // Logic pour ouvrir bot.fxml si nécessaire
+    @FXML
+    private void openBotWindow() {
+        try {
+            System.out.println("Opening Bot Interface...");
+
+            // 1. Charger le fichier FXML du Bot
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/BotView.fxml")
+            );
+            VBox botRoot = loader.load(); // Utilisez le type de layout racine de votre bot.fxml (VBox, AnchorPane, etc.)
+
+            // 2. Créer une nouvelle scène et une nouvelle fenêtre (Stage)
+            Stage stage = new Stage();
+            stage.setTitle("Trading Bot AI - Configuration");
+            stage.setScene(new Scene(botRoot));
+
+            // 3. Afficher la fenêtre
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'ouverture de l'interface Bot : " + e.getMessage());
+            showAlert("Error", "Could not load Bot interface. Make sure bot.fxml exists.");
+            e.printStackTrace();
+        }
     }
 }
