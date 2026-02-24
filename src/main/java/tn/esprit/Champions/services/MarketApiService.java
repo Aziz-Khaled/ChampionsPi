@@ -4,64 +4,46 @@ import java.net.URI;
 import java.net.http.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MarketApiService {
-    // Endpoint pour obtenir TOUS les prix d'un coup (Optimisation réseau)
-    private static final String ALL_PRICES_URL = "https://api.binance.com/api/v3/ticker/price";
-    private static final String SINGLE_PRICE_URL = "https://api.binance.com/api/v3/ticker/price?symbol=%sUSDT";
+    private static final String API_URL = "https://api.binance.com/api/v3/";
 
-    /**
-     * Récupère le prix d'une crypto spécifique
-     */
-    public double fetchPrice(String assetName) {
+    public double fetchPrice(String symbol) {
         try {
-            String symbol = formatSymbol(assetName);
+            String sym = symbol.toUpperCase().endsWith("USDT") ? symbol : symbol + "USDT";
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(String.format(SINGLE_PRICE_URL, symbol)))
-                    .build();
-
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL + "ticker/price?symbol=" + sym)).build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            JSONObject json = new JSONObject(response.body());
-
-            return json.getDouble("price");
-        } catch (Exception e) {
-            // Repli sur une simulation réaliste si l'API échoue
-            return 60000.0 + (Math.random() * 1000);
-        }
+            return new JSONObject(response.body()).getDouble("price");
+        } catch (Exception e) { return 0.0; }
     }
 
-    /**
-     * OPTIMISATION : Récupère tous les prix en une seule fois.
-     * Très utile pour rafraîchir ton tableau sans faire 50 requêtes.
-     */
-    public Map<String, Double> fetchAllPrices() {
-        Map<String, Double> pricesMap = new HashMap<>();
+    public double calculateRSI(String symbol) {
         try {
+            String sym = symbol.toUpperCase().endsWith("USDT") ? symbol : symbol + "USDT";
+            String url = API_URL + "klines?symbol=" + sym + "&interval=1h&limit=50";
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(ALL_PRICES_URL)).build();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            JSONArray klines = new JSONArray(response.body());
 
-            JSONArray jsonArray = new JSONArray(response.body());
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject obj = jsonArray.getJSONObject(i);
-                String symbol = obj.getString("symbol");
-                if (symbol.endsWith("USDT")) {
-                    pricesMap.put(symbol.replace("USDT", ""), obj.getDouble("price"));
-                }
+            List<Double> closes = new ArrayList<>();
+            for (int i = 0; i < klines.length(); i++) {
+                closes.add(klines.getJSONArray(i).getDouble(4));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return pricesMap;
+            return computeRSI(closes, 14);
+        } catch (Exception e) { return 50.0; }
     }
 
-    private String formatSymbol(String assetName) {
-        String s = assetName.toUpperCase().trim();
-        if (s.equals("BITCOIN")) return "BTC";
-        if (s.equals("ETHEREUM")) return "ETH";
-        return s;
+    private double computeRSI(List<Double> prices, int period) {
+        double up = 0, down = 0;
+        for (int i = prices.size() - period; i < prices.size(); i++) {
+            double diff = prices.get(i) - prices.get(i-1);
+            if (diff > 0) up += diff; else down -= diff;
+        }
+        double rs = (up / period) / (down / period);
+        return 100 - (100 / (1 + rs));
     }
 }

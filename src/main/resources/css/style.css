@@ -1,31 +1,19 @@
-/* Style pour ressembler à la capture d'écran */
-.chart {
-    -fx-background-color: #0b0e11;
+.binance-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
 }
-
-.chart-content {
-    -fx-padding: 10px;
+.binance-table .column-header-background {
+    -fx-background-color: #181a20;
 }
-
-.chart-series-line {
-    -fx-stroke: #fcd535; /* Ligne jaune Binance */
-    -fx-stroke-width: 2px;
+.binance-table .column-header {
+    -fx-background-color: transparent;
+    -fx-text-fill: #848e9c;
 }
-
-.axis {
-    -fx-tick-label-fill: #848e9c;
-    -fx-axis-label-fill: #848e9c;
+.binance-table .table-row-cell {
+    -fx-background-color: #181a20;
+    -fx-text-fill: #eaecef;
+    -fx-border-color: transparent;
 }
-
-.axis-tick-mark {
-    -fx-stroke: #2b3139;
-}
-
-.chart-vertical-grid-lines {
-    -fx-stroke: #2b3139;
-    -fx-stroke-dash-array: 2 2;
-}
-
-.chart-horizontal-grid-lines {
-    -fx-stroke: #2b3139;
+.binance-table .table-row-cell:selected {
+    -fx-background-color: #2b2f36;
 }
