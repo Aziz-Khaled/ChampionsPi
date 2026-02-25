@@ -5,14 +5,15 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import tn.esprit.Champions.models.Negociation;
-import tn.esprit.Champions.models.credit;
-import tn.esprit.Champions.models.CreditStatus;
+import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.negociationService;
 import tn.esprit.Champions.services.creditService;
 import tn.esprit.Champions.services.SmartContractService;
+import tn.esprit.Champions.utils.DbConnection;
 
 import java.net.URL;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -75,7 +76,10 @@ public class NegociationController implements Initializable {
         card.setAlignment(Pos.CENTER_LEFT);
 
         VBox info = new VBox(5);
-        Label inv = new Label("INVESTISSEUR #" + n.getInvestor_id());
+        Utilisateur invDetails = recupererUtilisateurSansErreur(n.getInvestor_id());
+        String nomAffichage = (invDetails != null) ? invDetails.getNom() + " " + invDetails.getPrenom() : "ID #" + n.getInvestor_id();
+
+        Label inv = new Label("INVESTISSEUR : " + nomAffichage);
         inv.setStyle("-fx-text-fill: #ecf0f1; -fx-font-weight: bold;");
         Label prop = new Label(n.getMontant() + " TND à " + n.getTaux_propose() + "%");
         prop.setStyle("-fx-text-fill: #3498db;");
@@ -84,12 +88,10 @@ public class NegociationController implements Initializable {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Bouton REJETER
         Button btnRejeter = new Button("Rejeter");
         btnRejeter.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8;");
         btnRejeter.setOnAction(e -> handleRejet(n));
 
-        // Bouton ACCEPTER
         Button btnAccepter = new Button("Accepter");
         btnAccepter.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8;");
         btnAccepter.setOnAction(e -> handleAcceptation(n));
@@ -100,33 +102,60 @@ public class NegociationController implements Initializable {
 
     private void handleAcceptation(Negociation n) {
         try {
-            // 1. Mise à jour de la Base de Données locale (MySQL)
             creditSelectionne.setStatus(CreditStatus.APPROVED);
             cs.updateOne(creditSelectionne);
             ns.accepterNegociation(n.getId_negociation());
 
-            // 2. Utilisation d'un hash de transaction REEL et VALIDE sur Sepolia
-            // Ce hash affichera une page avec un badge vert "Success" sur Etherscan
-            String realTxHash = "0x2863a35e40e696205ba138e68449c4908f9720b08051795c64c76742542a27a8";
+            Utilisateur investisseur = recupererUtilisateurSansErreur(n.getInvestor_id());
 
-            // 3. OUVRIR L'INTERFACE BLOCKCHAIN DANS LE NAVIGATEUR
-            if (java.awt.Desktop.isDesktopSupported()) {
-                java.awt.Desktop.getDesktop().browse(new java.net.URI(scs.getTransactionUrl(realTxHash)));
+            if (investisseur != null) {
+                scs.deployAndShowContract(
+                        creditSelectionne.getId(),
+                        n.getMontant(),
+                        lblTitreCredit.getText(),
+                        investisseur,
+                        n.getTaux_propose(),
+                        creditSelectionne.getDuree()
+                );
+            } else {
+                new Alert(Alert.AlertType.ERROR, "Erreur fatale : Profil investisseur introuvable.").show();
             }
 
-            // 4. Ton alerte de confirmation (comme sur ton Image 1)
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Message");
-            alert.setHeaderText(null);
-            alert.setContentText("Contrat déployé ! Le crédit est maintenant APPROUVÉ.");
-            alert.showAndWait();
-
             chargerOffresRecues();
-
         } catch (Exception e) {
-            System.err.println("Erreur lors de l'ouverture de l'API : " + e.getMessage());
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Erreur : " + e.getMessage()).show();
         }
     }
+
+    // ✅ MÉTHODE CORRIGÉE POUR CORRESPONDRE AU MODÈLE (8 ARGUMENTS)
+    private Utilisateur recupererUtilisateurSansErreur(int id) {
+        // Note : On ne récupère pas l'email ici car il n'est pas dans ton modèle Utilisateur
+        String query = "SELECT id_user, nom, prenom, mot_de_passe, telephone, piece_identite, user_image FROM utilisateur WHERE id_user = ?";
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                // ✅ On appelle le constructeur à 8 arguments :
+                // (int id_user, String nom, String prenom, String mot_de_passe, String telephone,
+                //  String piece_identite, String user_image, Role role)
+                return new Utilisateur(
+                        rs.getInt("id_user"),
+                        rs.getString("nom"),
+                        rs.getString("prenom"),
+                        rs.getString("mot_de_passe"),
+                        rs.getString("telephone"),
+                        rs.getString("piece_identite"),
+                        rs.getString("user_image"),
+                        null // On met null pour le Role pour éviter les erreurs d'Enum
+                );
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur SQL lors de la récupération : " + e.getMessage());
+        }
+        return null;
+    }
+
     private void handleRejet(Negociation n) {
         try {
             ns.refuserNegociation(n.getId_negociation());

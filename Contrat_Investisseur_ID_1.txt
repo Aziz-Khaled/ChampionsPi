@@ -1,0 +1,7 @@
+--- CERTIFICAT BLOCKCHAIN ---
+Date: 25/02/2026 05:43:29
+Projet: Eco-Village Solar Monitor
+Investisseur: Investisseur_ID_1
+Montant: 320.0 TND
+Hash: 0x69fe46036cfa42e8a5468a35b4d38b3f201
+----------------------------
