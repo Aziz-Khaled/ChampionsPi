@@ -65,6 +65,11 @@
             <version>2.0.1</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.sarxos</groupId>
+            <artifactId>webcam-capture</artifactId>
+            <version>0.3.12</version>
+        </dependency>
 
 
 

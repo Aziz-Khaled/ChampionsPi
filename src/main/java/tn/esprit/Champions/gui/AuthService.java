@@ -1,7 +1,15 @@
 package tn.esprit.Champions.gui;
 import javafx.scene.layout.HBox;
 
-import netscape.javascript.JSObject;
+import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.WebcamPanel;
+import com.github.sarxos.webcam.WebcamResolution;
+import javax.swing.JFrame;
+import javax.swing.JButton;
+import java.awt.BorderLayout;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+
 import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -76,31 +84,90 @@ public class AuthService {
     @FXML
     private ComboBox<Role> combobox_role;
 
+
     private File identityFile;
     private File personalImageFile;
     private boolean isCaptchaSolved = false;
 
+
     @FXML
+
     private void initialize() {
+        // Identity button remains a file picker
         Identity_Button.setOnAction(e -> chooseIdentityFile());
-        personalImage_button.setOnAction(e -> choosePersonalImage());
+
+        // REMOVE the line that was pointing to choosePersonalImage()
+        // The button will now correctly use handleLiveSelfie from the FXML
+        personalImage_button.setOnAction(e -> handleLiveSelfie());
+
         signUpButton.setOnAction(e -> signUp());
         Login_Button.setOnAction(e -> openLoginPage());
+
         combobox_role.getItems().setAll(
                 java.util.Arrays.stream(Role.values())
                         .filter(role -> role != Role.ADMIN)
                         .toList()
         );
-
     }
 
-    public class CaptchaBridge {
-        public void setCaptchaSuccess(boolean success) {
-            isCaptchaSolved = success;
-            System.out.println("Captcha Status: " + success);
+
+    @FXML
+    private void handleLiveSelfie() {
+        Webcam webcam = Webcam.getDefault();
+        if (webcam == null) {
+            showAlert(Alert.AlertType.ERROR, "Camera Error", "No webcam found on this device.");
+            return;
         }
-    }
 
+        webcam.setViewSize(WebcamResolution.VGA.getSize());
+
+        // Create a Swing window for the live preview
+        WebcamPanel panel = new WebcamPanel(webcam);
+        panel.setFPSDisplayed(true);
+        panel.setMirrored(true);
+
+        JFrame window = new JFrame("Champions - Live Identity Verification");
+        JButton captureBtn = new JButton("Capture Selfie");
+
+        window.add(panel, BorderLayout.CENTER);
+        window.add(captureBtn, BorderLayout.SOUTH);
+        window.pack();
+        window.setVisible(true);
+        window.setLocationRelativeTo(null);
+
+        captureBtn.addActionListener(e -> {
+            try {
+                BufferedImage image = webcam.getImage();
+
+                // Save to your assets folder
+                String fileName = "live_selfie_" + System.currentTimeMillis() + ".png";
+                File outputFile = new File("src/main/resources/assets/" + fileName);
+                ImageIO.write(image, "PNG", outputFile);
+
+                // Store file for registration
+                this.personalImageFile = outputFile;
+
+                // Update UI on JavaFX Thread
+                javafx.application.Platform.runLater(() -> {
+                    personalImage_button.setText("✅ Photo Captured");
+                    personalImage_button.setStyle("-fx-background-color: #10b981;");
+                });
+
+                window.dispose();
+                webcam.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        // Close camera if user closes window without capturing
+        window.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                webcam.close();
+            }
+        });
+    }
 
     @FXML
     private void chooseIdentityFile() {
@@ -187,10 +254,7 @@ public class AuthService {
                     "Please verify your email with the 6-digit code before continuing.");
             return false;
         }
-        if (!isCaptchaSolved) {
-            showAlert(Alert.AlertType.WARNING, "Security", "Please solve the CAPTCHA to prove you are human.");
-            return false;
-        }
+
 
 
         return true;
