@@ -1,4 +1,5 @@
 package tn.esprit.Champions.gui;
+import javafx.scene.layout.HBox;
 import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -32,6 +33,13 @@ public class AuthService {
     @FXML private VBox step1Container, step2Container;
     @FXML private Region prog1, prog2;
     @FXML private Label stepDescription;
+    @FXML private HBox otpContainer;
+    @FXML private TextField TF_OTP;
+    @FXML private Label lblOtpStatus;
+    @FXML private Button btnSendOTP;
+
+    private String generatedCode;
+    private boolean isEmailVerified = false;
 
     @FXML
     private Button Login_Button;
@@ -161,6 +169,12 @@ public class AuthService {
             return false;
         }
 
+        if (!isEmailVerified) {
+            showAlert(Alert.AlertType.WARNING, "Verification Required",
+                    "Please verify your email with the 6-digit code before continuing.");
+            return false;
+        }
+
         return true;
     }
     private void signUp() {
@@ -224,8 +238,6 @@ public class AuthService {
 
 
             userService.insertOne(newUser);
-
-
             Utilisateur dbUser = userService.getUserByEmail(newUser.getEmail());
 
             if (dbUser != null) {
@@ -315,5 +327,46 @@ public class AuthService {
         });
 
         fadeOut.play();
+    }
+
+    @FXML
+    private void handleSendOTP() {
+        String email = TF_Email.getText().trim();
+        if (email.isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            showAlert(Alert.AlertType.ERROR, "Error", "Please enter a valid email first.");
+            return;
+        }
+
+        // 1. Generate a 6-digit code
+        generatedCode = String.valueOf((int) (Math.random() * 900000) + 100000);
+        System.out.println("DEBUG: Code sent to " + email + " is: " + generatedCode);
+
+        // 2. THE MISSING PIECE: Call your EmailUtils class here
+        tn.esprit.Champions.utils.EmailUtils.sendOTP(email, generatedCode);
+
+        // 3. UI Feedback
+        otpContainer.setVisible(true);
+        otpContainer.setManaged(true);
+        btnSendOTP.setDisable(true);
+        TF_Email.setEditable(false);
+
+        // Optional: Show a quick alert so the user knows to check their inbox
+        showAlert(Alert.AlertType.INFORMATION, "Verification Sent", "A 6-digit code has been sent to " + email);
+    }
+
+    @FXML
+    private void handleVerifyOTP() {
+        String enteredCode = TF_OTP.getText().trim();
+
+        if (enteredCode.equals(generatedCode)) {
+            isEmailVerified = true;
+            lblOtpStatus.setText("✅");
+            lblOtpStatus.setStyle("-fx-text-fill: #10b981;");
+            otpContainer.setDisable(true); // Lock it once verified
+        } else {
+            isEmailVerified = false;
+            lblOtpStatus.setText("❌");
+            lblOtpStatus.setStyle("-fx-text-fill: #f43f5e;");
+        }
     }
 }

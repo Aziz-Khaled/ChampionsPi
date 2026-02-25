@@ -60,7 +60,22 @@
                                                     <children><Label styleClass="input-label" text="Prénom" /><TextField fx:id="TF_Prenom" promptText="John" /></children>
                                                 </VBox>
                                                 <VBox spacing="8.0" GridPane.columnSpan="2" GridPane.rowIndex="1">
-                                                    <children><Label styleClass="input-label" text="Email" /><TextField fx:id="TF_Email" promptText="john@example.com" /></children>
+                                                    <children>
+                                                        <Label styleClass="input-label" text="Email" />
+                                                        <HBox spacing="10">
+                                                            <children>
+                                                                <TextField fx:id="TF_Email" promptText="john@example.com" HBox.hgrow="ALWAYS" />
+                                                                <Button fx:id="btnSendOTP" onAction="#handleSendOTP" styleClass="button-secondary" text="Verify" />
+                                                            </children>
+                                                        </HBox>
+                                                        <HBox fx:id="otpContainer" managed="false" spacing="10" visible="false" alignment="CENTER_LEFT">
+                                                            <children>
+                                                                <TextField fx:id="TF_OTP" prefWidth="120.0" promptText="6-digit code" />
+                                                                <Button onAction="#handleVerifyOTP" styleClass="button-primary" text="Confirm Code" />
+                                                                <Label fx:id="lblOtpStatus" style="-fx-font-size: 18;" />
+                                                            </children>
+                                                        </HBox>
+                                                    </children>
                                                 </VBox>
                                                 <VBox spacing="8.0" GridPane.columnSpan="2" GridPane.rowIndex="2">
                                                     <children><Label styleClass="input-label" text="Téléphone" /><TextField fx:id="TF_Telephone" promptText="+216 ..." /></children>

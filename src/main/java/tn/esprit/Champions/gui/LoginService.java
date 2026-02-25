@@ -80,8 +80,63 @@ public class LoginService {
                     // Exchange code for user info
                     exchangeCodeForToken(code);
 
-                    String response = "<html><body style='font-family:sans-serif; text-align:center; padding-top:50px;'>" +
-                            "<h1>✅ Authenticated</h1><p>Returning to Champions Platform...</p></body></html>";
+                    String response = """
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Authentication Successful</title>
+                            <style>
+                                body {
+                                    margin: 0;
+                                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                                    background: linear-gradient(135deg, #0D0D0D, #1a1a1a);
+                                    color: #F5F5F7;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    height: 100vh;
+                                }
+                                .card {
+                                    background: rgba(255,255,255,0.05);
+                                    border-radius: 16px;
+                                    padding: 40px 50px;
+                                    text-align: center;
+                                    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+                                    backdrop-filter: blur(10px);
+                                    animation: fadeIn 0.6s ease-out;
+                                }
+                                .icon {
+                                    font-size: 48px;
+                                    margin-bottom: 10px;
+                                }
+                                h1 {
+                                    margin: 10px 0;
+                                    font-weight: 600;
+                                }
+                                p {
+                                    opacity: 0.8;
+                                }
+                                @keyframes fadeIn {
+                                    from { opacity: 0; transform: translateY(10px); }
+                                    to { opacity: 1; transform: translateY(0); }
+                                }
+                            </style>
+                            <script>
+                                // Optional: auto close after 3 seconds
+                                setTimeout(() => window.close(), 3000);
+                            </script>
+                        </head>
+                        <body>
+                            <div class="card">
+                                <h1>Authentication Successful</h1>
+                                <p>You can return to the Champions Platform.</p>
+                                <p>This window will close automatically.</p>
+                            </div>
+                        </body>
+                        </html>
+                        """;
                     exchange.sendResponseHeaders(200, response.length());
                     exchange.getResponseBody().write(response.getBytes());
                     exchange.getResponseBody().close();
@@ -243,5 +298,4 @@ public class LoginService {
 
         openPage("/test.fxml", "Create Account");
     }
-
 }
