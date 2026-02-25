@@ -34,7 +34,9 @@ public class AdminPanelService {
     @FXML private Button btnLogout;
     @FXML private VBox mainContent;
     @FXML private Label lblTitle;
-
+    @FXML private Label lblTotalUsers;
+    @FXML private Label lblPendingUsers;
+    @FXML private Label lblDisabledUsers;
     // Dashboard Components (Injected from FXML)
     @FXML private StackPane chartContainer;
     @FXML private StackPane pieChartContainer;
@@ -50,6 +52,7 @@ public class AdminPanelService {
         // 1. IMPORTANT: Capture the dashboard UI (the ScrollPane) before it's cleared
         if (mainContent != null && !mainContent.getChildren().isEmpty()) {
             dashboardView = mainContent.getChildren().get(0);
+
         }
 
         // Session Check
@@ -69,6 +72,7 @@ public class AdminPanelService {
         if (btnLogout != null) {
             btnLogout.setOnAction(e -> handleLogout());
         }
+        refreshStatistics();
     }
 
     // --- DASHBOARD LOGIC ---
@@ -86,6 +90,7 @@ public class AdminPanelService {
         setupLineChart();
         setupPieChart();
         setupActivityPulse();
+        refreshStatistics();
     }
 
     private void setupLineChart() {
@@ -93,38 +98,49 @@ public class AdminPanelService {
         chartContainer.getChildren().clear();
 
         CategoryAxis xAxis = new CategoryAxis();
+        xAxis.setLabel("Join Date");
         NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("New Users");
+
         LineChart<String, Number> lineChart = new LineChart<>(xAxis, yAxis);
+        lineChart.setTitle("7-Day User Growth");
         lineChart.setLegendVisible(false);
-        lineChart.setAnimated(true);
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.getData().add(new XYChart.Data<>("Mon", 12));
-        series.getData().add(new XYChart.Data<>("Tue", 25));
-        series.getData().add(new XYChart.Data<>("Wed", 18));
-        series.getData().add(new XYChart.Data<>("Thu", 45));
-        series.getData().add(new XYChart.Data<>("Fri", 35));
-        series.getData().add(new XYChart.Data<>("Sat", 65));
-        series.getData().add(new XYChart.Data<>("Sun", 58));
+
+        try {
+            java.util.Map<String, Integer> data = userService.getUserAcquisitionStats();
+            data.forEach((date, count) -> {
+                series.getData().add(new XYChart.Data<>(date, count));
+            });
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         lineChart.getData().add(series);
         chartContainer.getChildren().add(lineChart);
     }
 
     private void setupPieChart() {
-        if (pieChartContainer == null) return;
-        pieChartContainer.getChildren().clear();
+        try {
+            java.util.Map<String, Integer> distribution = userService.getStatusDistribution();
 
-        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
-                new PieChart.Data("Active", 1284),
-                new PieChart.Data("Pending", 43),
-                new PieChart.Data("Rejected", 12)
-        );
+            ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+            distribution.forEach((status, count) -> {
+                pieData.add(new PieChart.Data(status, count));
+            });
 
-        PieChart pieChart = new PieChart(pieData);
-        pieChart.setLabelsVisible(false);
-        pieChart.setLegendVisible(true);
-        pieChartContainer.getChildren().add(pieChart);
+            PieChart pieChart = new PieChart(pieData);
+            pieChart.setLabelsVisible(true);
+            pieChart.setLegendVisible(true);
+
+            if (pieChartContainer != null) {
+                pieChartContainer.getChildren().clear();
+                pieChartContainer.getChildren().add(pieChart);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupActivityPulse() {
@@ -377,5 +393,41 @@ public class AdminPanelService {
                 }
             }
         });
+    }
+
+    private void refreshStatistics() {
+        try {
+            int total = userService.getTotalUsersCount();
+            int pending = userService.getPendingUsersCount();
+            int disabled = userService.getDisabledUsersCount();
+
+            lblTotalUsers.setText(String.format("%,d", total));
+            lblPendingUsers.setText(String.valueOf(pending));
+            lblDisabledUsers.setText(String.valueOf(disabled));
+
+            // Update Pie Chart with real data if you want it synced
+            updatePieChartData(total, pending, disabled);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updatePieChartData(int total, int pending, int disabled) {
+        if (pieChartContainer == null) return;
+        pieChartContainer.getChildren().clear();
+
+        int active = total - pending - disabled;
+
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
+                new PieChart.Data("Active", active),
+                new PieChart.Data("Pending", pending),
+                new PieChart.Data("Disabled", disabled)
+        );
+
+        PieChart pieChart = new PieChart(pieData);
+        pieChart.setLabelsVisible(false);
+        pieChart.setLegendVisible(true);
+        pieChartContainer.getChildren().add(pieChart);
     }
 }

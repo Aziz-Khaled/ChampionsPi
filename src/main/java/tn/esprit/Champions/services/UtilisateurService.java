@@ -223,4 +223,70 @@ public class UtilisateurService implements CRUD<Utilisateur>{
         }
     }
 
+
+    public int getTotalUsersCount() throws SQLException {
+        String query = "SELECT COUNT(*) FROM utilisateur";
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        }
+        return 0;
+    }
+
+    public int getPendingUsersCount() throws SQLException {
+        String query = "SELECT COUNT(*) FROM utilisateur WHERE statut = 'PENDING'";
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        }
+        return 0;
+    }
+
+    public int getDisabledUsersCount() throws SQLException {
+        String query = "SELECT COUNT(*) FROM utilisateur WHERE statut = 'DESACTIVE'";
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        }
+        return 0;
+    }
+
+
+    /**
+     * Fetches user counts grouped by day for the last 7 days.
+     */
+    public java.util.Map<String, Integer> getUserAcquisitionStats() throws SQLException {
+        java.util.Map<String, Integer> stats = new java.util.LinkedHashMap<>();
+        String query = """
+            SELECT DATE(date_de_creation) as join_date, COUNT(*) as count 
+            FROM utilisateur 
+            WHERE date_de_creation >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+            GROUP BY DATE(date_de_creation)
+            ORDER BY join_date ASC
+            """;
+
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                stats.put(rs.getString("join_date"), rs.getInt("count"));
+            }
+        }
+        return stats;
+    }
+
+    /**
+     * Fetches counts for each status to provide accurate Pie Chart data.
+     */
+    public java.util.Map<String, Integer> getStatusDistribution() throws SQLException {
+        java.util.Map<String, Integer> distribution = new java.util.HashMap<>();
+        String query = "SELECT statut, COUNT(*) as count FROM utilisateur GROUP BY statut";
+
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                distribution.put(rs.getString("statut"), rs.getInt("count"));
+            }
+        }
+        return distribution;
+    }
 }

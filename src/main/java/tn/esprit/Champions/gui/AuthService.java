@@ -232,7 +232,7 @@ public class AuthService {
 
                 newUser.setId_user(dbUser.getId_user());
 
-                
+
                 String token = JwtUtils.generateToken(newUser);
                 System.out.println("Generated JWT for new user: " + token);
 

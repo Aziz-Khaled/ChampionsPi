@@ -121,6 +121,7 @@ public class LoginService {
             // Sync with DB
             Utilisateur authenticatedUser = userService.handleLocalUserSync(googleEmail, googleName);
             String token = JwtUtils.generateToken(authenticatedUser);
+            System.out.println("Generated JWT with google: " + token);
 
             Platform.runLater(() -> {
                 UserSession.setLoggedInUser(authenticatedUser, token);
@@ -178,7 +179,7 @@ public class LoginService {
                 // 4. SET SESSION (User + Token)
                 UserSession.setLoggedInUser(user, token);
 
-                System.out.println("Standard Login Successful. JWT Generated.");
+                System.out.println("Standard Login Successful. JWT Generated." + token);
 
                 // 5. Navigate based on role
                 navigateToRoleDashboard(user);
