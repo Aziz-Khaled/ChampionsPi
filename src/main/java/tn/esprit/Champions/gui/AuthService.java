@@ -1,5 +1,8 @@
 package tn.esprit.Champions.gui;
 import javafx.scene.layout.HBox;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
 import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -63,6 +66,8 @@ public class AuthService {
     @FXML
     private TextField TF_Prenom;
 
+    @FXML private WebView captchaWebView;
+
     @FXML
     private TextField TF_Telephone;
 
@@ -74,6 +79,7 @@ public class AuthService {
 
     private File identityFile;
     private File personalImageFile;
+    private boolean isCaptchaSolved = false;
 
     @FXML
     private void initialize() {
@@ -83,11 +89,19 @@ public class AuthService {
         Login_Button.setOnAction(e -> openLoginPage());
         combobox_role.getItems().setAll(
                 java.util.Arrays.stream(Role.values())
-                        .filter(role -> role != Role.ADMIN)  // exclude ADMIN
+                        .filter(role -> role != Role.ADMIN)
                         .toList()
         );
 
     }
+
+    public class CaptchaBridge {
+        public void setCaptchaSuccess(boolean success) {
+            isCaptchaSolved = success;
+            System.out.println("Captcha Status: " + success);
+        }
+    }
+
 
     @FXML
     private void chooseIdentityFile() {
@@ -174,6 +188,11 @@ public class AuthService {
                     "Please verify your email with the 6-digit code before continuing.");
             return false;
         }
+        if (!isCaptchaSolved) {
+            showAlert(Alert.AlertType.WARNING, "Security", "Please solve the CAPTCHA to prove you are human.");
+            return false;
+        }
+
 
         return true;
     }
