@@ -35,12 +35,12 @@ public class TradingDashboard {
     @FXML private Label lblBalance, lblBalanceTND, lblSelected, lblPnL, lblAdvice, lblTotal;
     @FXML private TextField txtQty, txtTargetPrice;
     @FXML private ComboBox<String> comboOrderMode;
-    @FXML private VBox  paneHistory, vboxNews;
+    @FXML private VBox paneHistory, vboxNews;
     @FXML private Pane paneMarket;
 
-    // Remplacement du LineChart par la WebView
     @FXML private WebView chartWebView;
 
+    // Services
     private final TradeService tradeService = new TradeService();
     private final MarketApiService marketApi = new MarketApiService();
     private final wallet_currencyService wcService = new wallet_currencyService();
@@ -48,6 +48,7 @@ public class TradingDashboard {
     private final TransactionService transService = new TransactionService();
     private final NewsService newsService = new NewsService();
 
+    // Session Data
     private Asset selectedAsset;
     private double initialEntryPrice = 0.0;
     private final double TND_RATE = 3.12;
@@ -63,18 +64,22 @@ public class TradingDashboard {
         setupTables();
         setupOrderInputs();
 
+        // Listener de sélection d'actif
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
                 selectedAsset = newVal;
                 initialEntryPrice = newVal.getCurrentPrice();
                 lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
 
-                // Mise à jour du graphique TradingView
+                // 1. Mise à jour du graphique (Option A)
                 updateTradingView(newVal.getSymbol());
 
+                // 2. Mise à jour des News (Correction API)
+                updateNews(newVal.getSymbol());
+
+                // 3. Autres services
                 startLiveStreaming(newVal.getSymbol());
                 updateAISignal(newVal.getSymbol());
-                updateNews(newVal.getSymbol());
                 calculateTotal();
             }
         });
@@ -87,8 +92,37 @@ public class TradingDashboard {
     }
 
     /**
-     * Charge le widget TradingView avec chandeliers et moyennes mobiles
+     * Correction de l'API News : Chargement asynchrone pour ne pas freeze l'UI
      */
+    private void updateNews(String symbol) {
+        new Thread(() -> {
+            try {
+                // On nettoie le symbole (ex: BTCUSDT -> BTC)
+                String querySymbol = symbol.replace("USDT", "").replace("usdt", "");
+                List<News> news = newsService.getLatestNews(querySymbol);
+
+                Platform.runLater(() -> {
+                    vboxNews.getChildren().clear();
+                    if (news == null || news.isEmpty()) {
+                        Label emptyLabel = new Label("No news found for " + querySymbol);
+                        emptyLabel.setStyle("-fx-text-fill: #848e9c; -fx-padding: 10;");
+                        vboxNews.getChildren().add(emptyLabel);
+                    } else {
+                        news.forEach(n -> {
+                            Label l = new Label("• " + n.getTitle());
+                            l.setWrapText(true);
+                            l.setStyle("-fx-text-fill: white; -fx-padding: 5; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
+                            l.setMaxWidth(230); // Éviter que le texte ne dépasse de la sidebar
+                            vboxNews.getChildren().add(l);
+                        });
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("News API Error: " + e.getMessage());
+            }
+        }).start();
+    }
+
     private void updateTradingView(String symbol) {
         String pair = symbol.toUpperCase();
         if (!pair.contains("USDT")) pair += "USDT";
@@ -174,9 +208,9 @@ public class TradingDashboard {
 
     private void updatePnL(double currentPrice) {
         if (initialEntryPrice <= 0) return;
-        double pnl = RiskManager.calculatePnL(currentPrice, initialEntryPrice);
+        double pnl = (currentPrice - initialEntryPrice) / initialEntryPrice * 100;
         lblPnL.setText(String.format("%+.2f%%", pnl));
-        lblPnL.setStyle("-fx-text-fill: " + RiskManager.getPnLColor(pnl) + ";");
+        lblPnL.setStyle("-fx-text-fill: " + (pnl >= 0 ? "#0ecb81" : "#f6465d") + ";");
     }
 
     private void updateBalances() {
@@ -211,11 +245,15 @@ public class TradingDashboard {
         try { tableHistory.getItems().setAll(tradeService.SelectAll()); } catch (SQLException e) {}
     }
 
-    @FXML private void onSuggestQuantity() { /* Logique suggest existante */ }
-
-    private void updateAISignal(String symbol) { /* Logique RSI existante */ }
-
-    private void updateNews(String symbol) { /* Logique News existante */ }
+    private void updateAISignal(String symbol) {
+        new Thread(() -> {
+            double rsi = marketApi.calculateRSI(symbol);
+            Platform.runLater(() -> {
+                String advice = (rsi < 30) ? "STRONG BUY" : (rsi > 70) ? "STRONG SELL" : "NEUTRAL";
+                lblAdvice.setText("AI SIGNAL: " + advice + " (RSI: " + String.format("%.2f", rsi) + ")");
+            });
+        }).start();
+    }
 
     private void showAlert(String title, String content) {
         Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(title); a.setContentText(content); a.show();
@@ -227,5 +265,34 @@ public class TradingDashboard {
             Parent root = FXMLLoader.load(getClass().getResource("/BotView.fxml"));
             Stage s = new Stage(); s.setScene(new Scene(root)); s.setTitle("AI Trading Bot"); s.show();
         } catch (IOException e) { e.printStackTrace(); }
+    }
+    @FXML
+    private void onSuggestQuantity() {
+        try {
+            if (selectedAsset == null) {
+                showAlert("Selection Required", "Please select an asset first.");
+                return;
+            }
+
+            double balance = wcService.getBalance(MY_WALLET_ID, USDT_ID);
+            String targetStr = txtTargetPrice.getText().replace(",", ".");
+
+            if (targetStr.isEmpty()) {
+                showAlert("Input Error", "Please enter a Target/Stop Loss price for calculation.");
+                return;
+            }
+
+            double stopLoss = Double.parseDouble(targetStr);
+            double currentPrice = selectedAsset.getCurrentPrice();
+
+            // Calcul suggéré (Risk 1% par trade)
+            double suggestedQty = (balance * 0.01) / Math.abs(currentPrice - stopLoss);
+
+            txtQty.setText(String.format("%.6f", suggestedQty));
+            calculateTotal();
+
+        } catch (Exception e) {
+            showAlert("Error", "Check your Stop Loss (Target Price) value format.");
+        }
     }
 }
