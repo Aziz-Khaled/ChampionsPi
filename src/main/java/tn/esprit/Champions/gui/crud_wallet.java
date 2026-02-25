@@ -1545,7 +1545,7 @@ public class crud_wallet {
 
         try {
             // 3️⃣ Récupérer la carte de l'utilisateur
-            CreditCard card = cardService.getCardByUserId(USER_ID);
+            CreditCard card = cardService.getActiveCardByUserId(USER_ID);
             if (card == null) {
                 showAlert(Alert.AlertType.ERROR,
                         "Erreur",

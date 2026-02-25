@@ -58,7 +58,7 @@ public class BlockchainService {
     }
     public void addBlock(transaction t) throws SQLException {
 
-        // 🔐 Vérifier d'abord si la blockchain est valide
+
         if (isBlockchainCorrupted()) {
             throw new RuntimeException("🚨 Blockchain corrompue ! Aucun bloc ne peut être ajouté.");
         }
@@ -315,7 +315,7 @@ public class BlockchainService {
                     );
                 }
 
-                // Mise à jour pour le prochain bloc
+
                 previousHash = storedCurrentHash;
                 expectedIndex++;
             }
