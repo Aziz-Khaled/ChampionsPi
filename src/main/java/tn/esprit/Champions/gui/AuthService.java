@@ -1,5 +1,5 @@
 package tn.esprit.Champions.gui;
-
+import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
@@ -15,6 +15,7 @@ import tn.esprit.Champions.models.Role;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.services.UtilisateurService;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.io.File;
 import java.io.IOException;
@@ -220,11 +221,26 @@ public class AuthService {
 
         try {
             UtilisateurService userService = new UtilisateurService();
+
+
             userService.insertOne(newUser);
+
+
+            Utilisateur dbUser = userService.getUserByEmail(newUser.getEmail());
+
+            if (dbUser != null) {
+
+                newUser.setId_user(dbUser.getId_user());
+
+                
+                String token = JwtUtils.generateToken(newUser);
+                System.out.println("Generated JWT for new user: " + token);
+
+                UserSession.setLoggedInUser(newUser, token);
+            }
 
             showAlert(Alert.AlertType.INFORMATION, "Succès",
                     "Demande d'inscription envoyée avec succès.\nEn attente de validation admin.");
-
 
             clearForm();
 

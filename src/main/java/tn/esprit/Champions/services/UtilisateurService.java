@@ -35,6 +35,8 @@ public class UtilisateurService implements CRUD<Utilisateur>{
             ps.setString(9, utilisateur.getUser_image());
 
             ps.executeUpdate();
+
+
         }
     }
 

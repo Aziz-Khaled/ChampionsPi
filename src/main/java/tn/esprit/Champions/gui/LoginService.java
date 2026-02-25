@@ -10,6 +10,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.services.UtilisateurService;
 import tn.esprit.Champions.utils.Auth0Config;
+import tn.esprit.Champions.utils.JwtUtils;
 import tn.esprit.Champions.utils.UserSession;
 
 import java.net.InetSocketAddress;
@@ -119,9 +120,10 @@ public class LoginService {
 
             // Sync with DB
             Utilisateur authenticatedUser = userService.handleLocalUserSync(googleEmail, googleName);
+            String token = JwtUtils.generateToken(authenticatedUser);
 
             Platform.runLater(() -> {
-                UserSession.setLoggedInUser(authenticatedUser);
+                UserSession.setLoggedInUser(authenticatedUser, token);
 
                 // --- KYC GATEKEEPER ---
                 boolean isKycMissing = authenticatedUser.getPiece_identite() == null ||
@@ -150,7 +152,7 @@ public class LoginService {
     // --- STANDARD LOGIN LOGIC ---
 
     private void login() {
-        String email = txt_Email.getText();
+        String email = txt_Email.getText().trim();
         String password = txt_Password.getText();
 
         if (email.isEmpty() || password.isEmpty()) {
@@ -160,19 +162,33 @@ public class LoginService {
 
         try {
             Utilisateur user = userService.getUserByEmail(email);
+
+            // 1. Verify User exists and Password matches
             if (user != null && BCrypt.checkpw(password, user.getMot_de_passe())) {
+
+                // 2. Check if account is disabled
                 if (user.getStatut() == tn.esprit.Champions.models.Status.DESACTIVE) {
                     showAlert(Alert.AlertType.ERROR, "Account Disabled", "Your account has been suspended.");
                     return;
                 }
 
-                UserSession.setLoggedInUser(user);
+                // 3. GENERATE THE JWT TOKEN
+                String token = JwtUtils.generateToken(user);
+
+                // 4. SET SESSION (User + Token)
+                UserSession.setLoggedInUser(user, token);
+
+                System.out.println("Standard Login Successful. JWT Generated.");
+
+                // 5. Navigate based on role
                 navigateToRoleDashboard(user);
+
             } else {
                 showAlert(Alert.AlertType.ERROR, "Error", "Invalid email or password.");
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Database Error", "An error occurred while connecting to the database.");
         }
     }
 
@@ -224,7 +240,7 @@ public class LoginService {
     @FXML
     private void openSignUpPage() {
 
-        openPage("/SignUpPage.fxml", "Create Account");
+        openPage("/test.fxml", "Create Account");
     }
 
 }

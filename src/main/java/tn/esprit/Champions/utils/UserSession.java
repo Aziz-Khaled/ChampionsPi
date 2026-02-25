@@ -4,18 +4,25 @@ import tn.esprit.Champions.models.Utilisateur;
 
 public class UserSession {
 
-    private static Utilisateur instance ;
+    private static Utilisateur loggedInUser;
+    private static String jwtToken;
 
-    public static void setLoggedInUser(Utilisateur user) {
-        instance = user;
+    // Updated to accept both the user and their token
+    public static void setLoggedInUser(Utilisateur user, String token) {
+        loggedInUser = user;
+        jwtToken = token;
     }
 
     public static Utilisateur getLoggedInUser() {
-        return instance;
+        return loggedInUser;
+    }
+
+    public static String getJwtToken() {
+        return jwtToken;
     }
 
     public static void clearSession() {
-        instance = null;
+        loggedInUser = null;
+        jwtToken = null;
     }
-
 }

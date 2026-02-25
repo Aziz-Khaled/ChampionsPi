@@ -118,7 +118,14 @@ public class KYCController {
 
     @FXML
     private void logout() {
-        UserSession.setLoggedInUser(null);
-        SceneHelper.transitionTo("/LoginPage.fxml", btn_submit.getScene().getRoot(), "Login - Champions");
+        UserSession.clearSession();
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/LoginPage.fxml"));
+            javafx.scene.Parent root = loader.load();
+            javafx.stage.Stage stage = (javafx.stage.Stage) btn_submit.getScene().getWindow();
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.show();
+        } catch (IOException ex) { ex.printStackTrace(); }
     }
+
 }
