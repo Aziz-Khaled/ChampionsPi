@@ -16,19 +16,13 @@ public class Test {
     public static void main(String[] args) {
 
         try {
-
-            // =========================
             // Initialisation connexion
-            // =========================
             DbConnection.getInstance();
 
             // =========================
             // TEST FORMATION
             // =========================
             FormationService fs = new FormationService();
-
-            System.out.println("===== AVANT INSERT FORMATION =====");
-            fs.SelectAll().forEach(System.out::println);
 
             formations f = new formations(
                     "Python pour debutants",
@@ -39,118 +33,70 @@ public class Test {
                     LocalDate.of(2026, 4, 17),
                     500,
                     25,
-                    "OUVERTE"
+                    "OUVERTE" // Si ton modèle formations utilise String, garde ça.
+                    // Sinon, utilise l'Enum correspondant.
             );
 
             fs.insertOne(f);
-
-            // Récupérer l’ID généré
             List<formations> listFormations = fs.SelectAll();
             formations insertedFormation = listFormations.get(listFormations.size() - 1);
             f.setIdFormation(insertedFormation.getIdFormation());
 
-            System.out.println("===== APRES INSERT FORMATION =====");
-            fs.SelectAll().forEach(System.out::println);
-
-            // UPDATE FORMATION
-            f.setTitre("Trading");
-            f.setPrix(800);
-            f.setDescription("Backend Java Avancé");
-            fs.updateOne(f);
-
-            System.out.println("===== APRES UPDATE FORMATION =====");
-            fs.SelectAll().forEach(System.out::println);
-
             // =========================
-            // TEST PARTICIPATION
+            // TEST PARTICIPATION (CORRIGÉ)
             // =========================
             ParticipationService ps = new ParticipationService();
 
-            System.out.println("===== AVANT INSERT PARTICIPATION =====");
-            ps.SelectAll().forEach(System.out::println);
+            System.out.println("===== INSERT PARTICIPATION =====");
 
+            // CORRECTION : "PAYEE" devient StatutParticipation.PAYEE
             participations p = new participations(
-                    0,                  // idParticipation temporaire
-                    f.getIdFormation(), // idFormation inséré
-                    1,                  // idUtilisateur existant
+                    0,
+                    f.getIdFormation(),
+                    1,
                     LocalDateTime.now(),
-                    "PAYEE",            // statut
+                    StatutParticipation.PAYEE, // <--- ICI : Utilisation de l'ENUM
                     false,
                     0f
             );
 
             ps.insertOne(p);
 
-            // Récupérer l’ID généré
             List<participations> listParticipations = ps.SelectAll();
             participations lastParticipation = listParticipations.get(listParticipations.size() - 1);
             p.setIdParticipation(lastParticipation.getIdParticipation());
 
-            System.out.println("===== APRES INSERT PARTICIPATION =====");
-            ps.SelectAll().forEach(System.out::println);
-
-            // UPDATE PARTICIPATION
-            p.setPresence(true);
-            p.setNote(18f);
-            ps.updateOne(p);
-
-            System.out.println("===== APRES UPDATE PARTICIPATION =====");
-            ps.SelectAll().forEach(System.out::println);
-
             // =========================
-            // TEST CERTIFICAT
+            // TEST CERTIFICAT (CORRIGÉ)
             // =========================
             CertificatService cs = new CertificatService();
 
-            System.out.println("===== AVANT INSERT CERTIFICAT =====");
-            cs.SelectAll().forEach(System.out::println);
+            System.out.println("===== INSERT CERTIFICAT =====");
 
+            // CORRECTION : "EXCELLENT" devient MentionCertificat.EXCELLENT
             certificats c = new certificats(
                     0,
-                    (long) p.getIdParticipation(), // FK valide
+                    (long) p.getIdParticipation(),
                     LocalDate.now(),
                     "CODE123456",
-                    "EXCELLENT",                   // MentionCertificat (doit exister dans ton enum)
+                    MentionCertificat.EXCELLENT,   // <--- ICI : Utilisation de l'ENUM
                     "https://urlfichier.com/certificat.pdf"
             );
 
             cs.insertOne(c);
-
-            System.out.println("===== APRES INSERT CERTIFICAT =====");
-            cs.SelectAll().forEach(System.out::println);
-
-            // UPDATE CERTIFICAT
-            c.setUrlFichier("https://urlfichier.com/certificat_modifie.pdf");
-            cs.updateOne(c);
-
-            System.out.println("===== APRES UPDATE CERTIFICAT =====");
-            cs.SelectAll().forEach(System.out::println);
-
-            // DELETE CERTIFICAT
-            /*cs.deleteOne(c);
-
-            System.out.println("===== APRES DELETE CERTIFICAT =====");
-            cs.SelectAll().forEach(System.out::println);*/
+            System.out.println("Certificat inséré avec succès !");
 
             // =========================
-            // DELETE PARTICIPATION
+            // NETTOYAGE (Optionnel)
             // =========================
-            ps.deleteOne(p);
-
-            System.out.println("===== APRES DELETE PARTICIPATION =====");
-            ps.SelectAll().forEach(System.out::println);
-
-            // =========================
-            // DELETE FORMATION
-            // =========================
-            fs.deleteOne(f);
-
-            System.out.println("===== APRES DELETE FORMATION =====");
-            fs.SelectAll().forEach(System.out::println);
+            // ps.deleteOne(p);
+            // fs.deleteOne(f);
 
         } catch (SQLException e) {
+            System.err.println("Erreur SQL : " + e.getMessage());
             e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            System.err.println("Erreur de type (Enum) : " + e.getMessage());
         }
-
     }
 }

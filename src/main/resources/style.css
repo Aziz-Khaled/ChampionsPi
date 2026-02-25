@@ -285,3 +285,60 @@
 .button-primary:hover {
     -fx-background-color: #4f46e5;
 }
+
+/* Arrière-plan général et police */
+.root {
+    -fx-font-family: "Segoe UI", system-ui;
+    -fx-background-color: #f1f5f9;
+}
+
+/* TableView look "Card" moderne */
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+    -fx-border-color: #e2e8f0;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);
+}
+
+/* En-têtes stylisés */
+.table-view .column-header {
+    -fx-background-color: #1e293b; /* Bleu nuit pro */
+    -fx-padding: 12;
+}
+.table-view .column-header .label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+/* Lignes avec effet de survol */
+.table-row-cell:hover {
+    -fx-background-color: #f8fafc;
+    -fx-cursor: hand;
+}
+
+/* --- BADGES WOW POUR LES STATUTS --- */
+.status-paid {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #15803d;
+    -fx-padding: 5 15;
+    -fx-background-radius: 20;
+    -fx-font-weight: bold;
+}
+
+.status-pending {
+    -fx-background-color: #fef3c7;
+    -fx-text-fill: #b45309;
+    -fx-padding: 5 15;
+    -fx-background-radius: 20;
+    -fx-font-weight: bold;
+}
+
+/* --- BOUTONS ÉLÉGANTS --- */
+.button-add {
+    -fx-background-color: #6366f1;
+    -fx-text-fill: white;
+    -fx-background-radius: 10;
+    -fx-font-weight: bold;
+}
+.button-add:hover { -fx-background-color: #4f46e5; }

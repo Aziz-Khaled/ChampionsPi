@@ -14,12 +14,12 @@ public class certificats {
 
     public certificats(){}
 
-    public certificats(int idCertificat, Long idParticipation, LocalDate dateEmission, String codeVerification, String mention, String urlFichier) {
+    public certificats(int idCertificat, Long idParticipation, LocalDate dateEmission, String codeVerification, MentionCertificat mention, String urlFichier) {
         this.idCertificat = idCertificat;
         this.idParticipation = idParticipation;
         this.dateEmission = dateEmission;
         this.codeVerification = codeVerification;
-        this.mention =  MentionCertificat.valueOf(mention);
+        this.mention = mention;
         this.urlFichier = urlFichier;
     }
 
