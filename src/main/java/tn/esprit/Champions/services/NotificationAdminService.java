@@ -23,25 +23,50 @@ public class NotificationAdminService {
                                    NotificationType type,
                                    String message) throws SQLException {
 
-        String sql = "INSERT INTO notification " +
-                "(id_transaction, type_notification, message, created_at) " +
-                "VALUES (?, ?, ?, NOW())";
+        // 🔎 1. Si ID Transaction existe, on vérifie classiquement
+        if (idTransaction != null) {
+            if (notificationExists(idTransaction, type)) {
+                return;
+            }
+        } else {
+            // 🔎 2. Si ID Transaction est NULL (Corruption blockchain),
+            // on vérifie si ce message exact existe déjà pour éviter le spam
+            if (messageExists(message, type)) {
+                return;
+            }
+        }
+
+        String sql = """
+            INSERT INTO notification
+            (id_transaction, type_notification, message, created_at, is_read)
+            VALUES (?, ?, ?, NOW(), 0)
+            """;
 
         try (PreparedStatement pst = cnx.prepareStatement(sql)) {
-
-            // id_transaction peut être NULL
-            if (idTransaction == null)
+            if (idTransaction == null) {
                 pst.setNull(1, Types.INTEGER);
-            else
+            } else {
                 pst.setInt(1, idTransaction);
-
-            // Enum → String
+            }
             pst.setString(2, type.name());
-
             pst.setString(3, message);
-
             pst.executeUpdate();
         }
+    }
+
+    // Nouvelle méthode pour vérifier les messages globaux (sans ID TX)
+    public boolean messageExists(String message, NotificationType type) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM notification WHERE message = ? AND type_notification = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+            pst.setString(1, message);
+            pst.setString(2, type.name());
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
     }
 
     // =====================================================
@@ -51,7 +76,11 @@ public class NotificationAdminService {
 
         List<NotificationAdmin> list = new ArrayList<>();
 
-        String sql = "SELECT * FROM notification ORDER BY created_at DESC";
+        String sql = """
+                SELECT *
+                FROM notification
+                ORDER BY created_at DESC
+                """;
 
         try (PreparedStatement pst = cnx.prepareStatement(sql);
              ResultSet rs = pst.executeQuery()) {
@@ -69,7 +98,6 @@ public class NotificationAdminService {
                     n.setIdTransaction(idTransaction);
                 }
 
-                // String → Enum
                 n.setTypeNotification(
                         NotificationType.valueOf(
                                 rs.getString("type_notification")
@@ -89,27 +117,71 @@ public class NotificationAdminService {
 
         return list;
     }
-    public boolean notificationExists(int idTransaction, NotificationType type) throws SQLException {
+
+    // =====================================================
+    // 🔹 3️⃣ VERIFIER SI NOTIFICATION EXISTE
+    // =====================================================
+    public boolean notificationExists(int idTransaction,
+                                      NotificationType type) throws SQLException {
 
         String sql = """
-        SELECT COUNT(*) 
-        FROM notification 
-        WHERE id_transaction = ? 
-        AND type_notification = ?
-    """;
+                SELECT COUNT(*)
+                FROM notification
+                WHERE id_transaction = ?
+                AND type_notification = ?
+                """;
 
         try (PreparedStatement pst = cnx.prepareStatement(sql)) {
 
             pst.setInt(1, idTransaction);
             pst.setString(2, type.name());
 
-            ResultSet rs = pst.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
             }
         }
 
         return false;
     }
+
+    // =====================================================
+    // 🔹 4️⃣ COMPTER NOTIFICATIONS NON LUES
+    // =====================================================
+    public int getUnreadCount() throws SQLException {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM notification
+                WHERE is_read = 0
+                """;
+
+        try (PreparedStatement pst = cnx.prepareStatement(sql);
+             ResultSet rs = pst.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+
+        return 0;
+    }
+
+    // =====================================================
+    // 🔹 5️⃣ MARQUER TOUT COMME LU
+    // =====================================================
+    public void markAllAsRead() throws SQLException {
+
+        String sql = """
+                UPDATE notification
+                SET is_read = 1
+                WHERE is_read = 0
+                """;
+
+        try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+            pst.executeUpdate();
+        }
+    }
+
 }

@@ -433,4 +433,42 @@ public class TransactionService implements CRUD<transaction> {
             if (cnx != null) cnx.setAutoCommit(previousAutoCommit);
         }
     }
+    public List<transaction> getAllTransactionsForAdmin() throws SQLException {
+        List<transaction> transactions = new ArrayList<>();
+
+        String query = """
+        SELECT id_transaction, id_wallet_source, id_wallet_destination, 
+               montant, id_currency, type, statut, date_transaction, id_card
+        FROM transaction
+        ORDER BY date_transaction DESC
+    """;
+
+        try (PreparedStatement ps = cnx.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                transaction t = new transaction();
+                t.setIdTransaction(rs.getInt("id_transaction"));
+                t.setIdWalletSource(rs.getInt("id_wallet_source"));
+                t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+                t.setMontant(rs.getDouble("montant"));
+                t.setCurrencyId(rs.getInt("id_currency"));
+
+                // Gestion sécurisée des Enums
+                String typeStr = rs.getString("type");
+                if (typeStr != null) t.setType(typeTransaction.valueOf(typeStr.trim()));
+
+                String statutStr = rs.getString("statut");
+                if (statutStr != null) t.setStatut(StatutTransaction.valueOf(statutStr.trim()));
+
+                if (rs.getTimestamp("date_transaction") != null) {
+                    t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
+                }
+
+                t.setId_card(rs.getInt("id_card"));
+                transactions.add(t);
+            }
+        }
+        return transactions;
+    }
 }

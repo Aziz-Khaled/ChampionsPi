@@ -1,6 +1,11 @@
 package tn.esprit.Champions.models;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
+
+
 
 public class NotificationAdmin {
 
@@ -13,6 +18,7 @@ public class NotificationAdmin {
     private String message;
 
     private LocalDateTime createdAt;
+    private boolean is_read;
 
     // 🔹 Constructeur vide
     public NotificationAdmin() {
@@ -69,4 +75,13 @@ public class NotificationAdmin {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public boolean isIs_read() {
+        return is_read;
+    }
+
+    public void setIs_read(boolean is_read) {
+        this.is_read = is_read;
+    }
+
 }
