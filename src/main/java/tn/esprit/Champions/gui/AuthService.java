@@ -1,7 +1,6 @@
 package tn.esprit.Champions.gui;
 import javafx.scene.layout.HBox;
-import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebView;
+
 import netscape.javascript.JSObject;
 import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
@@ -66,7 +65,7 @@ public class AuthService {
     @FXML
     private TextField TF_Prenom;
 
-    @FXML private WebView captchaWebView;
+
 
     @FXML
     private TextField TF_Telephone;
