@@ -141,14 +141,14 @@ public class ClientDashboardController {
         priceBox.setAlignment(Pos.CENTER);
 
         if (product.getDiscountPrice() > 0) {
-            Label oldPrice = new Label("$" + product.getPrice());
+            Label oldPrice = new Label("BTC" + product.getPrice());
             oldPrice.getStyleClass().add("price-old");
             oldPrice.setStyle("-fx-strikethrough: true; -fx-text-fill: #EF4444;"); // Red strikethrough
-            Label newPrice = new Label("$" + product.getDiscountPrice());
+            Label newPrice = new Label("BTC" + product.getDiscountPrice());
             newPrice.getStyleClass().add("card-price");
             priceBox.getChildren().addAll(oldPrice, newPrice);
         } else {
-            Label priceLabel = new Label("$" + product.getPrice());
+            Label priceLabel = new Label("BTC" + product.getPrice());
             priceLabel.getStyleClass().add("card-price");
             priceBox.getChildren().add(priceLabel);
         }

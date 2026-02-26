@@ -16,8 +16,6 @@ import java.util.List;
 
 public class PdfService {
 
-    
-
     public void generateReceipt(Order order, List<OrderItem> items, String filePath) throws Exception {
         Document document = new Document();
         PdfWriter.getInstance(document, new FileOutputStream(filePath));

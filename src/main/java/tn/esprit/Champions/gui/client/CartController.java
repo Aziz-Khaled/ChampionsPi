@@ -56,6 +56,8 @@ public class CartController {
     @FXML
     // Initialiser le contrôleur, configurer les colonnes et les actions
     public void initialize() {
+
+        
         // ... previous initialization ...
         colProduct.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getProduct().getName()));
 
