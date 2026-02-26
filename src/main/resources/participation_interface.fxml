@@ -17,9 +17,8 @@
             </HBox>
             <TableView fx:id="participationTable" VBox.vgrow="ALWAYS" style="-fx-background-radius: 10;">
                 <columns>
-                    <TableColumn fx:id="colId" text="ID" prefWidth="50" />
-                    <TableColumn fx:id="colFormation" text="Formation (ID)" prefWidth="150" />
-                    <TableColumn fx:id="colUtilisateur" text="Utilisateur (ID)" prefWidth="150" />
+                    <TableColumn fx:id="colFormation" text="Formation " prefWidth="150" />
+                    <TableColumn fx:id="colUtilisateur" text="Utilisateur " prefWidth="150" />
                     <TableColumn fx:id="colDate" text="Date Inscription" prefWidth="180" />
                     <TableColumn fx:id="colStatut" text="Statut" prefWidth="120" />
                     <TableColumn fx:id="colPresence" text="Présence" prefWidth="100" />
