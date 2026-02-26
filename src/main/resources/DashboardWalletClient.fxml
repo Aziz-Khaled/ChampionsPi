@@ -78,13 +78,13 @@
                                         <Label text="Amount" GridPane.rowIndex="0" />
                                         <TextField fx:id="convAmountField" promptText="0.00" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                                         <Label text="Wallet From" GridPane.rowIndex="1" />
-                                        <ComboBox fx:id="convFromBox" maxWidth="Infinity" promptText="Select Source" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                        <ComboBox fx:id="walletSourceBox" maxWidth="Infinity" promptText="Select Source" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
                                         <Label text="From" GridPane.rowIndex="2" />
                                         <ComboBox fx:id="convFromBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
                                         <Label text="Wallet To" GridPane.rowIndex="3" />
-                                        <ComboBox fx:id="convToBox" maxWidth="Infinity" promptText="Select Destination" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                        <ComboBox fx:id="walletDestBox" maxWidth="Infinity" promptText="Select Destination" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
                                         <Label text="To" GridPane.rowIndex="4" />
                                         <ComboBox fx:id="convToBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />

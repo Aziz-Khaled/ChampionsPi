@@ -41,6 +41,7 @@ public class admin_wallet_controller {
     @FXML private Circle notifBadge;
     @FXML private Button btnSignOut;
 
+
     // Services
     private TransactionService transactionService = new TransactionService();
     private WalletService walletService = new WalletService();

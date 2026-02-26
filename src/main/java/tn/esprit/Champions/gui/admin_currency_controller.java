@@ -177,8 +177,13 @@ public class admin_currency_controller {
 
         lblName.setText(selectedCode);
 
-        if (!fiatLoaded || !cryptoLoaded) {
-            showAlert("Patience", "Chargement des données en cours, réessayez dans quelques secondes.");
+        // Bloquer si crypto ou fiat non chargés
+        if (!fiatLoaded) {
+            showAlert("Patience", "Chargement des devises FIAT en cours...");
+            return;
+        }
+        if (!cryptoLoaded) {
+            showAlert("Patience", "Chargement des cryptos en cours...");
             return;
         }
 

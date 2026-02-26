@@ -83,7 +83,8 @@ public class crud_wallet {
     @FXML private VBox walletForm;
     @FXML private VBox transactionForm;
     @FXML private StackPane flipContainer;
-
+    @FXML private ComboBox<String> walletSourceBox; // ComboBox pour les RIB Source
+    @FXML private ComboBox<String> walletDestBox;
 
     @FXML private TextField sourceWalletField;
     @FXML private TextField destinationWalletField;
@@ -156,7 +157,7 @@ public class crud_wallet {
 
         loadCurrencies();
         loadWallets();
-
+        loadWalletRIBs();
 
         if (searchField != null) {
             searchField.setOnKeyReleased(this::handleSearch);
@@ -1826,6 +1827,20 @@ public class crud_wallet {
         } catch (Exception e) {
             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Erreur", "Problème API.");
+        }
+    }
+    private void loadWalletRIBs() {
+        try {
+            WalletService ws = new WalletService();
+            List<wallet> list = ws.SelectAll();
+            ObservableList<String> ribs = FXCollections.observableArrayList();
+            for (wallet w : list) {
+                ribs.add(w.getRib());
+            }
+            walletSourceBox.setItems(ribs);
+            walletDestBox.setItems(ribs);
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
