@@ -1,19 +1,28 @@
-.binance-table {
+/* Style des TableView (Zèbres + Couleurs Binance) */
+.table-view {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
 }
-.binance-table .column-header-background {
-    -fx-background-color: #181a20;
+.table-view .column-header, .table-view .column-header-background {
+    -fx-background-color: #2b3139;
 }
-.binance-table .column-header {
+.table-view .column-header .label {
+    -fx-text-fill: #848e9c;
+    -fx-font-weight: bold;
+}
+.table-row-cell:odd { -fx-background-color: #1e2329; }
+.table-row-cell:even { -fx-background-color: #161a1e; }
+.table-cell {
+    -fx-text-fill: white;
+    -fx-border-color: #2b3139;
+    -fx-border-width: 0 0 0.1 0;
+}
+
+/* Style des boutons Navigation */
+.nav-button {
     -fx-background-color: transparent;
     -fx-text-fill: #848e9c;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
 }
-.binance-table .table-row-cell {
-    -fx-background-color: #181a20;
-    -fx-text-fill: #eaecef;
-    -fx-border-color: transparent;
-}
-.binance-table .table-row-cell:selected {
-    -fx-background-color: #2b2f36;
-}
+.nav-button:hover { -fx-text-fill: white; }
