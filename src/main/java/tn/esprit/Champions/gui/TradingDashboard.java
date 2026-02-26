@@ -15,6 +15,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -85,7 +86,7 @@ public class TradingDashboard {
                 initialEntryPrice = newVal.getCurrentPrice() != null ? newVal.getCurrentPrice() : 0.0;
                 lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
                 updateTradingView(newVal.getSymbol());
-                updateNews(newVal.getSymbol()); // News de l'actif choisi
+                updateNews(newVal.getSymbol());
                 updateAISignal(newVal.getSymbol());
                 calculateTotal();
             }
@@ -97,22 +98,38 @@ public class TradingDashboard {
 
         updateBalances();
         startGlobalPriceUpdates();
-
-        // Affiche les news générales au lancement
-        updateNews("CRYPTO");
+        updateAllNews();
     }
 
-    // --- TON CODE NEWS INTÉGRÉ ---
+    private void updateAllNews() {
+        new Thread(() -> {
+            List<News> newsList = newsService.getLatestNews("CRYPTO");
+            Platform.runLater(() -> {
+                vboxNews.getChildren().clear();
+                vboxNews.setSpacing(10);
+                for (News n : newsList) {
+                    Label l = new Label("• " + n.getTitle());
+                    l.setWrapText(true);
+                    l.setMaxWidth(230); // Largeur max pour forcer le retour à la ligne
+                    l.setStyle("-fx-text-fill: white; -fx-padding: 8; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
+                    vboxNews.getChildren().add(l);
+                }
+            });
+        }).start();
+    }
+
     private void updateNews(String symbol) {
         new Thread(() -> {
             String cleanSymbol = symbol.toUpperCase().replace("USDT", "");
             List<News> newsList = newsService.getLatestNews(cleanSymbol);
             Platform.runLater(() -> {
                 vboxNews.getChildren().clear();
+                vboxNews.setSpacing(10);
                 for (News n : newsList) {
                     Label l = new Label("• " + n.getTitle());
                     l.setWrapText(true);
-                    l.setStyle("-fx-text-fill: white; -fx-padding: 5;");
+                    l.setMaxWidth(230);
+                    l.setStyle("-fx-text-fill: white; -fx-padding: 8; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
                     vboxNews.getChildren().add(l);
                 }
             });
@@ -120,19 +137,34 @@ public class TradingDashboard {
     }
 
     @FXML
+    private void showAIChat() {
+        paneMarket.setVisible(false); paneHistory.setVisible(false);
+        if (paneAIChat != null) paneAIChat.setVisible(true);
+    }
+
+    @FXML
+    private void showMarket() {
+        paneMarket.setVisible(true); paneHistory.setVisible(false);
+        if (paneAIChat != null) paneAIChat.setVisible(false);
+    }
+
+    @FXML
+    private void showHistory() {
+        paneMarket.setVisible(false); paneHistory.setVisible(true);
+        if (paneAIChat != null) paneAIChat.setVisible(false);
+        loadTradeHistory();
+    }
+
+    @FXML
     private void onSendMessage() {
         String userText = txtChatInput.getText();
         if (userText == null || userText.trim().isEmpty()) return;
-
         chatArea.appendText("Moi: " + userText + "\n");
         txtChatInput.clear();
         if(btnSend != null) btnSend.setDisable(true);
-
         new Thread(() -> {
             try {
-                String context = (selectedAsset != null) ?
-                        "L'actif est " + selectedAsset.getSymbol() + " au prix de " + selectedAsset.getCurrentPrice() :
-                        "Marché global.";
+                String context = (selectedAsset != null) ? "Actif: " + selectedAsset.getSymbol() : "Marché global.";
                 String response = aiService.askAI(userText, context);
                 Platform.runLater(() -> {
                     chatArea.appendText("AI Expert (Groq): " + response + "\n\n");
@@ -140,27 +172,21 @@ public class TradingDashboard {
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    chatArea.appendText("Système: Erreur de connexion.\n");
+                    chatArea.appendText("Erreur IA.\n");
                     if(btnSend != null) btnSend.setDisable(false);
                 });
             }
         }).start();
     }
 
-    // --- MÉTHODES DE TRADING (CONSERVÉES) ---
     private void processTrade(TradeType type) {
         if (selectedAsset == null || txtQty.getText().isEmpty()) return;
         try {
             double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
             OrderMode mode = OrderMode.valueOf(comboOrderMode.getValue());
             double price = mode == OrderMode.MARKET ? selectedAsset.getCurrentPrice() : Double.parseDouble(txtTargetPrice.getText());
-
-            Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty,
-                    (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
-                    LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
-
+            Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty, (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING), LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
             tradeService.insertOne(trade);
-
             if (mode == OrderMode.MARKET) {
                 transaction t = new transaction();
                 t.setIdWalletSource(type == TradeType.BUY ? MY_WALLET_ID : MARKET_WALLET_ID);
@@ -178,6 +204,14 @@ public class TradingDashboard {
         } catch (Exception e) { showAlert("Error", e.getMessage()); }
     }
 
+    private void updateBalances() {
+        try {
+            double usdt = wcService.getBalance(MY_WALLET_ID, USDT_ID);
+            lblBalance.setText(String.format("%.2f USDT", usdt));
+            lblBalanceTND.setText(String.format("≈ %.3f TND", usdt * 3.12));
+        } catch (Exception e) {}
+    }
+
     private void setupTables() {
         colSymbol.setCellFactory(column -> new TableCell<>() {
             private final ImageView img = new ImageView();
@@ -187,17 +221,14 @@ public class TradingDashboard {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); }
+                if (empty || item == null) setGraphic(null);
                 else {
-                    lbl.setText(item.toUpperCase());
-                    lbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+                    lbl.setText(item.toUpperCase()); lbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
                     String sym = item.toLowerCase();
                     if (!logoCache.containsKey(sym)) {
-                        Image icon = new Image("https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/" + sym + ".png", 20, 20, true, true, true);
-                        logoCache.put(sym, icon);
+                        logoCache.put(sym, new Image("https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/" + sym + ".png", 20, 20, true, true, true));
                     }
-                    img.setImage(logoCache.get(sym));
-                    setGraphic(box);
+                    img.setImage(logoCache.get(sym)); setGraphic(box);
                 }
             }
         });
@@ -213,15 +244,12 @@ public class TradingDashboard {
 
     private void startGlobalPriceUpdates() {
         for (Asset asset : tableAssets.getItems()) {
-            String apiSymbol = asset.getSymbol().toUpperCase() + "USDT";
-            marketApi.startPriceStream(apiSymbol, (Double livePrice) -> {
+            marketApi.startPriceStream(asset.getSymbol().toUpperCase() + "USDT", (Double livePrice) -> {
                 if (livePrice != null && livePrice > 0) {
                     Platform.runLater(() -> {
-                        asset.setCurrentPrice(livePrice);
-                        tableAssets.refresh();
+                        asset.setCurrentPrice(livePrice); tableAssets.refresh();
                         if (selectedAsset != null && selectedAsset.getSymbol().equalsIgnoreCase(asset.getSymbol())) {
-                            updatePnL(livePrice);
-                            calculateTotal();
+                            updatePnL(livePrice); calculateTotal();
                         }
                     });
                 }
@@ -229,18 +257,20 @@ public class TradingDashboard {
         }
     }
 
-    // --- NAVIGATION ---
-    @FXML private void showAIChat() { paneMarket.setVisible(false); paneHistory.setVisible(false); if (paneAIChat != null) paneAIChat.setVisible(true); }
-    @FXML private void showMarket() { paneMarket.setVisible(true); paneHistory.setVisible(false); if (paneAIChat != null) paneAIChat.setVisible(false); }
-    @FXML private void showHistory() { paneMarket.setVisible(false); paneHistory.setVisible(true); if (paneAIChat != null) paneAIChat.setVisible(false); loadTradeHistory(); }
+    private void calculateTotal() {
+        if (selectedAsset == null) return;
+        try {
+            double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
+            double price = "LIMIT".equals(comboOrderMode.getValue()) ? Double.parseDouble(txtTargetPrice.getText()) : selectedAsset.getCurrentPrice();
+            lblTotal.setText(String.format("%.2f USDT", qty * price));
+        } catch (Exception e) { lblTotal.setText("0.00 USDT"); }
+    }
 
-    private void updateBalances() { try { double usdt = wcService.getBalance(MY_WALLET_ID, USDT_ID); lblBalance.setText(String.format("%.2f USDT", usdt)); lblBalanceTND.setText(String.format("≈ %.3f TND", usdt * 3.12)); } catch (Exception e) {} }
-    private void calculateTotal() { if (selectedAsset == null) return; try { double qty = Double.parseDouble(txtQty.getText().replace(",", ".")); double price = "LIMIT".equals(comboOrderMode.getValue()) ? Double.parseDouble(txtTargetPrice.getText()) : selectedAsset.getCurrentPrice(); lblTotal.setText(String.format("%.2f USDT", qty * price)); } catch (Exception e) { lblTotal.setText("0.00 USDT"); } }
     private void loadInitialAssets() { try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) {} }
     private void loadAssetCache() { try { assetNamesCache = assetService.SelectAll().stream().collect(Collectors.toMap(Asset::getId, Asset::getSymbol)); } catch (Exception e) {} }
     private void setupOrderInputs() { comboOrderMode.getItems().setAll("MARKET", "LIMIT"); comboOrderMode.setValue("MARKET"); txtTargetPrice.disableProperty().bind(comboOrderMode.valueProperty().isEqualTo("MARKET")); }
     private void updateTradingView(String symbol) { Platform.runLater(() -> chartWebView.getEngine().load("https://s.tradingview.com/widgetembed/?symbol=BINANCE:" + symbol.toUpperCase() + "USDT&theme=dark")); }
-    private void updateAISignal(String symbol) { new Thread(() -> { double rsi = marketApi.calculateRSI(symbol); Platform.runLater(() -> lblAdvice.setText("AI SIGNAL: " + (rsi < 35 ? "BUY" : rsi > 65 ? "SELL" : "NEUTRAL"))); }).start(); }
+    private void updateAISignal(String symbol) { new Thread(() -> { double rsi = marketApi.calculateRSI(symbol); Platform.runLater(() -> lblAdvice.setText("AI SIGNAL: " + (rsi < 35 ? "BUY" : rsi > 65 ? "SELL" : "NEUTRAL") + " (RSI: " + String.format("%.2f", rsi) + ")")); }).start(); }
     private void setupTickerLoop() { Timeline timeline = new Timeline(new KeyFrame(Duration.millis(50), e -> { if (tickerContainer != null) { tickerContainer.setLayoutX(tickerContainer.getLayoutX() - 1); if (tickerContainer.getLayoutX() < -500) tickerContainer.setLayoutX(800); } })); timeline.setCycleCount(Animation.INDEFINITE); timeline.play(); }
     private void updatePnL(double currentPrice) { if (initialEntryPrice <= 0) return; double pnl = (currentPrice - initialEntryPrice) / initialEntryPrice * 100; lblPnL.setText(String.format("%+.2f%%", pnl)); lblPnL.setStyle("-fx-text-fill: " + (pnl >= 0 ? "#0ecb81" : "#f6465d") + ";"); }
     @FXML private void onBuy() { processTrade(TradeType.BUY); }

@@ -63,10 +63,12 @@
                                         <VBox style="-fx-background-color: #161a1e; -fx-background-radius: 8;" HBox.hgrow="ALWAYS">
                                             <WebView fx:id="chartWebView" VBox.vgrow="ALWAYS" />
                                         </VBox>
-                                        <VBox prefWidth="250.0" spacing="10" style="-fx-background-color: #161a1e; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #2b3139;">
+                                        <VBox prefWidth="250.0" spacing="10" style="-fx-background-color: #161a1e; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #2b3139;" VBox.vgrow="ALWAYS">
                                             <Label style="-fx-text-fill: #fcd535; -fx-font-weight: bold;" text="🔥 LIVE NEWS" />
-                                            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
-                                                <VBox fx:id="vboxNews" spacing="12" style="-fx-background-color: transparent;" />
+                                            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;" VBox.vgrow="ALWAYS">
+                                                <content>
+                                                    <VBox fx:id="vboxNews" spacing="12" style="-fx-background-color: transparent;" />
+                                                </content>
                                             </ScrollPane>
                                         </VBox>
                                     </children>
@@ -109,11 +111,11 @@
 
                         <VBox fx:id="paneAIChat" spacing="15" style="-fx-background-color: #0b0e11; -fx-padding: 25;" visible="false">
                             <children>
-                                <Label style="-fx-text-fill: #fcd535; -fx-font-size: 22; -fx-font-weight: bold;" text="🤖 AI TRADING ANALYST (GEMINI)" />
+                                <Label style="-fx-text-fill: #fcd535; -fx-font-size: 22; -fx-font-weight: bold;" text="🤖 AI TRADING ANALYST" />
                                 <TextArea fx:id="chatArea" editable="false" wrapText="true" VBox.vgrow="ALWAYS" style="-fx-control-inner-background: #161a1e; -fx-text-fill: white; -fx-font-family: 'Consolas';" />
                                 <HBox spacing="10">
                                     <children>
-                                        <TextField fx:id="txtChatInput" onAction="#onSendMessage" promptText="Ask Gemini about the market..." HBox.hgrow="ALWAYS" style="-fx-background-color: #2b3139; -fx-text-fill: white; -fx-padding: 10;" />
+                                        <TextField fx:id="txtChatInput" onAction="#onSendMessage" promptText="Ask Gemini..." HBox.hgrow="ALWAYS" style="-fx-background-color: #2b3139; -fx-text-fill: white; -fx-padding: 10;" />
                                         <Button onAction="#onSendMessage" prefHeight="40" prefWidth="100" style="-fx-background-color: #fcd535; -fx-text-fill: #0b0e11; -fx-font-weight: bold;" text="SEND" />
                                     </children>
                                 </HBox>
