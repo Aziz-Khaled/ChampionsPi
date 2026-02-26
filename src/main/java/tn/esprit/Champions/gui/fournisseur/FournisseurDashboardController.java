@@ -153,8 +153,6 @@ public class FournisseurDashboardController {
 
     // Configurer la colonne des actions avec les boutons modifier et supprimer
     private void setupActionColumn() {
-
-        
         colAction.setCellFactory(param -> new TableCell<>() {
             private final Button editBtn = new Button("Modifier");
             private final Button deleteBtn = new Button("Supprimer");
@@ -185,6 +183,8 @@ public class FournisseurDashboardController {
 
     // Gérer l'action de modification d'un produit
     private void handleEdit(Product p) {
+
+        
         editingProduct = p;
         nameField.setText(p.getName());
         descField.setText(p.getDescription());
