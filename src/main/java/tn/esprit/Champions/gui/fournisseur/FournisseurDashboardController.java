@@ -218,8 +218,6 @@ public class FournisseurDashboardController {
 
     @FXML
     private void handleAutoCorrect() {
-
-        
         String currentDesc = descField.getText();
         if (currentDesc == null || currentDesc.trim().isEmpty()) {
             Notifications.create().title("Attention").text("La description est vide !").showWarning();
