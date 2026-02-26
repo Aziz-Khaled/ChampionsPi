@@ -1,3 +1,4 @@
+
 package tn.esprit.Champions.models;
 
 public class Utilisateur {
@@ -18,7 +19,7 @@ public class Utilisateur {
         this.role = role;
     }
 
-     public Utilisateur() {
+    public Utilisateur() {
     }
 
 

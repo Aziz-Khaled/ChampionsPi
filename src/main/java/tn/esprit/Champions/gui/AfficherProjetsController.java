@@ -1,5 +1,8 @@
 package tn.esprit.Champions.gui;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -8,13 +11,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.projetStatus;
@@ -27,6 +33,9 @@ import java.util.ResourceBundle;
 
 public class AfficherProjetsController implements Initializable {
 
+    // Conteneurs pour les animations
+    @FXML private HBox headerContainer, statsContainer;
+
     @FXML private TableView<projet> tableProjets;
     @FXML private TableColumn<projet, String> colTitre;
     @FXML private TableColumn<projet, String> colDescription;
@@ -35,13 +44,9 @@ public class AfficherProjetsController implements Initializable {
     @FXML private TableColumn<projet, Timestamp> colDateDebut;
     @FXML private TableColumn<projet, Timestamp> colDateFin;
 
-    @FXML private Button btnEdit;
-    @FXML private Button btnDelete;
+    @FXML private Button btnEdit, btnDelete;
     @FXML private TextField searchField;
-
-    // ✅ AJOUTÉ : Déclaration du ComboBox pour le FXML
     @FXML private ComboBox<String> statusFilterCombo;
-
     @FXML private Label statLabel;
 
     private final projetService ps = new projetService();
@@ -51,13 +56,34 @@ public class AfficherProjetsController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         configurerColonnes();
         chargerDonnees();
-        configurerRechercheDynamique(); // ✅ Inclut maintenant le remplissage du Combo
+        configurerRechercheDynamique();
+        appliquerAnimations();
 
+        // Gestion de l'activation des boutons
         tableProjets.getSelectionModel().selectedItemProperty().addListener((obs, old, selection) -> {
             boolean selectionExiste = (selection != null);
             btnEdit.setDisable(!selectionExiste);
             btnDelete.setDisable(!selectionExiste);
         });
+    }
+
+    private void appliquerAnimations() {
+        animateNode(headerContainer, 0);
+        animateNode(statsContainer, 150);
+        animateNode(tableProjets, 300);
+    }
+
+    private void animateNode(Node node, double delayMs) {
+        node.setOpacity(0);
+        FadeTransition ft = new FadeTransition(Duration.millis(800), node);
+        ft.setFromValue(0); ft.setToValue(1);
+        ft.setDelay(Duration.millis(delayMs));
+
+        TranslateTransition tt = new TranslateTransition(Duration.millis(800), node);
+        tt.setFromY(20); tt.setToY(0);
+        tt.setDelay(Duration.millis(delayMs));
+
+        ft.play(); tt.play();
     }
 
     private void configurerColonnes() {
@@ -68,6 +94,7 @@ public class AfficherProjetsController implements Initializable {
         colDateDebut.setCellValueFactory(new PropertyValueFactory<>("start_date"));
         colDateFin.setCellValueFactory(new PropertyValueFactory<>("end_date"));
 
+        // ✅ Design des Badges de Statut (Style Dark Marketplace)
         colStatus.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(projetStatus item, boolean empty) {
@@ -78,14 +105,15 @@ public class AfficherProjetsController implements Initializable {
                     Label badge = new Label(item.toString());
                     badge.setPrefWidth(100);
                     badge.setAlignment(Pos.CENTER);
-                    String styleBase = "-fx-padding: 4 10; -fx-background-radius: 15; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;";
+
+                    String styleBase = "-fx-padding: 6 12; -fx-background-radius: 20; -fx-font-weight: bold; -fx-font-size: 11px;";
 
                     if (item == projetStatus.DRAFT) {
-                        badge.setStyle(styleBase + "-fx-background-color: #3498db;");
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(52, 152, 219, 0.2); -fx-text-fill: #3498db; -fx-border-color: rgba(52, 152, 219, 0.3); -fx-border-radius: 20;");
                     } else if (item == projetStatus.ACTIVE) {
-                        badge.setStyle(styleBase + "-fx-background-color: #27ae60;");
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(16, 185, 129, 0.2); -fx-text-fill: #10b981; -fx-border-color: rgba(16, 185, 129, 0.3); -fx-border-radius: 20;");
                     } else {
-                        badge.setStyle(styleBase + "-fx-background-color: #95a5a6;");
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(148, 163, 184, 0.2); -fx-text-fill: #94a3b8; -fx-border-color: rgba(148, 163, 184, 0.3); -fx-border-radius: 20;");
                     }
 
                     HBox container = new HBox(badge);
@@ -97,7 +125,6 @@ public class AfficherProjetsController implements Initializable {
     }
 
     private void configurerRechercheDynamique() {
-        // ✅ 1. Remplir le ComboBox avec les valeurs de l'Enum
         ObservableList<String> options = FXCollections.observableArrayList("Tous");
         for (projetStatus s : projetStatus.values()) {
             options.add(s.toString());
@@ -105,22 +132,18 @@ public class AfficherProjetsController implements Initializable {
         statusFilterCombo.setItems(options);
         statusFilterCombo.setValue("Tous");
 
-        // 2. Créer la liste filtrable
         FilteredList<projet> filteredData = new FilteredList<>(masterData, p -> true);
 
-        // ✅ 3. Créer une méthode de filtrage commune pour le texte ET le combo
         Runnable applyFilters = () -> {
             String textFilter = searchField.getText() == null ? "" : searchField.getText().toLowerCase();
             String selectedStatus = statusFilterCombo.getValue();
 
             filteredData.setPredicate(p -> {
-                // Filtre Texte
                 boolean matchesText = textFilter.isEmpty() ||
                         p.getTitle().toLowerCase().contains(textFilter) ||
                         (p.getDescription() != null && p.getDescription().toLowerCase().contains(textFilter)) ||
                         String.valueOf(p.getTarget_amount()).contains(textFilter);
 
-                // Filtre Statut
                 boolean matchesStatus = selectedStatus.equals("Tous") ||
                         p.getStatus().toString().equals(selectedStatus);
 
@@ -129,7 +152,6 @@ public class AfficherProjetsController implements Initializable {
             updateStatLabel(filteredData.size());
         };
 
-        // 4. Écouter les changements sur les deux composants
         searchField.textProperty().addListener((obs, old, newVal) -> applyFilters.run());
         statusFilterCombo.valueProperty().addListener((obs, old, newVal) -> applyFilters.run());
 
@@ -143,13 +165,13 @@ public class AfficherProjetsController implements Initializable {
             masterData.setAll(ps.SelectAll());
             updateStatLabel(masterData.size());
         } catch (Exception e) {
-            afficherErreur("Erreur lors du chargement des projets : " + e.getMessage());
+            afficherErreur("Erreur chargement : " + e.getMessage());
         }
     }
 
     private void updateStatLabel(int count) {
         if (statLabel != null) {
-            statLabel.setText(count + (count > 1 ? " Projets trouvés" : " Projet trouvé"));
+            statLabel.setText(count + (count > 1 ? " Projets" : " Projet"));
         }
     }
 
@@ -165,14 +187,15 @@ public class AfficherProjetsController implements Initializable {
             controller.initData(selected);
 
             Stage stage = new Stage();
-            stage.setTitle("Modifier : " + selected.getTitle());
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: #0f172a;");
+            stage.setScene(scene);
             stage.showAndWait();
 
             chargerDonnees();
         } catch (IOException e) {
-            afficherErreur("Erreur d'ouverture de l'interface de modification.");
+            afficherErreur("Erreur d'ouverture de l'interface.");
         }
     }
 
@@ -181,23 +204,17 @@ public class AfficherProjetsController implements Initializable {
         projet selected = tableProjets.getSelectionModel().getSelectedItem();
         if (selected == null) return;
 
-        // Utilisation de OK et CANCEL (Standard JavaFX pour CONFIRMATION)
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Suppression");
-        alert.setHeaderText("Confirmation de suppression");
-        alert.setContentText("Voulez-vous vraiment supprimer le projet : " + selected.getTitle() + " ?");
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Voulez-vous supprimer le projet : " + selected.getTitle() + " ?", ButtonType.OK, ButtonType.CANCEL);
+        alert.getDialogPane().setStyle("-fx-background-color: #1e293b;");
+        alert.getDialogPane().lookupAll(".label").forEach(node -> node.setStyle("-fx-text-fill: white;"));
 
-        // On attend la réponse
         alert.showAndWait().ifPresent(response -> {
-            // ✅ CORRECTION : Vérifier ButtonType.OK au lieu de YES
             if (response == ButtonType.OK) {
                 try {
                     ps.deleteOne(selected);
-                    // Rafraîchir la liste après suppression
                     chargerDonnees();
                 } catch (Exception e) {
-                    afficherErreur("Impossible de supprimer le projet : " + e.getMessage());
-                    e.printStackTrace();
+                    afficherErreur("Erreur suppression : " + e.getMessage());
                 }
             }
         });
@@ -209,22 +226,18 @@ public class AfficherProjetsController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/AjouterProjet.fxml"));
             Parent root = loader.load();
 
-            // 1. Récupérer l'instance du contrôleur que tu viens de charger
             AjouterProjetController controller = loader.getController();
-
-            // 2. CRÉER OU RÉCUPÉRER L'UTILISATEUR (Indispensable !)
-            // On simule l'utilisateur connecté (ID 1 par exemple)
             Utilisateur userConnecte = new Utilisateur();
-            userConnecte.setId_user(1);
-            userConnecte.setNom("Sarra"); // Optionnel, pour le test
-
-            // 3. ENVOYER l'objet au contrôleur de la popup
+            userConnecte.setId_user(1); // Simulation user
             controller.setConnectedOwner(userConnecte);
 
-            // 4. Afficher la fenêtre
             Stage stage = new Stage();
-            stage.setScene(new Scene(root));
-            stage.show();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: #0f172a;");
+            stage.setScene(scene);
+            stage.showAndWait();
+            chargerDonnees();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -233,7 +246,7 @@ public class AfficherProjetsController implements Initializable {
 
     private void afficherErreur(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setHeaderText(null);
+        alert.getDialogPane().setStyle("-fx-background-color: #1e293b;");
         alert.setContentText(message);
         alert.showAndWait();
     }

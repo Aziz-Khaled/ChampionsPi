@@ -81,6 +81,7 @@ public class AfficherCreditsController implements Initializable {
         colDescription.setCellValueFactory(new PropertyValueFactory<>("description"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        // ✅ Design des Badges de Statut (Style Dark Mode)
         colStatus.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(CreditStatus item, boolean empty) {
@@ -88,24 +89,36 @@ public class AfficherCreditsController implements Initializable {
                 if (empty || item == null) setGraphic(null);
                 else {
                     Label badge = new Label(item.toString());
-                    badge.setPrefWidth(90);
+                    badge.setPrefWidth(100);
                     badge.setAlignment(Pos.CENTER);
-                    String styleBase = "-fx-padding: 4 10; -fx-background-radius: 15; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;";
 
-                    if (item == CreditStatus.OPEN) badge.setStyle(styleBase + "-fx-background-color: #f39c12;");
-                    else if (item == CreditStatus.APPROVED) badge.setStyle(styleBase + "-fx-background-color: #27ae60;");
-                    else if (item == CreditStatus.REJECTED) badge.setStyle(styleBase + "-fx-background-color: #e74c3c;");
-                    else badge.setStyle(styleBase + "-fx-background-color: #95a5a6;");
+                    // Style de base : Background translucide pour l'effet "Glassmorphism"
+                    String styleBase = "-fx-padding: 6 12; -fx-background-radius: 20; -fx-font-weight: bold; -fx-font-size: 11px;";
+
+                    if (item == CreditStatus.OPEN)
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(243, 156, 18, 0.2); -fx-text-fill: #f39c12; -fx-border-color: rgba(243, 156, 18, 0.3); -fx-border-radius: 20;");
+                    else if (item == CreditStatus.APPROVED)
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(16, 185, 129, 0.2); -fx-text-fill: #10b981; -fx-border-color: rgba(16, 185, 129, 0.3); -fx-border-radius: 20;");
+                    else if (item == CreditStatus.REJECTED)
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(231, 76, 60, 0.2); -fx-text-fill: #e74c3c; -fx-border-color: rgba(231, 76, 60, 0.3); -fx-border-radius: 20;");
+                    else
+                        badge.setStyle(styleBase + "-fx-background-color: rgba(148, 163, 184, 0.2); -fx-text-fill: #94a3b8; -fx-border-color: rgba(148, 163, 184, 0.3); -fx-border-radius: 20;");
+
                     setGraphic(badge);
                 }
             }
         });
 
+        // ✅ Design du bouton "Offres" (Style Cyan Marketplace)
         colActions.setCellFactory(param -> new TableCell<>() {
             private final Button btnOffers = new Button("Offres");
             {
-                btnOffers.setStyle("-fx-background-color: transparent; -fx-border-color: #0fbcf9; -fx-border-radius: 15; -fx-text-fill: #0fbcf9; -fx-font-weight: bold; -fx-cursor: hand;");
+                btnOffers.setStyle("-fx-background-color: rgba(56, 189, 248, 0.1); -fx-border-color: #38bdf8; -fx-border-radius: 12; -fx-background-radius: 12; -fx-text-fill: #38bdf8; -fx-font-weight: 900; -fx-cursor: hand; -fx-padding: 5 15;");
                 btnOffers.setOnAction(event -> ouvrirNegociationEmprunteur(getTableView().getItems().get(getIndex())));
+
+                // Effet Hover simple en code
+                btnOffers.setOnMouseEntered(e -> btnOffers.setStyle("-fx-background-color: #38bdf8; -fx-text-fill: #020617; -fx-background-radius: 12; -fx-font-weight: 900;"));
+                btnOffers.setOnMouseExited(e -> btnOffers.setStyle("-fx-background-color: rgba(56, 189, 248, 0.1); -fx-border-color: #38bdf8; -fx-border-radius: 12; -fx-background-radius: 12; -fx-text-fill: #38bdf8; -fx-font-weight: 900;"));
             }
             @Override
             protected void updateItem(Void item, boolean empty) {
@@ -131,11 +144,10 @@ public class AfficherCreditsController implements Initializable {
             String status = statusFilterCombo.getValue();
 
             filteredData.setPredicate(c -> {
-                // ✅ RECHERCHE PAR NOM DE PROJET (via le cache)
                 String nomProjet = projetCache.getOrDefault(c.getProject_id(), "").toLowerCase();
 
                 boolean matchesText = text.isEmpty() ||
-                        nomProjet.contains(text) || // Recherche dans le nom du projet
+                        nomProjet.contains(text) ||
                         c.getDescription().toLowerCase().contains(text) ||
                         c.getDevise().toLowerCase().contains(text) ||
                         String.valueOf(c.getMontant()).contains(text);
@@ -157,13 +169,11 @@ public class AfficherCreditsController implements Initializable {
 
     private void chargerDonnees() {
         try {
-            // 1. Charger les projets pour le cache (Recherche par nom)
             projetCache.clear();
             for (projet p : ps.SelectAll()) {
                 projetCache.put(p.getId_project(), p.getTitle());
             }
 
-            // 2. Charger les crédits
             masterData.setAll(cs.SelectAll());
             updateStatLabel(masterData.size());
         } catch (Exception e) {
@@ -174,6 +184,8 @@ public class AfficherCreditsController implements Initializable {
     private void updateStatLabel(int count) {
         if (statLabel != null) {
             statLabel.setText(count + (count > 1 ? " Crédits trouvés" : " Crédit trouvé"));
+            // Style dynamique pour le label de stats
+            statLabel.setStyle("-fx-background-color: rgba(56, 189, 248, 0.1); -fx-text-fill: #38bdf8; -fx-padding: 8 20; -fx-background-radius: 20; -fx-font-weight: bold;");
         }
     }
 
@@ -190,7 +202,10 @@ public class AfficherCreditsController implements Initializable {
             Stage stage = new Stage();
             stage.setTitle("Nouvelle Demande");
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            // Optionnel : Forcer le fond sombre sur la modale si nécessaire
+            root.setStyle("-fx-background-color: #0f172a;");
+            stage.setScene(scene);
             stage.showAndWait();
             chargerDonnees();
         } catch (IOException e) { afficherErreur("Erreur FXML : " + e.getMessage()); }
@@ -207,7 +222,9 @@ public class AfficherCreditsController implements Initializable {
             controller.initData(selected);
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: #0f172a;");
+            stage.setScene(scene);
             stage.showAndWait();
             chargerDonnees();
         } catch (IOException e) { afficherErreur("Erreur FXML : " + e.getMessage()); }
@@ -217,7 +234,13 @@ public class AfficherCreditsController implements Initializable {
     private void handleDeleteSelection() {
         credit selected = tableCredits.getSelectionModel().getSelectedItem();
         if (selected == null) return;
+
+        // Custom Alert Style pour rester dans le thème
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer ce crédit ?", ButtonType.YES, ButtonType.NO);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setStyle("-fx-background-color: #1e293b;");
+        dialogPane.lookupAll(".label").forEach(node -> node.setStyle("-fx-text-fill: white;"));
+
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.YES) {
                 try { cs.deleteOne(selected); chargerDonnees(); }
@@ -230,24 +253,18 @@ public class AfficherCreditsController implements Initializable {
         if (c == null) return;
 
         try {
-            // 1. Extraire le titre du projet depuis ton cache existant
             String titreDuProjet = projetCache.getOrDefault(c.getProject_id(), "Projet #" + c.getProject_id());
-
-            // 2. Charger le FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/GestionNegociation.fxml"));
             Parent root = loader.load();
-
-            // 3. Récupérer le contrôleur de la fenêtre de négociation
             NegociationController controller = loader.getController();
-
-            // 4. ✅ Appel de la méthode corrigée (credit + titre)
             controller.setCreditSelectionne(c, titreDuProjet);
 
-            // 5. Affichage en mode Pop-up (Modale)
             Stage stage = new Stage();
             stage.setTitle("Offres pour : " + titreDuProjet);
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(new Scene(root));
+            Scene scene = new Scene(root);
+            root.setStyle("-fx-background-color: #0f172a;");
+            stage.setScene(scene);
             stage.show();
 
         } catch (IOException e) {
@@ -258,6 +275,7 @@ public class AfficherCreditsController implements Initializable {
 
     private void afficherErreur(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.getDialogPane().setStyle("-fx-background-color: #1e293b;");
         alert.setContentText(message);
         alert.showAndWait();
     }
