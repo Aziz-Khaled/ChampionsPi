@@ -1,9 +1,10 @@
 package tn.esprit.Champions.gui;
-import javafx.scene.layout.HBox;
-
 import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamPanel;
 import com.github.sarxos.webcam.WebcamResolution;
+import javafx.scene.layout.HBox;
+
+
 import javax.swing.JFrame;
 import javax.swing.JButton;
 import java.awt.BorderLayout;

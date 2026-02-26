@@ -26,7 +26,7 @@
                     <padding><Insets left="20.0" right="20.0" top="10.0" /></padding>
                     <children>
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="MAIN MENU" />
-                        <Button fx:id="btnOverview" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button-active" text="Dashboard Overview" />
+                        <Button fx:id="btnOverview" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Dashboard Overview" />
                         <Region prefHeight="20" />
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="USER MANAGEMENT" />
                         <Button fx:id="btnGestionUsers" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Pending Approvals" />
@@ -81,7 +81,7 @@
                         <VBox prefWidth="220" spacing="10" styleClass="stat-card">
                             <Label styleClass="brand-subtext" text="Pending Approval" />
                             <Label styleClass="brand-title" fx:id="lblPendingUsers" style="-fx-font-size: 32; -fx-text-fill: #FFCC00;" text="0" />
-                            <Button styleClass="button-secondary" style="-fx-font-size: 10;" text="Review Now →" />
+                            <Button styleClass="button-secondary" fx:id="rv_now" style="-fx-font-size: 10;" text="Review Now →" />
                         </VBox>
                         <VBox prefWidth="220" spacing="10" styleClass="stat-card">
                             <Label styleClass="brand-subtext" text="Banned/Rejected" />

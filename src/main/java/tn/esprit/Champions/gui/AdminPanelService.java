@@ -1,5 +1,6 @@
 package tn.esprit.Champions.gui;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,6 +9,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -15,6 +17,7 @@ import javafx.scene.layout.VBox;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.services.UtilisateurService;
+import tn.esprit.Champions.utils.FaceMatchService;
 import tn.esprit.Champions.utils.UserSession;
 
 import java.awt.Desktop;
@@ -23,6 +26,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AdminPanelService {
 
@@ -37,34 +42,40 @@ public class AdminPanelService {
     @FXML private Label lblTotalUsers;
     @FXML private Label lblPendingUsers;
     @FXML private Label lblDisabledUsers;
-    // Dashboard Components (Injected from FXML)
+
+    // Dashboard Components
     @FXML private StackPane chartContainer;
     @FXML private StackPane pieChartContainer;
     @FXML private VBox recentActivityList;
 
-    private final UtilisateurService userService = new UtilisateurService();
+    @FXML private ImageView iv_identity;
+    @FXML private ImageView iv_selfie;
+    @FXML private Label lbl_matchResult;
+    @FXML private Label lbl_trustLevel;
+    @FXML private ProgressBar pb_similarity;
+    @FXML private Button btnApprove;
+    @FXML private Button rv_now;
 
-    // NEW: Variable to store the dashboard layout (ScrollPane)
+    private final UtilisateurService userService = new UtilisateurService();
+    private final FaceMatchService faceMatchService = new FaceMatchService();
     private Node dashboardView;
+
+    // Map to store temporary verification scores for the table session
+    private final Map<Integer, String> verificationScores = new HashMap<>();
 
     @FXML
     private void initialize() {
-        // 1. IMPORTANT: Capture the dashboard UI (the ScrollPane) before it's cleared
         if (mainContent != null && !mainContent.getChildren().isEmpty()) {
             dashboardView = mainContent.getChildren().get(0);
-
         }
 
-        // Session Check
         Utilisateur currentUser = UserSession.getLoggedInUser();
         if (currentUser != null) {
             lblTitle.setText("Welcome, " + currentUser.getNom());
         }
 
-        // Set Default View
         showDashboard();
 
-        // Navigation Handlers
         btnOverview.setOnAction(e -> showDashboard());
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
@@ -75,13 +86,10 @@ public class AdminPanelService {
         refreshStatistics();
     }
 
-    // --- DASHBOARD LOGIC ---
-
     private void showDashboard() {
         setActiveButton(btnOverview);
         lblTitle.setText("System Overview");
 
-        // 2. Restore the original dashboard UI to the mainContent
         if (dashboardView != null) {
             mainContent.getChildren().clear();
             mainContent.getChildren().add(dashboardView);
@@ -124,7 +132,6 @@ public class AdminPanelService {
     private void setupPieChart() {
         try {
             java.util.Map<String, Integer> distribution = userService.getStatusDistribution();
-
             ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
             distribution.forEach((status, count) -> {
                 pieData.add(new PieChart.Data(status, count));
@@ -195,14 +202,24 @@ public class AdminPanelService {
                 }
             });
 
+            TableColumn<Utilisateur, String> colMatchResult = new TableColumn<>("AI Match");
+            colMatchResult.setCellValueFactory(data -> {
+                String score = verificationScores.getOrDefault(data.getValue().getId_user(), "--%");
+                return new SimpleStringProperty(score);
+            });
+
             TableColumn<Utilisateur, Void> colActions = new TableColumn<>("Actions");
             colActions.setCellFactory(param -> new TableCell<>() {
+                private final Button btnAI = new Button("Verify AI");
                 private final Button btnAccept = new Button("Accept");
                 private final Button btnReject = new Button("Reject");
-                private final HBox box = new HBox(10, btnAccept, btnReject);
+                private final HBox box = new HBox(8, btnAI, btnAccept, btnReject);
                 {
+                    btnAI.setStyle("-fx-background-color: #2E5BFF; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
                     btnAccept.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
                     btnReject.setStyle("-fx-background-color: #f43f5e; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
+
+                    btnAI.setOnAction(e -> runAIVerification(getTableView().getItems().get(getIndex()), table));
                     btnAccept.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), Status.ACTIVE));
                     btnReject.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), Status.DESACTIVE));
                 }
@@ -212,9 +229,44 @@ public class AdminPanelService {
                 }
             });
 
-            table.getColumns().addAll(colIdentity, colActions);
+            table.getColumns().addAll(colIdentity, colMatchResult, colActions);
             renderTable(table);
         } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    private void runAIVerification(Utilisateur user, TableView<Utilisateur> table) {
+        String assetPath = "src/main/resources/assets/";
+        File idFile = new File(assetPath + user.getPiece_identite());
+        File selfieFile = new File(assetPath + user.getUser_image());
+
+        if (!idFile.exists() || !selfieFile.exists()) {
+            showAlert("File Error", "Required images not found in: " + assetPath);
+            return;
+        }
+
+        // Update UI to show processing state
+        verificationScores.put(user.getId_user(), "Analyzing...");
+        table.refresh();
+
+        new Thread(() -> {
+            try {
+                float score = faceMatchService.compareFaces(idFile, selfieFile);
+                Platform.runLater(() -> {
+                    if (score > 0) {
+                        verificationScores.put(user.getId_user(), String.format("%.2f%%", score));
+                    } else {
+                        verificationScores.put(user.getId_user(), "No Match");
+                    }
+                    table.refresh();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    verificationScores.put(user.getId_user(), "Error");
+                    table.refresh();
+                    showAlert("AI Error", "Failed to communicate with Face++ API.");
+                });
+            }
+        }).start();
     }
 
     private void showAllUsers() {
@@ -236,8 +288,8 @@ public class AdminPanelService {
                 private final Button btnDelete = new Button("Delete");
                 private final HBox box = new HBox(10, btnUpdate, btnDelete);
                 {
-                    btnUpdate.setStyle("-fx-background-color: #2980B9; -fx-text-fill: white; -fx-background-radius: 4; -fx-cursor: hand;");
-                    btnDelete.setStyle("-fx-background-color: #C0392B; -fx-text-fill: white; -fx-background-radius: 4; -fx-cursor: hand;");
+                    btnUpdate.setStyle("-fx-background-color: #2980B9; -fx-text-fill: white; -fx-background-radius: 4;");
+                    btnDelete.setStyle("-fx-background-color: #C0392B; -fx-text-fill: white; -fx-background-radius: 4;");
                     btnUpdate.setOnAction(e -> updateUser(getTableView().getItems().get(getIndex())));
                     btnDelete.setOnAction(e -> deleteUser(getTableView().getItems().get(getIndex())));
                 }
@@ -255,13 +307,10 @@ public class AdminPanelService {
     private TableView<Utilisateur> createBaseTable(ObservableList<Utilisateur> data) {
         TableView<Utilisateur> table = new TableView<>(data);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
         TableColumn<Utilisateur, String> colName = new TableColumn<>("Nom & Prenom");
-        colName.setCellValueFactory(dataCell -> new SimpleStringProperty(dataCell.getValue().getNom() + " " + dataCell.getValue().getPrenom()));
-
+        colName.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getNom() + " " + cell.getValue().getPrenom()));
         TableColumn<Utilisateur, String> colEmail = new TableColumn<>("Email");
-        colEmail.setCellValueFactory(dataCell -> new SimpleStringProperty(dataCell.getValue().getEmail()));
-
+        colEmail.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getEmail()));
         table.getColumns().addAll(colName, colEmail);
         return table;
     }
@@ -269,30 +318,24 @@ public class AdminPanelService {
     private void renderTable(TableView<Utilisateur> table) {
         mainContent.getChildren().clear();
         mainContent.setSpacing(15);
-
         TextField searchField = new TextField();
-        searchField.setPromptText("Search by name or email...");
+        searchField.setPromptText("Search users...");
         searchField.getStyleClass().add("text-field");
 
         FilteredList<Utilisateur> filteredData = new FilteredList<>(table.getItems(), p -> true);
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            filteredData.setPredicate(user -> {
-                if (newVal == null || newVal.isEmpty()) return true;
-                String lowerCaseFilter = newVal.toLowerCase();
-                return user.getNom().toLowerCase().contains(lowerCaseFilter) ||
-                        user.getEmail().toLowerCase().contains(lowerCaseFilter);
-            });
+        searchField.textProperty().addListener((obs, old, newVal) -> {
+            filteredData.setPredicate(user -> newVal == null || newVal.isEmpty() ||
+                    user.getNom().toLowerCase().contains(newVal.toLowerCase()) ||
+                    user.getEmail().toLowerCase().contains(newVal.toLowerCase()));
         });
-
         table.setItems(filteredData);
         mainContent.getChildren().addAll(searchField, table);
         VBox.setVgrow(table, Priority.ALWAYS);
     }
 
-    // --- UTILS & CRUD ACTIONS ---
-
     private void confirmAndUpdate(Utilisateur user, Status status) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Status Change");
         confirm.setContentText("Set " + user.getNom() + " status to " + status + "?");
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
@@ -300,6 +343,7 @@ public class AdminPanelService {
                     user.setStatut(status);
                     userService.updateOne(user);
                     showGestionUsers();
+                    refreshStatistics();
                 } catch (SQLException e) { e.printStackTrace(); }
             }
         });
@@ -309,6 +353,7 @@ public class AdminPanelService {
         try {
             File file = new File("src/main/resources/assets/" + fileName);
             if (file.exists()) Desktop.getDesktop().open(file);
+            else showAlert("Error", "File not found: " + fileName);
         } catch (IOException e) { e.printStackTrace(); }
     }
 
@@ -324,9 +369,7 @@ public class AdminPanelService {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/LoginPage.fxml"));
             javafx.scene.Parent root = loader.load();
-            javafx.stage.Stage stage = (javafx.stage.Stage) btnLogout.getScene().getWindow();
-            stage.setScene(new javafx.scene.Scene(root));
-            stage.show();
+            ((javafx.stage.Stage) btnLogout.getScene().getWindow()).setScene(new javafx.scene.Scene(root));
         } catch (IOException ex) { ex.printStackTrace(); }
     }
 
@@ -334,6 +377,7 @@ public class AdminPanelService {
         try {
             userService.deleteOne(user);
             showAllUsers();
+            refreshStatistics();
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
@@ -400,34 +444,32 @@ public class AdminPanelService {
             int total = userService.getTotalUsersCount();
             int pending = userService.getPendingUsersCount();
             int disabled = userService.getDisabledUsersCount();
-
-            lblTotalUsers.setText(String.format("%,d", total));
-            lblPendingUsers.setText(String.valueOf(pending));
-            lblDisabledUsers.setText(String.valueOf(disabled));
-
-            // Update Pie Chart with real data if you want it synced
+            if (lblTotalUsers != null) lblTotalUsers.setText(String.format("%,d", total));
+            if (lblPendingUsers != null) lblPendingUsers.setText(String.valueOf(pending));
+            if (lblDisabledUsers != null) lblDisabledUsers.setText(String.valueOf(disabled));
             updatePieChartData(total, pending, disabled);
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void updatePieChartData(int total, int pending, int disabled) {
         if (pieChartContainer == null) return;
         pieChartContainer.getChildren().clear();
-
         int active = total - pending - disabled;
-
         ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList(
                 new PieChart.Data("Active", active),
                 new PieChart.Data("Pending", pending),
                 new PieChart.Data("Disabled", disabled)
         );
-
         PieChart pieChart = new PieChart(pieData);
-        pieChart.setLabelsVisible(false);
         pieChart.setLegendVisible(true);
         pieChartContainer.getChildren().add(pieChart);
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
