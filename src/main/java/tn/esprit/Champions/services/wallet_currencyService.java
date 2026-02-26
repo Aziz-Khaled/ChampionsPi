@@ -73,13 +73,15 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         }
 
         // INSERT wallet_currency
-        String insertQuery = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency) VALUES (?,?,?)";
+        // INSERT wallet_currency avec solde
+        String insertQuery = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency, solde) VALUES (?,?,?,?)";
         try (PreparedStatement pst = cnx.prepareStatement(insertQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
             pst.setString(3, walletCurrency.getNom_currency());
+            pst.setDouble(4, walletCurrency.getSolde()); // 🔹 ajouter le solde ici
             pst.executeUpdate();
-            System.out.println("wallet_currency ajouté avec succès : " + walletCurrency.getNom_currency());
+            System.out.println("wallet_currency ajouté avec succès : " + walletCurrency.getNom_currency() + " solde : " + walletCurrency.getSolde());
         }
 
         // Mettre à jour la date_derniere_modification du wallet

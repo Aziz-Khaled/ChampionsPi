@@ -117,13 +117,18 @@ public class CreditCardService {
     public void updateCard(CreditCard card) {
         String sql = "UPDATE credit_card SET expiry_month = ?, expiry_year = ?, stripe_customer_id = ?, stripe_payment_method_id = ? WHERE id_card = ?";
         try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+
             pst.setInt(1, card.getExpiryMonth());
             pst.setInt(2, card.getExpiryYear());
             pst.setString(3, card.getStripeCustomerId());
             pst.setString(4, card.getStripePaymentMethodId());
             pst.setInt(5, card.getIdCard());
+
             pst.executeUpdate();
+            cnx.commit(); // ✅ IMPORTANT
+
         } catch (SQLException e) {
+            try { cnx.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             e.printStackTrace();
         }
     }

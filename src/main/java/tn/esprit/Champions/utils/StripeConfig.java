@@ -6,5 +6,4 @@ public class StripeConfig {
 
     public static void init() {
 
-
 }}

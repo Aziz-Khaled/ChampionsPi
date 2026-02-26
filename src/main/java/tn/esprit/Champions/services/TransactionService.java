@@ -122,43 +122,101 @@ public class TransactionService implements CRUD<transaction> {
         }
     }
 
-    public void insertRechargeTransaction(int walletDestinationId, int currencyId, double amount, String stripeStatus, int creditCardId) throws SQLException {
-        StatutTransaction statut = "succeeded".equals(stripeStatus) ? StatutTransaction.Completed : StatutTransaction.Failed;
+    public void insertRechargeTransaction(
+            int walletDestinationId,
+            int currencyId,
+            double amount,
+            String stripeStatus,
+            int creditCardId
+    ) throws SQLException {
+
+        StatutTransaction statut;
+
+        switch (stripeStatus) {
+            case "succeeded" -> statut = StatutTransaction.Completed;
+            case "processing", "requires_action" -> statut = StatutTransaction.Processing;
+            case "canceled" -> statut = StatutTransaction.Cancelled;
+            case "requires_payment_method", "requires_confirmation" -> statut = StatutTransaction.Pending;
+            default -> statut = StatutTransaction.Failed;
+        }
+
         boolean previousAutoCommit = cnx.getAutoCommit();
 
         try {
             cnx.setAutoCommit(false);
 
-            // 1. Gestion du solde
-            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(walletDestinationId, currencyId);
+            // =====================================================
+            // 1️⃣ AJOUT AUTOMATIQUE SI CURRENCY N'EXISTE PAS
+            // =====================================================
+            wallet_currency destCurrency =
+                    walletCurrencyService.getWalletCurrencyByWalletAndId(walletDestinationId, currencyId);
+
             if (destCurrency == null) {
+
+                // 🔥 récupérer nom_currency depuis la table currency
+                String getCurrencyName = "SELECT nom FROM currency WHERE id_currency = ?";
+                String nomCurrency = null;
+
+                try (PreparedStatement ps = cnx.prepareStatement(getCurrencyName)) {
+                    ps.setInt(1, currencyId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            nomCurrency = rs.getString("nom");
+                        }
+                    }
+                }
+
+                if (nomCurrency == null) {
+                    throw new SQLException("Currency introuvable !");
+                }
+
+                // créer wallet_currency proprement
                 destCurrency = new wallet_currency();
                 destCurrency.setId_wallet(walletDestinationId);
                 destCurrency.setId_currency(currencyId);
+                destCurrency.setNom_currency(nomCurrency);
                 destCurrency.setSolde(amount);
+
                 walletCurrencyService.insertOne(destCurrency);
+
             } else {
+                // si elle existe → juste ajouter le solde
                 destCurrency.setSolde(destCurrency.getSolde() + amount);
                 walletCurrencyService.updateOne(destCurrency);
             }
 
-            // 2. Insérer Transaction
-            String sql = "INSERT INTO transaction (id_wallet_source, id_card, id_wallet_destination, montant, type, statut, date_transaction, id_currency) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)";
+            // =====================================================
+            // 2️⃣ INSÉRER TRANSACTION
+            // =====================================================
+            String sql = """
+            INSERT INTO transaction
+            (id_wallet_source, id_card, id_wallet_destination, montant, type, statut, date_transaction, id_currency)
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
+        """;
+
             int idTransaction = 0;
+
             try (PreparedStatement pst = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                pst.setNull(1, java.sql.Types.INTEGER);
+
+                pst.setNull(1, Types.INTEGER);
                 pst.setInt(2, creditCardId);
                 pst.setInt(3, walletDestinationId);
                 pst.setDouble(4, amount);
                 pst.setString(5, typeTransaction.RECHARGE.name());
                 pst.setString(6, statut.name());
                 pst.setInt(7, currencyId);
+
                 pst.executeUpdate();
+
                 ResultSet rs = pst.getGeneratedKeys();
-                if (rs.next()) idTransaction = rs.getInt(1);
+                if (rs.next()) {
+                    idTransaction = rs.getInt(1);
+                }
             }
 
-            // 3. Préparation objet pour blockchain
+            // =====================================================
+            // 3️⃣ BLOCKCHAIN (OBLIGATOIRE AVANT COMMIT)
+            // =====================================================
             transaction t = new transaction();
             t.setIdTransaction(idTransaction);
             t.setIdWalletSource(0);
@@ -169,15 +227,18 @@ public class TransactionService implements CRUD<transaction> {
             t.setId_card(creditCardId);
             t.setCurrencyId(currencyId);
 
-            // 🔹 4. SÉCURITÉ BLOCKCHAIN (AVANT COMMIT)
             blockchainService.addBlock(t);
 
-            // 🔹 5. VALIDATION FINALE
+            // =====================================================
+            // 4️⃣ COMMIT FINAL
+            // =====================================================
             cnx.commit();
 
+            System.out.println("Recharge réussie + Currency auto + Blockchain OK.");
+
         } catch (Exception e) {
-            if (cnx != null) cnx.rollback(); // 🚨 RECHARGE ANNULÉE SI PIRATAGE DÉTECTÉ
-            throw new SQLException("Recharge bloquée par la Blockchain : " + e.getMessage());
+            cnx.rollback();
+            throw new SQLException("Recharge bloquée : " + e.getMessage());
         } finally {
             cnx.setAutoCommit(previousAutoCommit);
         }
