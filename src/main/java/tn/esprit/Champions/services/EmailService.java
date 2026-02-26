@@ -7,6 +7,8 @@ import java.util.Properties;
 
 public class EmailService {
 
+    
+
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
     private static final String SENDER_EMAIL = "hedfialaa2@gmail.com";
