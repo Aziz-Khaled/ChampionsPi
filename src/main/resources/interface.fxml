@@ -8,22 +8,22 @@
       <VBox spacing="25" style="-fx-background-color: #f8f9fa; -fx-padding: 30;">
          <HBox alignment="CENTER_LEFT" spacing="15">
             <VBox>
-               <Label text="Programmes de Formation" style="-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
-               <Label text="Système de gestion certifié FinTech" style="-fx-text-fill: #95a5a6;"/>
+               <Label text="Gestion Back-Office Formations" style="-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+               <Label text="Champions Academy - Administration" style="-fx-text-fill: #95a5a6;"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS" />
-            <TextField fx:id="searchField" promptText="🔍 Rechercher une formation..." style="-fx-pref-width: 300; -fx-background-radius: 25; -fx-padding: 10;"/>
-            <Button fx:id="btnAdd" text="+ Nouvelle Formation" onAction="#handleAdding" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 12 25; -fx-cursor: hand;"/>
+            <Button text="📊 Voir Stats" onAction="#showStats" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 25; -fx-padding: 10 20; -fx-cursor: hand;"/>
+            <TextField fx:id="searchField" promptText="🔍 Rechercher..." style="-fx-pref-width: 250; -fx-background-radius: 25;"/>
+            <Button fx:id="btnAdd" text="+ Ajouter" onAction="#handleAdding" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 10 20;"/>
          </HBox>
-         <TableView fx:id="tableView" VBox.vgrow="ALWAYS" style="-fx-background-radius: 10; -fx-border-color: #dcdde1; -fx-border-radius: 10;">
+         <TableView fx:id="tableView" VBox.vgrow="ALWAYS">
             <columns>
-               <TableColumn fx:id="idColumn" text="ID" prefWidth="50" />
-               <TableColumn fx:id="titreColumn" text="Titre" prefWidth="200" />
-               <TableColumn fx:id="domaineColumn" text="Domaine" prefWidth="150" />
+               <TableColumn fx:id="titreColumn" text="Titre" prefWidth="250" />
+               <TableColumn fx:id="domaineColumn" text="Domaine" prefWidth="200" />
                <TableColumn fx:id="prixColumn" text="Prix (DT)" prefWidth="100" />
-               <TableColumn fx:id="dateDebutColumn" text="Date Début" prefWidth="120" />
-               <TableColumn fx:id="statutColumn" text="Statut" prefWidth="110" />
-               <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="220" />
+               <TableColumn fx:id="dateDebutColumn" text="Date Début" prefWidth="150" />
+               <TableColumn fx:id="statutColumn" text="Statut" prefWidth="150" />
+               <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="250" />
             </columns>
             <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY" /></columnResizePolicy>
          </TableView>
