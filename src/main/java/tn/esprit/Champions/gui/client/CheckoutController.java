@@ -50,8 +50,6 @@ public class CheckoutController {
 
     @FXML
     private void handleConfirm() {
-
-        
         if (addressField.getText().isEmpty() || phoneField.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Champs manquants");
