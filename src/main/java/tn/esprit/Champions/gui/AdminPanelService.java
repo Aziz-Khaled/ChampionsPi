@@ -76,6 +76,7 @@ public class AdminPanelService {
 
         showDashboard();
 
+        rv_now.setOnAction(e -> showGestionUsers());
         btnOverview.setOnAction(e -> showDashboard());
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
