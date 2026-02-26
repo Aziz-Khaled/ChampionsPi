@@ -1,4 +1,3 @@
-
 package tn.esprit.Champions.services;
 
 import tn.esprit.Champions.models.participations;
@@ -29,7 +28,12 @@ public class ParticipationService implements CRUD<participations> {
         ps.setTimestamp(3, Timestamp.valueOf(p.getDateInscription()));
         ps.setString(4, p.getStatut().name());
         ps.setBoolean(5, p.isPresence());
-        ps.setFloat(6, p.getNote());
+
+        // --- MODIFICATION ICI POUR ÉVITER LE NULLPOINTEREXCEPTION ---
+        // Si getNote() est null, on met 0, sinon on prend la valeur
+        float noteValeur = (p.getNote() != null) ? p.getNote() : 0.0f;
+        ps.setFloat(6, noteValeur);
+        // ------------------------------------------------------------
 
         ps.executeUpdate();
 
@@ -51,7 +55,11 @@ public class ParticipationService implements CRUD<participations> {
         ps.setTimestamp(3, Timestamp.valueOf(p.getDateInscription()));
         ps.setString(4, p.getStatut().name());
         ps.setBoolean(5, p.isPresence());
-        ps.setFloat(6, p.getNote());
+
+        // Sécurité note
+        float noteValeur = (p.getNote() != null) ? p.getNote() : 0.0f;
+        ps.setFloat(6, noteValeur);
+
         ps.setInt(7, p.getIdParticipation());
 
         ps.executeUpdate();
@@ -68,11 +76,6 @@ public class ParticipationService implements CRUD<participations> {
     @Override
     public List<participations> SelectAll() throws SQLException {
         List<participations> list = new ArrayList<>();
-
-        // --- ANCIEN CODE ---
-        // String sql = "SELECT * FROM participations";
-
-        // --- NOUVEAU CODE (JOINTURE) ---
         String sql = "SELECT p.*, f.titre FROM participations p " +
                 "JOIN formations f ON p.idFormation = f.idFormation";
 
@@ -88,13 +91,10 @@ public class ParticipationService implements CRUD<participations> {
             p.setStatut(StatutParticipation.valueOf(rs.getString("statut")));
             p.setPresence(rs.getBoolean("presence"));
             p.setNote(rs.getFloat("note"));
-
-            // --- AJOUT : Récupération du titre ---
             p.setTitreFormation(rs.getString("titre"));
 
             list.add(p);
         }
-
         return list;
     }
 }
