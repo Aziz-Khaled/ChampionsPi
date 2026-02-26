@@ -3,6 +3,7 @@ package tn.esprit.Champions.gui.client;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 import org.controlsfx.control.Notifications;
 import tn.esprit.Champions.models.Order;
 import tn.esprit.Champions.models.OrderItem;
@@ -12,10 +13,19 @@ import tn.esprit.Champions.services.OrderService;
 import tn.esprit.Champions.services.ProductService;
 import tn.esprit.Champions.utils.ShoppingCart;
 
-import java.sql.SQLException;
+import javafx.application.Platform;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.geometry.Pos;
+import tn.esprit.Champions.models.Product;
+import tn.esprit.Champions.services.GeminiService;
+import tn.esprit.Champions.services.ProductService;
+import tn.esprit.Champions.services.OrderService;
+import tn.esprit.Champions.services.OrderItemService;
+import tn.esprit.Champions.services.PdfService;
+
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public class CartController {
 
@@ -33,16 +43,20 @@ public class CartController {
     private TableColumn<OrderItem, Void> colAction;
     @FXML
     private Label totalLabel;
+    @FXML
+    private HBox aiRecommendationBox;
 
     private final ProductService productService = new ProductService();
     private final OrderService orderService = new OrderService();
     private final OrderItemService orderItemService = new OrderItemService();
-    private final tn.esprit.Champions.services.StripeService stripeService = new tn.esprit.Champions.services.StripeService();
     private final tn.esprit.Champions.services.PdfService pdfService = new tn.esprit.Champions.services.PdfService();
+    private final tn.esprit.Champions.services.GeminiService geminiService = new tn.esprit.Champions.services.GeminiService();
+    private final tn.esprit.Champions.services.EmailService emailService = new tn.esprit.Champions.services.EmailService();
 
     @FXML
     // Initialiser le contrôleur, configurer les colonnes et les actions
     public void initialize() {
+        // ... previous initialization ...
         colProduct.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getProduct().getName()));
 
         // Custom cell for Quantity with +/- buttons
@@ -83,8 +97,8 @@ public class CartController {
             }
         });
 
-        colPrice.setCellValueFactory(data -> new SimpleStringProperty("$" + data.getValue().getUnitPrice()));
-        colTotal.setCellValueFactory(data -> new SimpleStringProperty("$" + data.getValue().getSubTotal()));
+        colPrice.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getUnitPrice() + " BTC"));
+        colTotal.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSubTotal() + " BTC"));
 
         // Simple remove button logic
         colAction.setCellFactory(param -> new TableCell<>() {
@@ -131,7 +145,7 @@ public class CartController {
     private void updateTable() {
         cartTable.getItems().setAll(ShoppingCart.getInstance().getItems());
         cartTable.refresh();
-        totalLabel.setText(String.format("$%.2f", ShoppingCart.getInstance().getTotal()));
+        totalLabel.setText(String.format("%.8f BTC", ShoppingCart.getInstance().getTotal()));
     }
 
     @FXML
@@ -142,106 +156,186 @@ public class CartController {
             return;
         }
 
-        // --- Custom Popup Dialog ---
-        Dialog<javafx.util.Pair<String, String>> dialog = new Dialog<>();
-        dialog.setTitle("Informations de Livraison");
-        dialog.setHeaderText("Veuillez entrer vos coordonnées pour finaliser la commande");
+        try {
+            // Load the custom Premium Checkout Modal
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/views/client/CheckoutModal.fxml"));
+            javafx.scene.Parent root = loader.load();
 
-        ButtonType confirmButtonType = new ButtonType("Confirmer la commande", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(confirmButtonType, ButtonType.CANCEL);
+            CheckoutController controller = loader.getController();
+            controller.setTotalAmount(ShoppingCart.getInstance().getTotal());
 
-        javafx.scene.layout.GridPane grid = new javafx.scene.layout.GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new javafx.geometry.Insets(20, 150, 10, 10));
+            Stage stage = new Stage();
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.setTitle("Finaliser Commande - Fintech BTC");
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.showAndWait();
 
-        TextField addressField = new TextField();
-        addressField.setPromptText("Adresse de livraison");
-        TextField phoneField = new TextField();
-        phoneField.setPromptText("Numéro de téléphone");
-
-        grid.add(new Label("Adresse:"), 0, 0);
-        grid.add(addressField, 1, 0);
-        grid.add(new Label("Téléphone:"), 0, 1);
-        grid.add(phoneField, 1, 1);
-        grid.add(new Label("Paiement:"), 0, 2);
-        grid.add(new Label("CRYPTO (Automatique)"), 1, 2);
-
-        dialog.getDialogPane().setContent(grid);
-
-        // Convert the result to address/phone pair when the confirm button is clicked.
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == confirmButtonType) {
-                return new javafx.util.Pair<>(addressField.getText(), phoneField.getText());
-            }
-            return null;
-        });
-
-        Optional<javafx.util.Pair<String, String>> result = dialog.showAndWait();
-
-        result.ifPresent(details -> {
-            String address = details.getKey();
-            String phone = details.getValue();
-
-            if (address.isEmpty() || phone.isEmpty()) {
-                Notifications.create().title("Erreur").text("Veuillez remplir tous les champs").showError();
+            if (!controller.isConfirmed()) {
                 return;
             }
 
-            try {
-                // 1. Stripe Payment
-                String checkoutUrl = stripeService.createCheckoutSession(ShoppingCart.getInstance().getItems());
-                if (checkoutUrl != null) {
-                    java.awt.Desktop.getDesktop().browse(new java.net.URI(checkoutUrl));
-                }
+            String address = controller.getAddress();
+            String phone = controller.getPhone();
 
-                // 2. Validate stock and decrement
-                for (OrderItem item : ShoppingCart.getInstance().getItems()) {
-                    productService.decrementStock(item.getProduct().getId(), item.getQuantity());
-                }
+            // 1. BTC mock Validation
+            Notifications.create()
+                    .title("Paiement BTC")
+                    .text("Paiement de " + ShoppingCart.getInstance().getTotal() + " BTC validé sur la blockchain.")
+                    .showInformation();
 
-                // 3. Create the Order object
-                Order order = new Order();
-                order.setUserId(2); // Static user ID for now
-                order.setOrderDate(LocalDateTime.now());
-                order.setTotalAmount(ShoppingCart.getInstance().getTotal());
-                order.setStatus(OrderStatus.PAID);
-                order.setShippingAddress(address);
-                order.setPaymentMethod("STRIPE");
-                order.setPhoneNumber(phone);
-
-                // 4. Save Order to database
-                orderService.insertOne(order);
-
-                // 5. Save each OrderItem to database
-                List<OrderItem> currentItems = new java.util.ArrayList<>(ShoppingCart.getInstance().getItems());
-                for (OrderItem item : currentItems) {
-                    item.setOrder(order);
-                    orderItemService.insertOne(item);
-                }
-
-                // 6. Generate PDF Receipt
-                String uploadsDir = System.getProperty("user.dir") + "/uploads/receipts";
-                java.io.File dir = new java.io.File(uploadsDir);
-                if (!dir.exists())
-                    dir.mkdirs();
-
-                String filePath = uploadsDir + "/receipt_order_" + order.getId() + ".pdf";
-                pdfService.generateReceipt(order, currentItems, filePath);
-
-                Notifications.create()
-                        .title("Succès")
-                        .text("Commande payée via Stripe ! Reçu généré : " + filePath)
-                        .showConfirm();
-
-                ShoppingCart.getInstance().clear();
-                updateTable();
-
-            } catch (Exception e) {
-                Notifications.create().title("Erreur").text("Erreur lors de la commande : " + e.getMessage())
-                        .showError();
-                e.printStackTrace();
+            // 2. Validate stock and decrement
+            for (OrderItem item : ShoppingCart.getInstance().getItems()) {
+                productService.decrementStock(item.getProduct().getId(), item.getQuantity());
             }
-        });
+
+            // 3. Create the Order object
+            Order order = new Order();
+            order.setUserId(2); // Static user ID for now
+            order.setOrderDate(LocalDateTime.now());
+            order.setTotalAmount(ShoppingCart.getInstance().getTotal());
+            order.setStatus(OrderStatus.PAID);
+            order.setShippingAddress(address);
+            order.setPaymentMethod("BTC");
+            order.setPhoneNumber(phone);
+
+            // 4. Save Order to database
+            orderService.insertOne(order);
+
+            // 5. Save each OrderItem to database
+            List<OrderItem> currentItems = new java.util.ArrayList<>(ShoppingCart.getInstance().getItems());
+            for (OrderItem item : currentItems) {
+                item.setOrder(order);
+                orderItemService.insertOne(item);
+            }
+
+            // 6. Generate PDF Receipt
+            String uploadsDir = System.getProperty("user.dir") + "/uploads/receipts";
+            java.io.File dir = new java.io.File(uploadsDir);
+            if (!dir.exists())
+                dir.mkdirs();
+
+            String filePath = uploadsDir + "/receipt_order_" + order.getId() + ".pdf";
+            pdfService.generateReceipt(order, currentItems, filePath);
+
+            // 7. Show Success Popup with QR Code
+            String qrContent = "Order ID: " + order.getId() + "\nTotal: " + order.getTotalAmount()
+                    + " BTC\nStatus: PAID";
+            byte[] qrImageData = pdfService.generateQRCodeImage(qrContent);
+            javafx.scene.image.Image qrFxImage = new javafx.scene.image.Image(
+                    new java.io.ByteArrayInputStream(qrImageData));
+            javafx.scene.image.ImageView qrView = new javafx.scene.image.ImageView(qrFxImage);
+            qrView.setFitWidth(200);
+            qrView.setFitHeight(200);
+
+            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+            successAlert.setTitle("Commande Réussie - Fintech BTC");
+            successAlert.setHeaderText("Votre paiement BTC a été confirmé !");
+
+            javafx.scene.layout.VBox alertContent = new javafx.scene.layout.VBox(10);
+            alertContent.setAlignment(javafx.geometry.Pos.CENTER);
+            alertContent.getChildren().addAll(
+                    new Label("Montant Total : " + order.getTotalAmount() + " BTC"),
+                    new Label("Scannez ce QR Code pour voir les détails :"),
+                    qrView,
+                    new Label("Le reçu PDF va s'ouvrir automatiquement."));
+
+            successAlert.getDialogPane().setContent(alertContent);
+            successAlert.show();
+
+            // 8. Open PDF automatically
+            try {
+                java.io.File pdfFile = new java.io.File(filePath);
+                if (java.awt.Desktop.isDesktopSupported()) {
+                    java.awt.Desktop.getDesktop().open(pdfFile);
+                }
+            } catch (Exception ex) {
+                System.err.println("Impossible d'ouvrir le PDF : " + ex.getMessage());
+            }
+
+            // Send Email Notification
+            String orderDetails = ShoppingCart.getInstance().getItems().stream()
+                    .map(item -> "- " + item.getProduct().getName() + " x" + item.getQuantity())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+
+            new Thread(() -> {
+                emailService.sendOrderConfirmation("Mohamedalaaeddine.Hedfi@esprit.tn", orderDetails, order.getTotalAmount());
+            }).start();
+
+            ShoppingCart.getInstance().clear();
+            updateTable();
+
+        } catch (Exception e) {
+            Notifications.create().title("Erreur").text("Erreur lors de la commande : " + e.getMessage())
+                    .showError();
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleAIRecommendations() {
+        aiRecommendationBox.getChildren().clear();
+        aiRecommendationBox.getChildren().add(new Label("L'IA analyse votre panier..."));
+
+        new Thread(() -> {
+            try {
+                List<Product> allProducts = productService.SelectAll();
+                List<Integer> recIdsInteger = geminiService
+                        .getRecommendedProductIds(ShoppingCart.getInstance().getItems(), allProducts);
+
+                // Convert Integer list to Long list for matching with Product IDs
+                List<Long> recIds = recIdsInteger.stream()
+                        .map(Integer::longValue)
+                        .collect(java.util.stream.Collectors.toList());
+
+                List<Product> recommendedProducts = allProducts.stream()
+                        .filter(p -> recIds.contains(p.getId()))
+                        .collect(java.util.stream.Collectors.toList());
+
+                Platform.runLater(() -> renderRecommendationCards(recommendedProducts));
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    aiRecommendationBox.getChildren().clear();
+                    aiRecommendationBox.getChildren().add(new Label("Erreur IA: " + e.getMessage()));
+                });
+            }
+        }).start();
+    }
+
+    private void renderRecommendationCards(List<Product> products) {
+        aiRecommendationBox.getChildren().clear();
+        if (products.isEmpty()) {
+            aiRecommendationBox.getChildren().add(new Label("Aucune recommandation pour le moment."));
+            return;
+        }
+
+        for (Product p : products) {
+            VBox card = new VBox(10);
+            card.getStyleClass().add("card");
+            card.setPrefWidth(180);
+            card.setAlignment(Pos.CENTER);
+            card.setStyle(
+                    "-fx-background-color: white; -fx-padding: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10;");
+
+            Label name = new Label(p.getName());
+            name.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
+            name.setWrapText(true);
+            name.setAlignment(Pos.CENTER);
+
+            Label price = new Label(p.getPrice() + " BTC");
+            price.setStyle("-fx-text-fill: -fx-primary-emerald; -fx-font-weight: bold;");
+
+            Button addBtn = new Button("Ajouter");
+            addBtn.getStyleClass().add("btn-primary");
+            addBtn.setStyle("-fx-font-size: 11;");
+            addBtn.setOnAction(e -> {
+                ShoppingCart.getInstance().addProduct(p, 1);
+                updateTable();
+                Notifications.create().title("Succès").text(p.getName() + " ajouté au panier").showInformation();
+            });
+
+            card.getChildren().addAll(name, price, addBtn);
+            aiRecommendationBox.getChildren().add(card);
+        }
     }
 }

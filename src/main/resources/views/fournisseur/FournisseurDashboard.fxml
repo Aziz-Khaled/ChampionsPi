@@ -22,7 +22,11 @@
                 </VBox>
 
                 <VBox spacing="5">
-                    <Label text="Description" styleClass="form-label"/>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Description" styleClass="form-label"/>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button text="Auto-correct (IA)" onAction="#handleAutoCorrect" styleClass="btn-secondary" style="-fx-font-size: 10; -fx-padding: 2 5;"/>
+                    </HBox>
                     <TextArea fx:id="descField" prefHeight="80" promptText="Détails du produit..."/>
                 </VBox>
 
@@ -39,12 +43,12 @@
 
                 <HBox spacing="10">
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Prix Normal (\$)" styleClass="form-label"/>
+                        <Label text="Prix Normal (BTC)" styleClass="form-label"/>
                         <TextField fx:id="priceField" promptText="0.00"/>
                         <Label fx:id="priceError" styleClass="error-label" visible="false"/>
                     </VBox>
                     <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Prix Promo (\$)" styleClass="form-label"/>
+                        <Label text="Prix Promo (BTC)" styleClass="form-label"/>
                         <TextField fx:id="discountPriceField" promptText="0.00"/>
                     </VBox>
                 </HBox>

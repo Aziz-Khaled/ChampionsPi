@@ -42,28 +42,32 @@ public class PdfService {
         for (OrderItem item : items) {
             table.addCell(item.getProduct().getName());
             table.addCell(String.valueOf(item.getQuantity()));
-            table.addCell("$" + item.getUnitPrice());
-            table.addCell("$" + item.getSubTotal());
+            table.addCell(item.getUnitPrice() + " BTC");
+            table.addCell(item.getSubTotal() + " BTC");
         }
         document.add(table);
 
         document.add(new Paragraph(" "));
-        document.add(new Paragraph("Total Payé: $" + order.getTotalAmount(), titleFont));
+        document.add(new Paragraph("Total Payé: " + order.getTotalAmount() + " BTC", titleFont));
         document.add(new Paragraph(" "));
 
         // QR Code
-        String qrContent = "Order ID: " + order.getId() + "\nTotal: $" + order.getTotalAmount() + "\nStatus: PAID";
-        QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 200, 200);
-
-        ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
-        MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
-        byte[] pngData = pngOutputStream.toByteArray();
+        String qrContent = "Order ID: " + order.getId() + "\nTotal: " + order.getTotalAmount() + " BTC\nStatus: PAID";
+        byte[] pngData = generateQRCodeImage(qrContent);
 
         Image qrImage = Image.getInstance(pngData);
         qrImage.setAlignment(Element.ALIGN_CENTER);
         document.add(qrImage);
 
         document.close();
+    }
+
+    public byte[] generateQRCodeImage(String content) throws Exception {
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, 200, 200);
+
+        ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
+        MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+        return pngOutputStream.toByteArray();
     }
 }

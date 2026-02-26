@@ -9,6 +9,8 @@ import tn.esprit.Champions.models.Product;
 import tn.esprit.Champions.models.ProductCategory;
 import tn.esprit.Champions.models.ProductStatus;
 import tn.esprit.Champions.services.ProductService;
+import tn.esprit.Champions.services.GeminiService;
+import javafx.application.Platform;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +63,7 @@ public class FournisseurDashboardController {
     private TextField adminSearchField;
 
     private final ProductService productService = new ProductService();
+    private final GeminiService geminiService = new GeminiService();
     private List<Product> allProducts;
     private String selectedImagePath = "";
     private File selectedFile = null;
@@ -211,6 +214,32 @@ public class FournisseurDashboardController {
                 Notifications.create().title("Erreur").text("Impossible de supprimer le produit.").showError();
             }
         }
+    }
+
+    @FXML
+    private void handleAutoCorrect() {
+        String currentDesc = descField.getText();
+        if (currentDesc == null || currentDesc.trim().isEmpty()) {
+            Notifications.create().title("Attention").text("La description est vide !").showWarning();
+            return;
+        }
+
+        Notifications.create().title("IA en cours").text("Correction de la description...").showInformation();
+
+        new Thread(() -> {
+            try {
+                String corrected = geminiService.correctDescription(currentDesc);
+                Platform.runLater(() -> {
+                    descField.setText(corrected);
+                    Notifications.create().title("IA Terminée").text("Description corrigée !").showInformation();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    Notifications.create().title("Erreur IA").text("Impossible de corriger la description.")
+                            .showError();
+                });
+            }
+        }).start();
     }
 
     @FXML

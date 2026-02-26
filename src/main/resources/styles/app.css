@@ -42,12 +42,12 @@
 .card {
     -fx-background-color: white;
     -fx-background-radius: 15;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 10, 0, 0, 5);
     -fx-padding: 15;
 }
 
 .card:hover {
-    -fx-effect: dropshadow(three-pass-box, rgba(16,185,129,0.1), 15, 0, 0, 8);
+    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.1), 15, 0, 0, 8);
 }
 
 .card-title {
@@ -91,7 +91,8 @@
     -fx-font-weight: bold;
 }
 
-.text-field, .text-area {
+.text-field,
+.text-area {
     -fx-background-color: white;
     -fx-border-color: #E2E8F0;
     -fx-border-radius: 8;
@@ -99,7 +100,8 @@
     -fx-padding: 8;
 }
 
-.text-field:focused, .text-area:focused {
+.text-field:focused,
+.text-area:focused {
     -fx-border-color: -fx-primary-emerald;
 }
 
@@ -142,4 +144,38 @@
     -fx-text-fill: -fx-accent-orange;
     -fx-font-weight: bold;
     -fx-font-size: 13px;
+}
+
+/* Premium Modal Styles */
+.premium-modal {
+    -fx-background-color: -fx-bg-light;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+}
+
+.modal-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-dark;
+}
+
+.modal-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: -fx-primary-emerald;
+    -fx-font-weight: 500;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-dark;
+    -fx-padding: 0 0 5 0;
+}
+
+.checkout-summary {
+    -fx-background-color: white;
+    -fx-border-color: -fx-primary-emerald;
+    -fx-border-width: 1.5;
 }
