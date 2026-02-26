@@ -3,13 +3,17 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.*;
 
@@ -209,9 +213,27 @@ public class admin_wallet_controller {
     @FXML
     private void handleSignOut() {
         try {
-            // Assure-toi que le chemin vers Login.fxml est correct
-            Parent root = FXMLLoader.load(getClass().getResource("/tn/esprit/Champions/gui/Login.fxml"));
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            Parent root = loader.load();
+
+
             btnSignOut.getScene().setRoot(root);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    @FXML
+    private void goToCurrencyPage(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashbordAdminCurrency.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
