@@ -20,7 +20,6 @@ public class BotController {
     @FXML private ListView<String> listLogs;
     @FXML private Label lblBotStatus;
 
-    // Services
     private final TradeService tradeService = new TradeService();
     private final MarketApiService marketApi = new MarketApiService();
     private final TransactionService transService = new TransactionService();
@@ -29,7 +28,6 @@ public class BotController {
 
     private Timeline botTimeline;
 
-    // Configuration des IDs (A vérifier selon ta DB)
     private final int USER_WALLET_ID = 3;
     private final int MARKET_WALLET_ID = 4;
     private final int USDT_ID = 1;
@@ -40,13 +38,10 @@ public class BotController {
         startAutomationEngine();
     }
 
-    /**
-     * Boucle principale de surveillance (Polling toutes les 5 secondes)
-     */
     private void startAutomationEngine() {
         botTimeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
             try {
-                // 1. On récupère les ordres LIMIT en attente (PENDING)
+                List<Asset> allAssets = assetService.SelectAll();
                 List<Trade> pendingTrades = tradeService.SelectAll().stream()
                         .filter(t -> t.getStatus() == Status.PENDING && t.getOrderMode() == OrderMode.LIMIT)
                         .toList();
@@ -58,77 +53,54 @@ public class BotController {
 
                 lblBotStatus.setText("Statut : Surveillance de " + pendingTrades.size() + " ordres...");
 
-                // 2. Pour chaque ordre, on vérifie le prix réel sur Binance
                 for (Trade trade : pendingTrades) {
-                    processTradeAnalysis(trade);
+                    Asset asset = allAssets.stream()
+                            .filter(a -> a.getId() == trade.getAsset_id())
+                            .findFirst().orElse(null);
+
+                    if (asset != null) {
+                        double currentPrice = marketApi.fetchPrice(asset.getSymbol());
+                        if (currentPrice > 0) checkConditions(trade, currentPrice, asset.getSymbol());
+                    }
                 }
-
-            } catch (SQLException e) {
-                updateLogs("❌ Erreur BDD : " + e.getMessage());
-            }
+            } catch (SQLException e) { updateLogs("❌ Erreur : " + e.getMessage()); }
         }));
-
         botTimeline.setCycleCount(Animation.INDEFINITE);
         botTimeline.play();
     }
 
-    /**
-     * Analyse un trade spécifique en fonction de son actif réel
-     */
-    private void processTradeAnalysis(Trade trade) throws SQLException {
-        // Solution pour l'absence de findById : On cherche dans la liste complète
-        Asset asset = assetService.SelectAll().stream()
-                .filter(a -> a.getId() == trade.getAsset_id())
-                .findFirst()
-                .orElse(null);
+    private void checkConditions(Trade trade, double marketPrice, String symbol) throws SQLException {
+        boolean trigger = false;
+        // Condition Classique (Achat si prix baisse, Vente si prix monte)
+        if (trade.getTradeType() == TradeType.BUY && marketPrice <= trade.getPrice()) trigger = true;
+        else if (trade.getTradeType() == TradeType.SELL && marketPrice >= trade.getPrice()) trigger = true;
 
-        if (asset == null) {
-            updateLogs("⚠️ Actif #" + trade.getAsset_id() + " non trouvé.");
-            return;
-        }
-
-        String symbol = asset.getSymbol(); // Ex: "ETH", "BTC", "SOL"
-        double currentPrice = marketApi.fetchPrice(symbol); // Récupère le prix sur Binance pour ce symbole
-
-        if (currentPrice <= 0) return;
-
-        boolean shouldExecute = false;
-
-        // Logique de déclenchement
-        if (trade.getTradeType() == TradeType.BUY && currentPrice <= trade.getPrice()) {
-            shouldExecute = true;
-        } else if (trade.getTradeType() == TradeType.SELL && currentPrice >= trade.getPrice()) {
-            shouldExecute = true;
-        }
-
-        if (shouldExecute) {
-            executeBotOrder(trade, currentPrice, symbol);
-        }
+        if (trigger) executeBotOrder(trade, marketPrice, symbol);
     }
 
-    /**
-     * Exécute l'ordre financièrement et met à jour les données
-     */
     private void executeBotOrder(Trade trade, double executionPrice, String symbol) {
         try {
             double totalAmount = trade.getQuantity() * executionPrice;
 
-            // 1. Mise à jour du Wallet (Logique métier de ton service)
+            // 1. Mise à jour Wallet avec prix RÉEL du marché
             wcService.updateBalanceAfterTrade(USER_WALLET_ID, USDT_ID, totalAmount, trade.getTradeType());
 
-            // 2. Mise à jour du statut de l'ordre
+            // 2. MISE À JOUR PROFESSIONNELLE : On remplace le prix cible par le prix RÉEL d'exécution
+            double oldLimitPrice = trade.getPrice();
+            trade.setPrice(executionPrice);
             trade.setStatus(Status.COMPLETED);
             trade.setExecutedAt(LocalDateTime.now());
+
+            // Sauvegarde en BDD (Écrase l'ancien prix par le prix réel)
             tradeService.updateOne(trade);
 
-            // 3. Enregistrement de la transaction financière
+            // 3. Enregistrement transaction
             saveTransaction(trade, totalAmount);
 
-            updateLogs("✅ EXÉCUTÉ : " + trade.getTradeType() + " " + symbol + " à " + String.format("%.2f", executionPrice));
+            updateLogs(String.format("✅ EXÉCUTÉ : %s %s | Cible: %.2f -> Réel: %.2f",
+                    trade.getTradeType(), symbol, oldLimitPrice, executionPrice));
 
-        } catch (Exception e) {
-            updateLogs("⚠️ Échec (" + symbol + ") : " + e.getMessage());
-        }
+        } catch (Exception e) { updateLogs("⚠️ Échec (" + symbol + ") : " + e.getMessage()); }
     }
 
     private void saveTransaction(Trade trade, double amount) throws SQLException {
@@ -148,8 +120,7 @@ public class BotController {
         Platform.runLater(() -> listLogs.getItems().add(0, "[" + time + "] " + message));
     }
 
-    @FXML
-    private void handleStop() {
+    @FXML private void handleStop() {
         if (botTimeline != null) {
             botTimeline.stop();
             lblBotStatus.setText("Statut : Arrêté");

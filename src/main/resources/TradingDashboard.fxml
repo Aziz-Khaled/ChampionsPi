@@ -111,7 +111,7 @@
 
                         <VBox fx:id="paneHistory" spacing="15" style="-fx-background-color: #0b0e11; -fx-padding: 25;" visible="false">
                             <children>
-                                <Label style="-fx-text-fill: white; -fx-font-size: 22; -fx-font-weight: bold;" text="TRANSACTION HISTORY" />
+                                <Label style="-fx-text-fill: white; -fx-font-size: 22; -fx-font-weight: bold;" text="TRADE HISTORY" />
                                 <TableView fx:id="tableHistory" VBox.vgrow="ALWAYS">
                                     <columns>
                                         <TableColumn fx:id="colHistSymbol" text="Asset" />
