@@ -38,7 +38,7 @@
 
                 <HBox spacing="20.0">
                     <Button styleClass="btn-view-pdf" text="Télécharger la brochure" style="-fx-padding: 10 20;" />
-                    <Button style="-fx-background-color: transparent; -fx-text-fill: #6366f1; -fx-font-weight: bold;" text="Poser une question" />
+                    <Button onAction="#handleOpenChat" style="-fx-background-color: transparent; -fx-text-fill: #6366f1; -fx-font-weight: bold;" text="Poser une question" />
                 </HBox>
             </VBox>
 

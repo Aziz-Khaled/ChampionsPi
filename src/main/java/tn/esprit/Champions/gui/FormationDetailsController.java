@@ -198,6 +198,52 @@ public class FormationDetailsController {
             showStyledAlert(Alert.AlertType.ERROR, "Erreur Navigation", "Impossible de charger le dashboard.");
         }
     }
+    @FXML
+    private void handleOpenChat(ActionEvent event) {
+        // 1. Créer une fenêtre de saisie
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Champions AI Assistant");
+        dialog.setHeaderText("Posez votre question sur : " + selectedFormation.getTitre());
+        dialog.setContentText("Votre message :");
+
+        // 2. Récupérer la question et appeler l'IA
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent() && !result.get().trim().isEmpty()) {
+
+            // On affiche une alerte de chargement
+            Alert loadingAlert = new Alert(Alert.AlertType.INFORMATION);
+            loadingAlert.setTitle("IA en réflexion");
+            loadingAlert.setHeaderText(null);
+            loadingAlert.setContentText("L'IA prépare votre réponse... Veuillez patienter.");
+            loadingAlert.show();
+
+            Task<String> task = new Task<>() {
+                @Override
+                protected String call() throws Exception {
+                    // Appel au service OpenAI
+                    return ChatbotService.askQuestion(result.get(), selectedFormation.getTitre());
+                }
+            };
+
+            task.setOnSucceeded(e -> {
+                loadingAlert.close();
+                // Affichage de la réponse finale
+                Alert responseAlert = new Alert(Alert.AlertType.INFORMATION);
+                responseAlert.setTitle("Réponse Champions AI");
+                responseAlert.setHeaderText("Voici la réponse pour la formation " + selectedFormation.getTitre());
+                responseAlert.setContentText(task.getValue());
+                responseAlert.getDialogPane().setMinWidth(500);
+                responseAlert.showAndWait();
+            });
+
+            task.setOnFailed(e -> {
+                loadingAlert.close();
+                showStyledAlert(Alert.AlertType.ERROR, "Erreur AI", "Impossible de contacter l'IA. Vérifiez votre clé API.");
+            });
+
+            new Thread(task).start();
+        }
+    }
 
     private void showStyledAlert(Alert.AlertType type, String header, String content) {
         Alert alert = new Alert(type);
