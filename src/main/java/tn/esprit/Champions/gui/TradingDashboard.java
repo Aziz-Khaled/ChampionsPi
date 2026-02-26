@@ -48,14 +48,12 @@ public class TradingDashboard {
     @FXML private WebView chartWebView;
     @FXML private HBox tickerContainer;
 
-    // Services
     private final TradeService tradeService = new TradeService();
     private final MarketApiService marketApi = new MarketApiService();
     private final wallet_currencyService wcService = new wallet_currencyService();
     private final AssetService assetService = new AssetService();
     private final NewsService newsService = new NewsService();
 
-    // Cache et Session
     private final Map<String, Image> logoCache = new HashMap<>();
     private final Map<String, List<Label>> tickerPriceLabels = new HashMap<>();
     private Map<Integer, String> assetNamesCache;
@@ -71,11 +69,10 @@ public class TradingDashboard {
         setupOrderInputs();
         setupTickerLoop();
 
-        // Listener de sélection
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
                 selectedAsset = newVal;
-                initialEntryPrice = newVal.getCurrentPrice();
+                initialEntryPrice = newVal.getCurrentPrice() != null ? newVal.getCurrentPrice() : 0.0;
                 lblSelected.setText(newVal.getSymbol().toUpperCase() + " / USDT");
                 updateTradingView(newVal.getSymbol());
                 updateNews(newVal.getSymbol());
@@ -84,7 +81,6 @@ public class TradingDashboard {
             }
         });
 
-        // Listeners pour calcul auto
         txtQty.textProperty().addListener((obs, old, newVal) -> calculateTotal());
         txtTargetPrice.textProperty().addListener((obs, old, newVal) -> calculateTotal());
         comboOrderMode.valueProperty().addListener((obs, old, newVal) -> calculateTotal());
@@ -94,7 +90,7 @@ public class TradingDashboard {
     }
 
     private void setupTables() {
-        // --- COLONNE SYMBOLE + LOGO ---
+        // --- COLONNE SYMBOLE + LOGO (AVEC FALLBACK) ---
         colSymbol.setCellFactory(column -> new TableCell<>() {
             private final ImageView img = new ImageView();
             private final Label lbl = new Label();
@@ -104,36 +100,59 @@ public class TradingDashboard {
                 img.setFitHeight(20); img.setFitWidth(20);
                 img.setPreserveRatio(true);
             }
+
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setGraphic(null); }
-                else {
+                if (empty || item == null) {
+                    setGraphic(null);
+                } else {
                     lbl.setText(item.toUpperCase());
                     lbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+
                     String sym = item.toLowerCase();
+
                     if (!logoCache.containsKey(sym)) {
                         String url = "https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/" + sym + ".png";
-                        logoCache.put(sym, new Image(url, 20, 20, true, true, true));
+
+                        // On tente de charger l'image
+                        Image icon = new Image(url, 20, 20, true, true, true);
+
+                        // Si une erreur survient (404), on met une image vide (null) dans le cache
+                        icon.errorProperty().addListener((obs, oldV, hasError) -> {
+                            if (hasError) {
+                                logoCache.put(sym, null);
+                                Platform.runLater(() -> img.setImage(null));
+                            }
+                        });
+
+                        logoCache.put(sym, icon);
                     }
+
+                    // On affiche soit l'image, soit rien du tout
                     img.setImage(logoCache.get(sym));
                     setGraphic(box);
                 }
             }
         });
 
-        // --- COLONNE PRIX (TOUT EN BLANC + PRECISION) ---
+        // --- COLONNE PRIX (LOGIQUE GÉNÉRIQUE BINANCE) ---
         colPrice.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Double price, boolean empty) {
                 super.updateItem(price, empty);
-                if (empty || price == null) { setText(null); }
-                else {
-                    // Gestion de la précision pour XRP, ESP et autres petits prix
-                    if (price < 1.0) setText(String.format("%.5f", price));
-                    else setText(String.format("%.2f", price));
+                if (empty || price == null) {
+                    setText(null); setGraphic(null);
+                } else if (price == 0) {
+                    setText("Loading...");
+                    setStyle("-fx-text-fill: #555555; -fx-alignment: CENTER-RIGHT;");
+                } else {
+                    // Règle de précision automatique
+                    if (price < 0.001) setText(String.format("%.6f", price));      // ZAMA, ESP
+                    else if (price < 1.0) setText(String.format("%.4f", price));   // XRP, ADA
+                    else if (price < 100.0) setText(String.format("%.3f", price)); // SOL, DOT
+                    else setText(String.format("%.2f", price));                    // BTC, ETH
 
-                    // Style forcé en BLANC
                     setStyle("-fx-text-fill: white; -fx-alignment: CENTER-RIGHT; -fx-font-family: 'Monospaced'; -fx-font-weight: bold;");
                 }
             }
@@ -142,43 +161,55 @@ public class TradingDashboard {
         colSymbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
         colPrice.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
 
-        // Configuration Historique
         colHistSymbol.setCellValueFactory(d -> new SimpleStringProperty(assetNamesCache.getOrDefault(d.getValue().getAsset_id(), "Unknown")));
         colHistQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         colHistPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
         colHistType.setCellValueFactory(new PropertyValueFactory<>("tradeType"));
         colHistStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        loadInitialAssets();
+    }
+
+    private void loadInitialAssets() {
         try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) { e.printStackTrace(); }
     }
 
+    public void addNewAssetManually(String symbol) {
+        Asset newAsset = new Asset();
+        newAsset.setSymbol(symbol.toUpperCase());
+        newAsset.setCurrentPrice(0.0);
+        tableAssets.getItems().add(newAsset);
+        startPriceStreamForAsset(newAsset);
+    }
+
     private void startGlobalPriceUpdates() {
-        // Regroupement des symboles pour éviter les erreurs de connexion WebSocket (Connection Reset)
         for (Asset asset : tableAssets.getItems()) {
-            String symbol = asset.getSymbol().toUpperCase();
-            if (!symbol.endsWith("USDT")) symbol += "USDT";
-
-            marketApi.startPriceStream(symbol, (Double livePrice) -> {
-                if (livePrice != null && livePrice > 0) {
-                    Platform.runLater(() -> {
-                        asset.setCurrentPrice(livePrice);
-                        tableAssets.refresh(); // Met à jour toute la table en blanc
-
-                        // Mise à jour du Ticker
-                        List<Label> labels = tickerPriceLabels.get(asset.getSymbol().toLowerCase());
-                        if (labels != null) {
-                            labels.forEach(l -> l.setText(livePrice < 1.0 ? String.format("%.5f", livePrice) : String.format("%.2f", livePrice)));
-                        }
-
-                        // Détails si l'actif est sélectionné
-                        if (selectedAsset != null && selectedAsset.getSymbol().equalsIgnoreCase(asset.getSymbol())) {
-                            updatePnL(livePrice);
-                            calculateTotal();
-                        }
-                    });
-                }
-            });
+            startPriceStreamForAsset(asset);
         }
+    }
+
+    private void startPriceStreamForAsset(Asset asset) {
+        String sym = asset.getSymbol().toUpperCase();
+        String apiSymbol = sym.endsWith("USDT") ? sym : sym + "USDT";
+
+        marketApi.startPriceStream(apiSymbol, (Double livePrice) -> {
+            if (livePrice != null && livePrice > 0) {
+                Platform.runLater(() -> {
+                    asset.setCurrentPrice(livePrice);
+                    tableAssets.refresh();
+
+                    List<Label> labels = tickerPriceLabels.get(asset.getSymbol().toLowerCase());
+                    if (labels != null) {
+                        labels.forEach(l -> l.setText(livePrice < 1.0 ? String.format("%.5f", livePrice) : String.format("%.2f", livePrice)));
+                    }
+
+                    if (selectedAsset != null && selectedAsset.getSymbol().equalsIgnoreCase(asset.getSymbol())) {
+                        updatePnL(livePrice);
+                        calculateTotal();
+                    }
+                });
+            }
+        });
     }
 
     private void updateNews(String symbol) {
@@ -190,7 +221,6 @@ public class TradingDashboard {
                     vboxNews.getChildren().clear();
                     news.forEach(n -> {
                         Label l = new Label("• " + n.getTitle());
-                        // Style propre pour la liste des news
                         l.setStyle("-fx-text-fill: #e1e1e1; -fx-padding: 10; -fx-font-size: 12; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
                         l.setWrapText(true);
                         vboxNews.getChildren().add(l);
@@ -208,7 +238,7 @@ public class TradingDashboard {
                 for (Asset a : assets) {
                     HBox item = new HBox(8); item.setAlignment(Pos.CENTER_LEFT);
                     Label sym = new Label(a.getSymbol().toUpperCase()); sym.setStyle("-fx-text-fill: #0ecb81; -fx-font-weight: bold;");
-                    Label prc = new Label(String.format("%.2f", a.getCurrentPrice())); prc.setStyle("-fx-text-fill: white;");
+                    Label prc = new Label("0.00"); prc.setStyle("-fx-text-fill: white;");
                     tickerPriceLabels.computeIfAbsent(a.getSymbol().toLowerCase(), k -> new ArrayList<>()).add(prc);
                     item.getChildren().addAll(sym, prc, new Label(" | "));
                     tickerContainer.getChildren().add(item);
@@ -226,9 +256,15 @@ public class TradingDashboard {
         if (selectedAsset == null) return;
         try {
             double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
-            double price = "LIMIT".equals(comboOrderMode.getValue()) ? Double.parseDouble(txtTargetPrice.getText().replace(",", ".")) : selectedAsset.getCurrentPrice();
+            Double currentAssetPrice = selectedAsset.getCurrentPrice();
+            double price = "LIMIT".equals(comboOrderMode.getValue())
+                    ? Double.parseDouble(txtTargetPrice.getText().replace(",", "."))
+                    : (currentAssetPrice != null ? currentAssetPrice : 0.0);
+
             lblTotal.setText(String.format("%.2f USDT", qty * price));
-        } catch (Exception e) { lblTotal.setText("0.00 USDT"); }
+        } catch (Exception e) {
+            lblTotal.setText("0.00 USDT");
+        }
     }
 
     private void updateBalances() {

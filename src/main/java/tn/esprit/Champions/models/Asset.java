@@ -33,6 +33,13 @@ public class Asset {
         this.updatedAt = updatedAt;
         this.userId = userId;
     }
+    public Asset(String symbol, Double currentPrice) {
+        this.symbol = symbol;
+        this.currentPrice = currentPrice;
+        // Optionnel : Initialiser les autres champs par défaut si nécessaire
+        this.name = symbol; // Par défaut le nom est le symbole
+        this.status = Status.ACTIVE; // Ou l'équivalent dans ton ENUM
+    }
 
     public int getId() {  // ← Change Asset en int
         return id;
