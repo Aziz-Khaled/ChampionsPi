@@ -19,8 +19,6 @@ public class OrderItemService implements CRUD<OrderItem> {
 
     @Override
     public void insertOne(OrderItem item) throws SQLException {
-
-        
         if (cnx == null)
             throw new SQLException("Connexion à la base de données non établie.");
         String query = "INSERT INTO order_item (order_id, product_id, quantity, unit_price, sub_total, discount_applied) "

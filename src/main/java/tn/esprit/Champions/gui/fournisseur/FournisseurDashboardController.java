@@ -120,6 +120,8 @@ public class FournisseurDashboardController {
 
     @FXML
     private void handleExportCSV() {
+
+        
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Exporter en CSV");
         fileChooser.setInitialFileName("produits_export.csv");
