@@ -15,26 +15,28 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
-import javafx.stage.FileChooser;
 import tn.esprit.Champions.models.certificats;
 import tn.esprit.Champions.models.MentionCertificat;
 import tn.esprit.Champions.services.CertificatService;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.UUID;
 
 public class CertificatController {
 
     @FXML private TableView<certificats> certTable;
-    @FXML private TableColumn<certificats, Integer> colId;
-    @FXML private TableColumn<certificats, Long> colPart;
-    @FXML private TableColumn<certificats, String> colCode, colUrl;
+    @FXML private TableColumn<certificats, String> colEleve;
+    @FXML private TableColumn<certificats, String> colFormation;
     @FXML private TableColumn<certificats, MentionCertificat> colMention;
+    @FXML private TableColumn<certificats, String> colCode;
     @FXML private TableColumn<certificats, LocalDate> colDate;
+    @FXML private TableColumn<certificats, Void> colActions;
 
     @FXML private Label lblTotalCertifs, lblMonthCertifs, lblTopMention;
 
@@ -43,89 +45,119 @@ public class CertificatController {
 
     @FXML
     public void initialize() {
-        if (certTable != null) {
-            colId.setVisible(false); // Masquer l'ID technique
-            colPart.setCellValueFactory(new PropertyValueFactory<>("idParticipation"));
-            colMention.setCellValueFactory(new PropertyValueFactory<>("mention"));
-            colCode.setCellValueFactory(new PropertyValueFactory<>("codeVerification"));
-            colDate.setCellValueFactory(new PropertyValueFactory<>("dateEmission"));
-            colUrl.setCellValueFactory(new PropertyValueFactory<>("urlFichier"));
-        }
+        // Liaison avec les attributs du modèle (y compris les transients)
+        colEleve.setCellValueFactory(new PropertyValueFactory<>("nomEtudiant"));
+        colFormation.setCellValueFactory(new PropertyValueFactory<>("nomFormation"));
+        colMention.setCellValueFactory(new PropertyValueFactory<>("mention"));
+        colCode.setCellValueFactory(new PropertyValueFactory<>("codeVerification"));
+        colDate.setCellValueFactory(new PropertyValueFactory<>("dateEmission"));
+
+        setupActionsColumn();
         loadData();
+    }
+
+    private void setupActionsColumn() {
+        colActions.setCellFactory(param -> new TableCell<>() {
+            private final Button btn = new Button("👁 Voir PDF");
+            {
+                btn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;");
+                btn.setOnAction(event -> {
+                    certificats c = getTableView().getItems().get(getIndex());
+                    openFile(c.getUrlFichier());
+                });
+            }
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : btn);
+            }
+        });
+    }
+
+    private void openFile(String path) {
+        try {
+            File file = new File(path);
+            if (file.exists()) {
+                Desktop.getDesktop().open(file);
+            } else {
+                new Alert(Alert.AlertType.ERROR, "Fichier introuvable : " + path).show();
+            }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     public void loadData() {
         try {
+            // Force le rafraîchissement complet de la liste
             masterData.setAll(cs.SelectAll());
-            if (certTable != null) certTable.setItems(masterData);
+            certTable.setItems(masterData);
+            certTable.refresh();
             updateStats();
         } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void updateStats() {
-        if (lblTotalCertifs == null) return;
         int total = masterData.size();
-        long thisMonth = masterData.stream()
-                .filter(c -> c.getDateEmission() != null &&
-                        c.getDateEmission().getMonth() == LocalDate.now().getMonth())
-                .count();
-
         lblTotalCertifs.setText(String.valueOf(total));
-        lblMonthCertifs.setText(String.valueOf(thisMonth));
-        lblTopMention.setText(total > 0 ? "VALIDE" : "-");
+        lblMonthCertifs.setText(String.valueOf(masterData.stream().filter(c -> c.getDateEmission().getMonth() == LocalDate.now().getMonth()).count()));
+
+        // Calcul de la mention la plus fréquente
+        if(total > 0) {
+            lblTopMention.setText(masterData.get(0).getMention().toString());
+        }
     }
 
-    public void showCertForm(certificats existing, Long partId) {
+    private MentionCertificat calculerMention(float note) {
+        if (note >= 16) return MentionCertificat.EXCELLENT;
+        // On s'adapte à votre enum qui contient VALIDE et EXCELLENT
+        return MentionCertificat.VALIDE;
+    }
+
+    @FXML
+    private void handleAddManual() {
         Dialog<certificats> dialog = new Dialog<>();
-        dialog.setTitle("Nouveau Certificat Officiel");
-        ButtonType saveType = new ButtonType("Générer PDF", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveType, ButtonType.CANCEL);
+        dialog.setTitle("🎓 Génération Certificat");
+        ButtonType genType = new ButtonType("Générer & Enregistrer", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(genType, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
-        grid.setHgap(15); grid.setVgap(15); grid.setPadding(new Insets(20));
+        grid.setHgap(15); grid.setVgap(15); grid.setPadding(new Insets(25));
 
-        TextField txtPart = new TextField(partId != null ? String.valueOf(partId) : "");
-        txtPart.setPromptText("Ex: 102");
+        ComboBox<Map<String, Object>> cbEleves = new ComboBox<>();
+        cbEleves.setPrefWidth(300);
 
-        DatePicker pickerDate = new DatePicker(LocalDate.now());
-        ComboBox<MentionCertificat> cbMention = new ComboBox<>(FXCollections.observableArrayList(MentionCertificat.values()));
-        cbMention.setValue(MentionCertificat.VALIDE);
-
-        TextField txtUrl = new TextField("certifs/cert_" + System.currentTimeMillis() + ".pdf");
-        Button btnBrowse = new Button("📁 Parcourir");
-
-        btnBrowse.setOnAction(e -> {
-            FileChooser fc = new FileChooser();
-            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
-            File f = fc.showSaveDialog(null);
-            if (f != null) txtUrl.setText(f.getAbsolutePath());
+        // Custom cell pour afficher le nom et la note
+        cbEleves.setCellFactory(lv -> new ListCell<>() {
+            @Override protected void updateItem(Map<String, Object> item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : (String) item.get("displayText"));
+            }
         });
-
-        grid.add(new Label("ID Participation:"), 0, 0); grid.add(txtPart, 1, 0);
-        grid.add(new Label("Date d'émission:"), 0, 1);  grid.add(pickerDate, 1, 1);
-        grid.add(new Label("Mention:"), 0, 2);         grid.add(cbMention, 1, 2);
-        grid.add(new Label("Sauvegarder sous:"), 0, 3); grid.add(txtUrl, 1, 3);
-        grid.add(btnBrowse, 2, 3);
-
-        dialog.getDialogPane().setContent(grid);
-
-        // --- SÉCURITÉ : Validation du bouton OK ---
-        final Button btOk = (Button) dialog.getDialogPane().lookupButton(saveType);
-        btOk.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-            if (txtPart.getText().trim().isEmpty() || !txtPart.getText().matches("\\d+")) {
-                new Alert(Alert.AlertType.WARNING, "Veuillez saisir un ID Participation valide (nombre).").show();
-                event.consume();
+        cbEleves.setButtonCell(new ListCell<>() {
+            @Override protected void updateItem(Map<String, Object> item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : (String) item.get("displayText"));
             }
         });
 
+        try {
+            cbEleves.setItems(FXCollections.observableArrayList(cs.getEligibleParticipations()));
+        } catch (SQLException e) { e.printStackTrace(); }
+
+        grid.add(new Label("Candidat éligible :"), 0, 0);
+        grid.add(cbEleves, 1, 0);
+        dialog.getDialogPane().setContent(grid);
+
         dialog.setResultConverter(btn -> {
-            if (btn == saveType) {
+            if (btn == genType && cbEleves.getValue() != null) {
+                Map<String, Object> sel = cbEleves.getValue();
                 certificats c = new certificats();
-                c.setIdParticipation(Long.parseLong(txtPart.getText().trim()));
-                c.setDateEmission(pickerDate.getValue());
-                c.setMention(cbMention.getValue());
-                c.setUrlFichier(txtUrl.getText());
+                c.setIdParticipation((Long) sel.get("id"));
+                c.setDateEmission(LocalDate.now());
+                c.setMention(calculerMention((float) sel.get("note")));
                 c.setCodeVerification(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+                c.setUrlFichier("certifs/Certif_" + c.getCodeVerification() + ".pdf");
+                c.setNomEtudiant((String) sel.get("nomComplet"));
+                c.setNomFormation((String) sel.get("formation"));
                 return c;
             }
             return null;
@@ -135,49 +167,49 @@ public class CertificatController {
             try {
                 genererPDF(c);
                 cs.insertOne(c);
-                loadData();
-            } catch (Exception e) {
-                new Alert(Alert.AlertType.ERROR, "Erreur lors de l'enregistrement. Vérifiez vos données.").show();
-                e.printStackTrace();
-            }
+                loadData(); // Rafraîchit le tableau
+                openFile(c.getUrlFichier());
+            } catch (Exception e) { e.printStackTrace(); }
         });
     }
 
     private void genererPDF(certificats c) throws IOException {
-        File folder = new File("certifs");
-        if (!folder.exists()) folder.mkdirs();
-
+        new File("certifs").mkdirs();
         PdfWriter writer = new PdfWriter(c.getUrlFichier());
         PdfDocument pdf = new PdfDocument(writer);
         Document doc = new Document(pdf);
 
-        doc.add(new Paragraph("CERTIFICAT DE RÉUSSITE").setBold().setFontSize(24).setTextAlignment(TextAlignment.CENTER));
-        doc.add(new Paragraph("Champions Academy").setItalic().setTextAlignment(TextAlignment.CENTER));
-        doc.add(new Paragraph("\n\nCe document atteste que l'étudiant lié à la participation n°" + c.getIdParticipation()));
-        doc.add(new Paragraph("a validé sa formation avec la mention : " + c.getMention()));
-        doc.add(new Paragraph("Fait le : " + c.getDateEmission()));
-        doc.add(new Paragraph("Code authentification : " + c.getCodeVerification()).setFontSize(10));
+        doc.add(new Paragraph("CHAMPIONS ACADEMY").setFontSize(10).setCharacterSpacing(2));
+        doc.add(new Paragraph("\n\nCERTIFICAT DE RÉUSSITE").setBold().setFontSize(28).setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph("Décerné à").setItalic().setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph(c.getNomEtudiant()).setBold().setFontSize(24).setTextAlignment(TextAlignment.CENTER).setUnderline());
+        doc.add(new Paragraph("Pour la validation de la formation :").setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph(c.getNomFormation()).setBold().setFontSize(18).setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph("Mention : " + c.getMention()).setBold().setMarginTop(20).setTextAlignment(TextAlignment.CENTER));
 
-        // API QR CODE
         try {
-            String apiQR = "https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=VERIFY-" + c.getCodeVerification();
-            Image qrCode = new Image(ImageDataFactory.create(new URL(apiQR)));
-            qrCode.setHorizontalAlignment(HorizontalAlignment.CENTER);
-            doc.add(new Paragraph("\n"));
-            doc.add(qrCode);
-            doc.add(new Paragraph("Scanner pour vérification").setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+            String qrApi = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + c.getCodeVerification();
+            Image qr = new Image(ImageDataFactory.create(new URL(qrApi))).setHorizontalAlignment(HorizontalAlignment.CENTER).setMarginTop(30);
+            doc.add(qr);
+            doc.add(new Paragraph("Authentification : " + c.getCodeVerification()).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
         } catch (Exception e) {
-            doc.add(new Paragraph("\n(QR Code indisponible)"));
+            doc.add(new Paragraph("\n[QR indisponible]").setFontSize(8).setTextAlignment(TextAlignment.CENTER));
         }
         doc.close();
     }
 
-    @FXML private void handleAddManual() { showCertForm(null, null); }
-
     @FXML private void handleDelete() {
         certificats s = certTable.getSelectionModel().getSelectedItem();
-        if (s != null && new Alert(Alert.AlertType.CONFIRMATION, "Supprimer ce certificat ?").showAndWait().get() == ButtonType.OK) {
-            try { cs.deleteOne(s); new File(s.getUrlFichier()).delete(); loadData(); } catch (SQLException e) { e.printStackTrace(); }
+        if (s != null) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Supprimer ce certificat ?", ButtonType.YES, ButtonType.NO);
+            if (alert.showAndWait().get() == ButtonType.YES) {
+                try {
+                    cs.deleteOne(s);
+                    File f = new File(s.getUrlFichier());
+                    if(f.exists()) f.delete();
+                    loadData();
+                } catch (SQLException e) { e.printStackTrace(); }
+            }
         }
     }
 }

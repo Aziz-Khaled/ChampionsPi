@@ -9,19 +9,19 @@
             <HBox alignment="CENTER_LEFT" spacing="15">
                 <VBox>
                     <Label text="Registre des Participations" style="-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
-                    <Label text="Suivi des inscriptions et des notes des apprenants" style="-fx-text-fill: #95a5a6;"/>
+                    <Label text="Performance académique et suivi des inscriptions" style="-fx-text-fill: #95a5a6;"/>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
-                <TextField fx:id="searchField" promptText="🔍 Chercher par ID Utilisateur ou Statut..." style="-fx-pref-width: 300; -fx-background-radius: 25;"/>
-                <Button fx:id="btnAdd" text="+ Inscrire un élève" onAction="#handleAdding" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 12 25; -fx-cursor: hand;"/>
+                <TextField fx:id="searchField" promptText="🔍 Rechercher un nom..." style="-fx-pref-width: 300; -fx-background-radius: 25;"/>
+                <Button text="+ Inscrire un apprenant" onAction="#handleAdding" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-padding: 12 25; -fx-cursor: hand;"/>
             </HBox>
             <TableView fx:id="participationTable" VBox.vgrow="ALWAYS" style="-fx-background-radius: 10;">
                 <columns>
-                    <TableColumn fx:id="colFormation" text="Formation " prefWidth="150" />
-                    <TableColumn fx:id="colUtilisateur" text="Utilisateur " prefWidth="150" />
-                    <TableColumn fx:id="colDate" text="Date Inscription" prefWidth="180" />
+                    <TableColumn fx:id="colFormation" text="Formation" prefWidth="200" />
+                    <TableColumn fx:id="colUtilisateur" text="Apprenant" prefWidth="200" />
+                    <TableColumn fx:id="colDate" text="Date Inscription" prefWidth="150" />
                     <TableColumn fx:id="colStatut" text="Statut" prefWidth="120" />
-                    <TableColumn fx:id="colPresence" text="Présence" prefWidth="100" />
+                    <TableColumn fx:id="colPresence" text="Présence" prefWidth="120" />
                     <TableColumn fx:id="colNote" text="Note /20" prefWidth="100" />
                     <TableColumn fx:id="colActions" text="Actions" prefWidth="200" />
                 </columns>
