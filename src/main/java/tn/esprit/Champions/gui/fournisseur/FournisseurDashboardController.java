@@ -90,6 +90,8 @@ public class FournisseurDashboardController {
     }
 
     private void applyFilters() {
+
+        
         if (allProducts == null)
             return;
         String searchText = adminSearchField.getText().toLowerCase();
