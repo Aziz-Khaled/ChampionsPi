@@ -1,0 +1,28 @@
+====================================================
+           CONTRAT DE PRÊT BLOCKCHAIN (SMART)       
+====================================================
+
+DATE DE SIGNATURE : 25/02/2026 05:46:14
+TRANSACTION HASH  : 0xe2e0a946d2304c30b02f2a1346783e3c201
+
+--- PARTIES DU CONTRAT ---
+INVESTISSEUR : Investisseur_ID_1
+PROJET CIBLE : Eco-Village Solar Monitor
+
+--- CONDITIONS FINANCIÈRES ---
+MONTANT DU PRÊT  : 320.0 TND
+TAUX D'INTÉRÊT    : 3.6% (Fixe)
+DURÉE DU CRÉDIT   : 36 mois
+
+--- PLAN DE REMBOURSEMENT ---
+MENSUALITÉ ESTIMÉE : 9,21 TND
+TOTAL À REMBOURSER : 331,52 TND
+
+--- CLAUSES BLOCKCHAIN ---
+1. Ce contrat est immuable et enregistré sur le réseau.
+2. Les paiements seront déclenchés automatiquement via Smart Contract.
+3. En cas de retard, des pénalités réseau s'appliqueront.
+
+====================================================
+         SIGNATURE NUMÉRIQUE : VERIFIED             
+====================================================

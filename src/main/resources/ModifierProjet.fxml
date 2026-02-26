@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefWidth="550.0" spacing="0.0" style="-fx-background-color: white; -fx-background-radius: 20; -fx-border-radius: 20; -fx-border-color: #dcdde1; -fx-border-width: 1;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.ModifierProjetController">
+    <children>
+        <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #2c3e50; -fx-background-radius: 20 20 0 0;">
+            <padding><Insets left="30.0" /></padding>
+            <children>
+                <VBox alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Édition du Projet" textFill="WHITE">
+                            <font><Font name="System Bold" size="22.0" /></font>
+                        </Label>
+                        <Label text="Modifiez les informations ci-dessous" textFill="#bdc3c7">
+                            <font><Font size="13.0" /></font>
+                        </Label>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+
+        <VBox spacing="20.0">
+            <padding><Insets bottom="30.0" left="40.0" right="40.0" top="30.0" /></padding>
+            <children>
+                <GridPane hgap="20.0" vgap="15.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="120.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="280.0" />
+                    </columnConstraints>
+                    <children>
+                        <Label text="Titre du projet" textFill="#34495e" GridPane.rowIndex="0">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Label>
+                        <TextField fx:id="txtTitre" prefHeight="40.0" promptText="Ex: Financement Agricole" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8; -fx-background-radius: 8;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                        <Label text="Objectif (€)" textFill="#34495e" GridPane.rowIndex="1">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Label>
+                        <TextField fx:id="txtMontant" prefHeight="40.0" promptText="0.00" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8; -fx-background-radius: 8;" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                        <Label text="Description" textFill="#34495e" GridPane.rowIndex="2" GridPane.valignment="TOP">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                            <padding><Insets top="5.0" /></padding>
+                        </Label>
+                        <TextArea fx:id="txtDescription" prefHeight="120.0" promptText="Détails du projet..." style="-fx-control-inner-background: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8; -fx-background-radius: 8;" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                        <Label text="Statut actuel" textFill="#34495e" GridPane.rowIndex="3">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Label>
+                        <ComboBox fx:id="comboStatus" prefHeight="40.0" prefWidth="Infinity" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8; -fx-background-radius: 8;" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                    </children>
+                </GridPane>
+
+                <Separator opacity="0.4">
+                    <VBox.margin><Insets top="10.0" /></VBox.margin>
+                </Separator>
+
+                <HBox alignment="CENTER_RIGHT" spacing="15.0">
+                    <children>
+                        <Button onAction="#annuler" prefHeight="45.0" prefWidth="120.0" style="-fx-background-color: transparent; -fx-border-color: #95a5a6; -fx-border-radius: 10; -fx-text-fill: #7f8c8d; -fx-font-weight: bold; -fx-cursor: hand;" text="ANNULER" />
+                        <Button onAction="#enregistrer" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #27ae60; -fx-background-radius: 10; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-effect: dropshadow(three-pass-box, rgba(39, 174, 96, 0.3), 10, 0, 0, 5);" text="SAUVEGARDER" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</VBox>

@@ -7,4 +7,54 @@ public class Negociation {
     private double montant ;
     private double taux_propose ;
 
+    public Negociation() {
+    }
+
+    public Negociation(int credit_id, int id_negociation, int investor_id, double montant, double taux_propose) {
+        this.credit_id = credit_id;
+        this.id_negociation = id_negociation;
+        this.investor_id = investor_id;
+        this.montant = montant;
+        this.taux_propose = taux_propose;
+    }
+
+    public int getCredit_id() {
+        return credit_id;
+    }
+
+    public void setCredit_id(int credit_id) {
+        this.credit_id = credit_id;
+    }
+
+    public int getId_negociation() {
+        return id_negociation;
+    }
+
+    public void setId_negociation(int id_negociation) {
+        this.id_negociation = id_negociation;
+    }
+
+    public int getInvestor_id() {
+        return investor_id;
+    }
+
+    public void setInvestor_id(int investor_id) {
+        this.investor_id = investor_id;
+    }
+
+    public double getMontant() {
+        return montant;
+    }
+
+    public void setMontant(double montant) {
+        this.montant = montant;
+    }
+
+    public double getTaux_propose() {
+        return taux_propose;
+    }
+
+    public void setTaux_propose(double taux_propose) {
+        this.taux_propose = taux_propose;
+    }
 }

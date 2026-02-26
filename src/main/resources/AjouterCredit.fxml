@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefWidth="550.0" spacing="0.0" style="-fx-background-color: white; -fx-background-radius: 20; -fx-border-radius: 20; -fx-border-color: #dcdde1;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.AjouterCreditController">
+    <children>
+        <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #0984e3; -fx-background-radius: 20 20 0 0;">
+            <padding><Insets left="30.0" /></padding>
+            <children>
+                <VBox alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Nouvelle Demande de Crédit" textFill="WHITE">
+                            <font><Font name="System Bold" size="22.0" /></font>
+                        </Label>
+                        <Label text="Formulaire de demande de financement" textFill="#e3f2fd">
+                            <font><Font size="13.0" /></font>
+                        </Label>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+
+        <VBox spacing="20.0">
+            <padding><Insets bottom="30.0" left="40.0" right="40.0" top="30.0" /></padding>
+            <children>
+                <GridPane hgap="20.0" vgap="15.0">
+                    <columnConstraints>
+                        <ColumnConstraints prefWidth="150.0" />
+                        <ColumnConstraints prefWidth="310.0" />
+                    </columnConstraints>
+                    <children>
+                        <Label text="Projet concerné :" textFill="#2d3436" GridPane.rowIndex="0">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Label>
+                        <ComboBox fx:id="comboProjet" prefHeight="40.0" prefWidth="Infinity" promptText="Choisir un projet..." style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+                        <Label text="Montant &amp; Devise :" textFill="#2d3436" GridPane.rowIndex="1">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Label>
+                        <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <children>
+                                <TextField fx:id="txtMontant" prefHeight="40.0" promptText="0.00" HBox.hgrow="ALWAYS" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
+                                <ComboBox fx:id="comboDevise" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
+                            </children>
+                        </HBox>
+
+                        <Label text="Conditions (Taux/Durée) :" textFill="#2d3436" GridPane.rowIndex="2">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Label>
+                        <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                            <children>
+                                <TextField fx:id="txtTaux" prefHeight="40.0" promptText="Taux %" HBox.hgrow="ALWAYS" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
+                                <TextField fx:id="txtDuree" prefHeight="40.0" promptText="Mois" HBox.hgrow="ALWAYS" style="-fx-background-color: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" />
+                            </children>
+                        </HBox>
+
+                        <Label text="Motif du crédit :" textFill="#2d3436" GridPane.rowIndex="3" GridPane.valignment="TOP">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                            <padding><Insets top="5.0" /></padding>
+                        </Label>
+                        <TextArea fx:id="txtDescription" prefHeight="100.0" promptText="Expliquez votre besoin..." style="-fx-control-inner-background: #f5f6fa; -fx-border-color: #dcdde1; -fx-border-radius: 8;" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                    </children>
+                </GridPane>
+
+                <Separator opacity="0.4" />
+
+                <HBox alignment="CENTER_RIGHT" spacing="15.0">
+                    <children>
+                        <Button onAction="#annuler" prefHeight="40.0" prefWidth="100.0" style="-fx-background-color: transparent; -fx-text-fill: #b2bec3; -fx-font-weight: bold; -fx-cursor: hand;" text="ANNULER" />
+                        <Button onAction="#enregistrer" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="SOUMETTRE" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</VBox>
