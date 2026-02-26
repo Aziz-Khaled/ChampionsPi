@@ -19,8 +19,6 @@ public class ProductService implements CRUD<Product> {
 
     @Override
     public void insertOne(Product product) throws SQLException {
-
-        
         if (cnx == null)
             throw new SQLException("Connexion à la base de données non établie.");
         String query = "INSERT INTO product (name, description, price, discount_price, brand, avg_rating, image_url, stock, category, status, user_id, created_at, updated_at) "
