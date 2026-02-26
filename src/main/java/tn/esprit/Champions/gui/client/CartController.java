@@ -18,11 +18,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Pos;
 import tn.esprit.Champions.models.Product;
-import tn.esprit.Champions.services.GeminiService;
-import tn.esprit.Champions.services.ProductService;
-import tn.esprit.Champions.services.OrderService;
-import tn.esprit.Champions.services.OrderItemService;
-import tn.esprit.Champions.services.PdfService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -181,7 +176,7 @@ public class CartController {
             // 1. BTC mock Validation
             Notifications.create()
                     .title("Paiement BTC")
-                    .text("Paiement de " + ShoppingCart.getInstance().getTotal() + " BTC validé sur la blockchain.")
+                    .text("Paiement de " + ShoppingCart.getInstance().getTotal() + " BTC ")
                     .showInformation();
 
             // 2. Validate stock and decrement
@@ -259,7 +254,8 @@ public class CartController {
                     .collect(java.util.stream.Collectors.joining("\n"));
 
             new Thread(() -> {
-                emailService.sendOrderConfirmation("Mohamedalaaeddine.Hedfi@esprit.tn", orderDetails, order.getTotalAmount());
+                emailService.sendOrderConfirmation("Mohamedalaaeddine.Hedfi@esprit.tn", orderDetails,
+                        order.getTotalAmount());
             }).start();
 
             ShoppingCart.getInstance().clear();
@@ -274,19 +270,20 @@ public class CartController {
 
     @FXML
     private void handleAIRecommendations() {
+        if (ShoppingCart.getInstance().getItems().isEmpty()) {
+            Notifications.create().title("Panier vide")
+                    .text("Ajoutez des produits pour recevoir des recommandations IA.").showWarning();
+            return;
+        }
+
         aiRecommendationBox.getChildren().clear();
         aiRecommendationBox.getChildren().add(new Label("L'IA analyse votre panier..."));
 
         new Thread(() -> {
             try {
                 List<Product> allProducts = productService.SelectAll();
-                List<Integer> recIdsInteger = geminiService
-                        .getRecommendedProductIds(ShoppingCart.getInstance().getItems(), allProducts);
-
-                // Convert Integer list to Long list for matching with Product IDs
-                List<Long> recIds = recIdsInteger.stream()
-                        .map(Integer::longValue)
-                        .collect(java.util.stream.Collectors.toList());
+                List<Long> recIds = geminiService.getRecommendedProductIds(ShoppingCart.getInstance().getItems(),
+                        allProducts);
 
                 List<Product> recommendedProducts = allProducts.stream()
                         .filter(p -> recIds.contains(p.getId()))
@@ -296,7 +293,9 @@ public class CartController {
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     aiRecommendationBox.getChildren().clear();
-                    aiRecommendationBox.getChildren().add(new Label("Erreur IA: " + e.getMessage()));
+                    Label errorLabel = new Label("Erreur IA: " + e.getMessage());
+                    errorLabel.setStyle("-fx-text-fill: #EF4444;");
+                    aiRecommendationBox.getChildren().add(errorLabel);
                 });
             }
         }).start();
@@ -304,6 +303,8 @@ public class CartController {
 
     private void renderRecommendationCards(List<Product> products) {
         aiRecommendationBox.getChildren().clear();
+        aiRecommendationBox.getChildren().add(new Label("Recommandations pour vous :"));
+
         if (products.isEmpty()) {
             aiRecommendationBox.getChildren().add(new Label("Aucune recommandation pour le moment."));
             return;
@@ -312,29 +313,51 @@ public class CartController {
         for (Product p : products) {
             VBox card = new VBox(10);
             card.getStyleClass().add("card");
-            card.setPrefWidth(180);
+            card.setPrefWidth(200);
             card.setAlignment(Pos.CENTER);
             card.setStyle(
-                    "-fx-background-color: white; -fx-padding: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10;");
+                    "-fx-background-color: #f8fafc; " +
+                            "-fx-padding: 15; " +
+                            "-fx-border-color: #e2e8f0; " +
+                            "-fx-border-radius: 12; " +
+                            "-fx-background-radius: 12; " +
+                            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);");
+
+            // Product Image (if exists)
+            javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+            try {
+                if (p.getImageUrl() != null && !p.getImageUrl().isEmpty()) {
+                    String imgPath = p.getImageUrl();
+                    if (!imgPath.startsWith("http") && !imgPath.startsWith("file")) {
+                        imgPath = "file:" + System.getProperty("user.dir") + "/" + imgPath;
+                    }
+                    imgView.setImage(new javafx.scene.image.Image(imgPath, 100, 100, true, true));
+                }
+            } catch (Exception e) {
+                System.err.println("Error loading image for card: " + e.getMessage());
+            }
+            imgView.setFitWidth(100);
+            imgView.setFitHeight(100);
 
             Label name = new Label(p.getName());
-            name.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
+            name.setStyle("-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #1e293b;");
             name.setWrapText(true);
+            name.setMaxWidth(180);
             name.setAlignment(Pos.CENTER);
 
-            Label price = new Label(p.getPrice() + " BTC");
-            price.setStyle("-fx-text-fill: -fx-primary-emerald; -fx-font-weight: bold;");
+            Label price = new Label(String.format("%.8f BTC", p.getPrice()));
+            price.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold; -fx-font-size: 12;");
 
-            Button addBtn = new Button("Ajouter");
+            Button addBtn = new Button("Ajouter au panier");
             addBtn.getStyleClass().add("btn-primary");
-            addBtn.setStyle("-fx-font-size: 11;");
+            addBtn.setStyle("-fx-font-size: 11; -fx-cursor: hand;");
             addBtn.setOnAction(e -> {
                 ShoppingCart.getInstance().addProduct(p, 1);
                 updateTable();
                 Notifications.create().title("Succès").text(p.getName() + " ajouté au panier").showInformation();
             });
 
-            card.getChildren().addAll(name, price, addBtn);
+            card.getChildren().addAll(imgView, name, price, addBtn);
             aiRecommendationBox.getChildren().add(card);
         }
     }

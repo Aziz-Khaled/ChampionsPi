@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class GeminiService {
 
-    private static final String API_KEY = "xxxxxxx";
+    private static final String API_KEY = "AIzaSyB__wZb_rY5mG3IkpoRFExu-ayISOq0_EM";
     private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
             + API_KEY;
     private final Gson gson = new Gson();
@@ -73,7 +73,7 @@ public class GeminiService {
         return description; // Return original if error
     }
 
-    public List<Integer> getRecommendedProductIds(List<OrderItem> currentCart, List<Product> allProducts) {
+    public List<Long> getRecommendedProductIds(List<OrderItem> currentCart, List<Product> allProducts) {
         try {
             String cartContext = currentCart.stream()
                     .map(item -> item.getProduct().getName() + " (Cat: " + item.getProduct().getCategory() + ")")
@@ -121,27 +121,30 @@ public class GeminiService {
                         .get(0).getAsJsonObject()
                         .get("text").getAsString().trim();
 
-                // Clean potential markdown backticks from the response
-                if (resultText.startsWith("```json")) {
-                    resultText = resultText.substring(7);
+                // Improved cleaning: search for the first '[' and last ']' to extract the array
+                int start = resultText.indexOf("[");
+                int end = resultText.lastIndexOf("]");
+                if (start != -1 && end != -1 && end > start) {
+                    resultText = resultText.substring(start, end + 1);
                 }
-                if (resultText.startsWith("```")) {
-                    resultText = resultText.substring(3);
-                }
-                if (resultText.endsWith("```")) {
-                    resultText = resultText.substring(0, resultText.length() - 3);
-                }
-                resultText = resultText.trim();
 
-                return gson.fromJson(resultText, ArrayList.class);
+                List<Long> recommendedIds = new ArrayList<>();
+                try {
+                    JsonArray jsonArray = gson.fromJson(resultText, JsonArray.class);
+                    for (int i = 0; i < jsonArray.size(); i++) {
+                        recommendedIds.add(jsonArray.get(i).getAsLong());
+                    }
+                } catch (Exception e) {
+                    System.err.println("JSON Parsing Error: " + e.getMessage() + " for text: " + resultText);
+                }
+                return recommendedIds;
             } else {
-                System.err.println("Gemini API Error: " + conn.getResponseCode());
+                throw new RuntimeException("HTTP Status " + conn.getResponseCode());
             }
 
         } catch (Exception e) {
             System.err.println("Error calling Gemini API: " + e.getMessage());
-            e.printStackTrace();
+            throw new RuntimeException("Erreur API Gemini: " + e.getMessage());
         }
-        return new ArrayList<>();
     }
 }
