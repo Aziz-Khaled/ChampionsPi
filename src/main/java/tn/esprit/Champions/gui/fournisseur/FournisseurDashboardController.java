@@ -120,8 +120,6 @@ public class FournisseurDashboardController {
 
     @FXML
     private void handleExportCSV() {
-
-        
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Exporter en CSV");
         fileChooser.setInitialFileName("produits_export.csv");
@@ -155,6 +153,8 @@ public class FournisseurDashboardController {
 
     // Configurer la colonne des actions avec les boutons modifier et supprimer
     private void setupActionColumn() {
+
+        
         colAction.setCellFactory(param -> new TableCell<>() {
             private final Button editBtn = new Button("Modifier");
             private final Button deleteBtn = new Button("Supprimer");
