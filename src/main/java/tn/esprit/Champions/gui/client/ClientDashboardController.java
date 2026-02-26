@@ -100,6 +100,8 @@ public class ClientDashboardController {
 
     // Créer une carte d'affichage pour un produit donné
     private VBox createProductCard(Product product) {
+
+        
         VBox card = new VBox(8);
         card.getStyleClass().add("card");
         card.setPrefWidth(220);

@@ -63,8 +63,6 @@ public class PdfService {
     }
 
     public byte[] generateQRCodeImage(String content) throws Exception {
-
-        
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, 200, 200);
 
