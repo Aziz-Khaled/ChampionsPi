@@ -43,6 +43,13 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import tn.esprit.Champions.models.Conversion;
+import tn.esprit.Champions.services.ConversionService;
+
 
 
 
@@ -95,6 +102,17 @@ public class crud_wallet {
     @FXML private Label rib;
     @FXML
     private Label cardErrorLabel;
+    @FXML
+    private TextField convAmountField;
+
+    @FXML
+    private ComboBox<String> convFromBox;
+
+    @FXML
+    private ComboBox<String> convToBox;
+
+    @FXML
+    private TextField convResultField;
 
 
 
@@ -136,7 +154,7 @@ public class crud_wallet {
         walletCurrencyService = new wallet_currencyService();
         currencyService = new CurrencyService();
 
-
+        loadCurrencies();
         loadWallets();
 
 
@@ -1751,4 +1769,63 @@ public class crud_wallet {
             Platform.runLater(() -> showError("Erreur lors de la suppression de la carte : " + e.getMessage()));
         }
     }
+    private void loadCurrencies() {
+
+        try {
+
+            CurrencyService service = new CurrencyService();
+
+            List<currency> list = service.SelectAll();
+
+            ObservableList<String> currencyNames = FXCollections.observableArrayList();
+
+            for (currency c : list) {
+                currencyNames.add(c.getNom()); // on affiche le nom
+            }
+
+            convFromBox.setItems(currencyNames);
+            convToBox.setItems(currencyNames);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Impossible de charger les currencies.");
+        }
     }
+    @FXML
+    private void handleConvert(ActionEvent event) {
+
+        try {
+
+            if (convAmountField.getText().isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez entrer un montant.");
+                return;
+            }
+
+            double amountFrom = Double.parseDouble(convAmountField.getText());
+
+            if (convFromBox.getValue() == null || convToBox.getValue() == null) {
+                showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez sélectionner les monnaies.");
+                return;
+            }
+
+            String fromCurrency = convFromBox.getValue().toString();
+            String toCurrency = convToBox.getValue().toString();
+
+            ConversionService service = new ConversionService();
+
+            double rate = service.getExchangeRate(fromCurrency, toCurrency);
+
+            double amountTo = amountFrom * rate;
+
+            convResultField.setText(String.format("%.8f", amountTo));
+
+            showAlert(Alert.AlertType.INFORMATION, "Succès", "Conversion réussie.");
+
+        } catch (NumberFormatException e) {
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Montant invalide.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Problème API.");
+        }
+    }
+}

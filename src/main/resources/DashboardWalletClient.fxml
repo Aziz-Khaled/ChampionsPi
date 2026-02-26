@@ -24,7 +24,7 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
-<StackPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet">
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.crud_wallet">
 
     <BorderPane>
         <left>
@@ -63,144 +63,165 @@
                 </HBox>
 
                 <HBox prefHeight="617.0" prefWidth="1135.0" spacing="15.0" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
-                    <StackPane fx:id="flipContainer" maxWidth="350.0" prefHeight="620.0" prefWidth="350.0">
-                        <VBox fx:id="walletForm" prefHeight="605.0" prefWidth="320.0" spacing="10.0" style="-fx-padding: 20; -fx-background-color: white;" styleClass="card">
-                            <HBox alignment="CENTER_RIGHT">
-                                <Button onAction="#flipToTransaction" style="-fx-background-color: transparent; -fx-font-size:16;" text="➜" />
-                            </HBox>
-                            <Label alignment="CENTER" maxWidth="Infinity" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Form"><VBox.margin><Insets bottom="10.0" /></VBox.margin></Label>
-                            <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet"><padding><Insets left="10.0" /></padding><VBox.margin><Insets bottom="10.0" /></VBox.margin></Label>
-                            <GridPane hgap="10.0" vgap="12.0">
-                                <columnConstraints>
-                                    <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
-                                    <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
-                                </columnConstraints>
-                                <rowConstraints><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /></rowConstraints>
-                                <Label styleClass="label-header" text="Type" /><ComboBox fx:id="boxType" prefHeight="26.0" prefWidth="250.0" GridPane.columnIndex="1" />
-                                <Label styleClass="label-header" text="Status" GridPane.rowIndex="1" /><ComboBox fx:id="boxStatus" prefHeight="26.0" prefWidth="250.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                            </GridPane>
-                            <HBox alignment="CENTER" spacing="15.0" style="-fx-padding: 15 0 0 0;">
-                                <Button fx:id="add_wallet" onAction="#handleAddWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #1a5f7a; -fx-text-fill: white;" text="+"><font><Font name="System Bold" size="18.0" /></font></Button>
-                                <Button fx:id="modify_wallet" onAction="#handleModifyWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e2e8f0;" text="✏" />
-                                <Button fx:id="delete_wallet" onAction="#handleDeleteWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e74c3c; -fx-text-fill: white;" text="🗑" />
-                            </HBox>
-                            <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Currency"><padding><Insets left="10.0" /></padding><VBox.margin><Insets bottom="10.0" top="15.0" /></VBox.margin></Label>
-                            <GridPane hgap="10.0" vgap="12.0">
-                                <columnConstraints><ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" /><ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" /></columnConstraints>
-                                <rowConstraints><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /></rowConstraints>
-                                <Label styleClass="label-header" text="Wallet RIB" /><TextField fx:id="walletIdField" promptText="wallet RIB" GridPane.columnIndex="1" />
-                                <Label styleClass="label-header" text="Currency" GridPane.rowIndex="1" /><ComboBox fx:id="currencyComboBox" prefHeight="26.0" prefWidth="250.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                            </GridPane>
-                            <HBox alignment="CENTER" spacing="15.0" style="-fx-padding: 15 0 0 0;">
-                                <Button fx:id="add_wallet_currency" onAction="#handleAddWalletCurrency" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #1a5f7a; -fx-text-fill: white;" text="+"><font><Font name="System Bold" size="18.0" /></font></Button>
-                                <Button fx:id="modify_wallet_currency" onAction="#handleAddWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e2e8f0;" text="✏" />
-                                <Button fx:id="delete_wallet_currency" onAction="#handleDeleteWalletCurrency" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e74c3c; -fx-text-fill: white;" text="🗑" />
-                            </HBox>
-                        </VBox>
+                    <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="350.0" minWidth="350.0" prefWidth="350.0" style="-fx-background-color: transparent;" vbarPolicy="AS_NEEDED">
 
-                        <VBox fx:id="transactionForm" alignment="TOP_CENTER" prefWidth="350.0" spacing="10" style="-fx-padding: 20; -fx-background-color: white;" styleClass="card" visible="false">
-                            <HBox alignment="CENTER_LEFT"><Button onAction="#flipToWallet" style="-fx-background-color: transparent; -fx-font-size:16;" text="⬅" /></HBox>
-                            <Label style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Transaction Form" />
-                            <GridPane hgap="10.0" vgap="10.0">
-                                <columnConstraints><ColumnConstraints hgrow="SOMETIMES" minWidth="90.0" prefWidth="100.0" /><ColumnConstraints hgrow="ALWAYS" minWidth="150.0" prefWidth="200.0" /></columnConstraints>
-                                <rowConstraints><RowConstraints minHeight="30.0" prefHeight="30.0" /><RowConstraints minHeight="30.0" prefHeight="30.0" /><RowConstraints minHeight="30.0" prefHeight="30.0" /><RowConstraints minHeight="30.0" prefHeight="30.0" /></rowConstraints>
-                                <Label text="Source" /><TextField fx:id="sourceWalletField" editable="false" promptText="RIB source" GridPane.columnIndex="1" />
-                                <Label text="Destination" GridPane.rowIndex="1" /><TextField fx:id="destinationWalletField" promptText="RIB destination" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                <Label text="Amount" GridPane.rowIndex="2" /><TextField fx:id="amountField" promptText="montant" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                <Label text="Currency" GridPane.rowIndex="3" /><ComboBox fx:id="currencyTransactionBox" prefWidth="250.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                            </GridPane>
-                            <HBox alignment="CENTER" spacing="15.0">
-                                <Button fx:id="addTransactionBtn" onAction="#handleAddTransaction" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #1a5f7a; -fx-text-fill: white;" text="+"><font><Font name="System Bold" size="18.0" /></font></Button>
-                                <Button fx:id="modifyTransactionBtn" onAction="#handleUpdateTransaction" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e2e8f0;" text="✏" />
-                            </HBox>
-                            <Separator />
-                            <StackPane maxHeight="190.0" maxWidth="330.0">
-                                <children>
-                                    <Rectangle arcHeight="25.0" arcWidth="25.0" height="185.0" width="320.0">
-                                        <fill><LinearGradient endX="1.0" endY="1.0"><stops><Stop color="#1e293b" /><Stop color="#0f172a" offset="0.5" /><Stop color="#020617" offset="1.0" /></stops></LinearGradient></fill>
-                                    </Rectangle>
-                                    <VBox prefHeight="185.0" prefWidth="320.0">
-                                        <padding><Insets bottom="15.0" left="20.0" right="20.0" top="10.0" /></padding>
+                        <content>
+                            <StackPane fx:id="flipContainer" maxWidth="335.0" prefWidth="335.0">
+                                <VBox fx:id="walletForm" spacing="10.0" style="-fx-padding: 15; -fx-background-color: white;" styleClass="card">
+
+                                    <Label alignment="CENTER" maxWidth="Infinity" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1abc9c;" text="Quick Convert" />
+                                    <GridPane hgap="8" vgap="8">
+                                        <columnConstraints>
+                                            <ColumnConstraints minWidth="85.0" prefWidth="85.0" />
+                                            <ColumnConstraints hgrow="ALWAYS" />
+                                        </columnConstraints>
+                                        <Label text="Amount" GridPane.rowIndex="0" />
+                                        <TextField fx:id="convAmountField" promptText="0.00" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                        <Label text="Wallet From" GridPane.rowIndex="1" />
+                                        <ComboBox fx:id="convFromBox" maxWidth="Infinity" promptText="Select Source" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+                                        <Label text="From" GridPane.rowIndex="2" />
+                                        <ComboBox fx:id="convFromBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                                        <Label text="Wallet To" GridPane.rowIndex="3" />
+                                        <ComboBox fx:id="convToBox" maxWidth="Infinity" promptText="Select Destination" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                                        <Label text="To" GridPane.rowIndex="4" />
+                                        <ComboBox fx:id="convToBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+                                        <Label text="Estimate" GridPane.rowIndex="5" />
+                                        <TextField fx:id="convResultField" editable="false" promptText="Result" style="-fx-background-color: #f8f9fa;" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                        <rowConstraints>
+                                            <RowConstraints />
+                                            <RowConstraints />
+                                            <RowConstraints />
+                                            <RowConstraints />
+                                        </rowConstraints>
+                                    </GridPane>
+                                    <Button fx:id="convertBtn" maxWidth="Infinity" onAction="#handleConvert" style="-fx-background-color: #1abc9c; -fx-text-fill: white; -fx-font-weight: bold;" text="Convert" />
+                                    <Button fx:id="quickTransactionBtn" maxWidth="Infinity" style="-fx-background-color: #1abc9c; -fx-text-fill: white; -fx-font-weight: bold;" text="💸 Quick Transaction">
+                                        <VBox.margin><Insets top="10.0" /></VBox.margin>
+                                    </Button>
+                                    <Separator prefWidth="200.0">
+                                        <VBox.margin><Insets bottom="5.0" top="5.0" /></VBox.margin>
+                                    </Separator>
+                                    <HBox alignment="CENTER_RIGHT">
+                                        <Button onAction="#flipToTransaction" style="-fx-background-color: transparent; -fx-font-size:16;" text="➜" />
+                                    </HBox>
+                                    <Label alignment="CENTER" maxWidth="Infinity" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Form"><VBox.margin><Insets bottom="10.0" /></VBox.margin></Label>
+                                    <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet"><padding><Insets left="10.0" /></padding><VBox.margin><Insets bottom="10.0" /></VBox.margin></Label>
+                                    <GridPane hgap="8.0" vgap="12.0">
+                                        <columnConstraints>
+                                            <ColumnConstraints hgrow="SOMETIMES" minWidth="85.0" prefWidth="85.0" />
+                                            <ColumnConstraints hgrow="ALWAYS" />
+                                        </columnConstraints>
+                                        <rowConstraints><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /></rowConstraints>
+                                        <Label styleClass="label-header" text="Type" /><ComboBox fx:id="boxType" maxWidth="Infinity" GridPane.columnIndex="1" />
+                                        <Label styleClass="label-header" text="Status" GridPane.rowIndex="1" /><ComboBox fx:id="boxStatus" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    </GridPane>
+                                    <HBox alignment="CENTER" spacing="15.0" style="-fx-padding: 15 0 0 0;">
+                                        <Button fx:id="add_wallet" onAction="#handleAddWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #1a5f7a; -fx-text-fill: white;" text="+"><font><Font name="System Bold" size="18.0" /></font></Button>
+                                        <Button fx:id="modify_wallet" onAction="#handleModifyWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e2e8f0;" text="✏" />
+                                        <Button fx:id="delete_wallet" onAction="#handleDeleteWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e74c3c; -fx-text-fill: white;" text="🗑" />
+                                    </HBox>
+                                    <Label style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Wallet Currency"><padding><Insets left="10.0" /></padding><VBox.margin><Insets bottom="10.0" top="15.0" /></VBox.margin></Label>
+                                    <GridPane hgap="8.0" vgap="12.0">
+                                        <columnConstraints><ColumnConstraints hgrow="SOMETIMES" minWidth="85.0" prefWidth="85.0" /><ColumnConstraints hgrow="ALWAYS" /></columnConstraints>
+                                        <rowConstraints><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /><RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" /></rowConstraints>
+                                        <Label styleClass="label-header" text="Wallet RIB" /><TextField fx:id="walletIdField" promptText="wallet RIB" GridPane.columnIndex="1" />
+                                        <Label styleClass="label-header" text="Currency" GridPane.rowIndex="1" /><ComboBox fx:id="currencyComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    </GridPane>
+                                    <HBox alignment="CENTER" spacing="15.0" style="-fx-padding: 15 0 0 0;">
+                                        <Button fx:id="add_wallet_currency" onAction="#handleAddWalletCurrency" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #1a5f7a; -fx-text-fill: white;" text="+"><font><Font name="System Bold" size="18.0" /></font></Button>
+                                        <Button fx:id="modify_wallet_currency" onAction="#handleAddWallet" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e2e8f0;" text="✏" />
+                                        <Button fx:id="delete_wallet_currency" onAction="#handleDeleteWalletCurrency" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e74c3c; -fx-text-fill: white;" text="🗑" />
+                                    </HBox>
+                                </VBox>
+
+                                <VBox fx:id="transactionForm" alignment="TOP_CENTER" prefWidth="335.0" spacing="10" style="-fx-padding: 15; -fx-background-color: white;" styleClass="card" visible="false">
+                                    <HBox alignment="CENTER_LEFT"><Button onAction="#flipToWallet" style="-fx-background-color: transparent; -fx-font-size:16;" text="⬅" /></HBox>
+                                    <Label style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="Transaction Form" />
+                                    <GridPane hgap="8.0" vgap="10.0">
+                                        <columnConstraints><ColumnConstraints minWidth="85.0" prefWidth="85.0" /><ColumnConstraints hgrow="ALWAYS" /></columnConstraints>
+                                        <rowConstraints><RowConstraints minHeight="30.0" prefHeight="30.0" /><RowConstraints minHeight="30.0" prefHeight="30.0" /><RowConstraints minHeight="30.0" prefHeight="30.0" /><RowConstraints minHeight="30.0" prefHeight="30.0" /></rowConstraints>
+                                        <Label text="Source" /><TextField fx:id="sourceWalletField" editable="false" promptText="RIB source" GridPane.columnIndex="1" />
+                                        <Label text="Destination" GridPane.rowIndex="1" /><TextField fx:id="destinationWalletField" promptText="RIB destination" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                        <Label text="Amount" GridPane.rowIndex="2" /><TextField fx:id="amountField" promptText="montant" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                        <Label text="Currency" GridPane.rowIndex="3" /><ComboBox fx:id="currencyTransactionBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    </GridPane>
+                                    <HBox alignment="CENTER" spacing="15.0">
+                                        <Button fx:id="addTransactionBtn" onAction="#handleAddTransaction" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #1a5f7a; -fx-text-fill: white;" text="+"><font><Font name="System Bold" size="18.0" /></font></Button>
+                                        <Button fx:id="modifyTransactionBtn" onAction="#handleUpdateTransaction" prefHeight="40.0" prefWidth="40.0" style="-fx-background-radius: 50; -fx-background-color: #e2e8f0;" text="✏" />
+                                    </HBox>
+                                    <Separator />
+                                    <StackPane maxHeight="190.0" maxWidth="310.0">
                                         <children>
-                                            <HBox alignment="CENTER_RIGHT"><ImageView fitHeight="30.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true"><image><Image url="@logo%20.png" /></image></ImageView></HBox>
+                                            <Rectangle arcHeight="25.0" arcWidth="25.0" height="175.0" width="300.0">
+                                                <fill><LinearGradient endX="1.0" endY="1.0"><stops><Stop color="#1e293b" /><Stop color="#0f172a" offset="0.5" /><Stop color="#020617" offset="1.0" /></stops></LinearGradient></fill>
+                                            </Rectangle>
+                                            <VBox prefHeight="175.0" prefWidth="300.0">
+                                                <padding><Insets bottom="10.0" left="15.0" right="15.0" top="10.0" /></padding>
+                                                <children>
+                                                    <HBox alignment="CENTER_RIGHT"><ImageView fitHeight="25.0" fitWidth="80.0" pickOnBounds="true" preserveRatio="true"><image><Image url="@logo%20.png" /></image></ImageView></HBox>
 
-                                            <!-- ================= FORMULAIRE CARTE (AJOUTÉ) ================= -->
-                                            <VBox fx:id="cardForm" managed="false" spacing="10" style="-fx-background-color:white;              -fx-padding:15;              -fx-background-radius:10;" visible="false">
+                                                    <VBox fx:id="cardForm" managed="false" spacing="10" style="-fx-background-color:white;              -fx-padding:15;              -fx-background-radius:10;" visible="false">
 
-                                                <Label style="-fx-font-size:14;                   -fx-font-weight:bold;" text="💳 Informations Carte" />
-                                                <Label fx:id="cardErrorLabel" managed="false" style="-fx-font-size:12;" textFill="red" visible="false" wrapText="true" />
+                                                        <Label style="-fx-font-size:14;                   -fx-font-weight:bold;" text="💳 Informations Carte" />
+                                                        <Label fx:id="cardErrorLabel" managed="false" style="-fx-font-size:12;" textFill="red" visible="false" wrapText="true" />
 
-                                                <GridPane hgap="10" vgap="8">
+                                                        <GridPane hgap="10" vgap="8">
 
-                                                    <columnConstraints>
-                                                        <ColumnConstraints prefWidth="110" />
-                                                        <ColumnConstraints prefWidth="200" />
-                                                    </columnConstraints>
+                                                            <columnConstraints>
+                                                                <ColumnConstraints prefWidth="110" />
+                                                                <ColumnConstraints prefWidth="200" />
+                                                            </columnConstraints>
 
-                                                    <Label text="Titulaire" />
-                                                    <TextField fx:id="cardHolderField" GridPane.columnIndex="1" />
+                                                            <Label text="Titulaire" />
+                                                            <TextField fx:id="cardHolderField" GridPane.columnIndex="1" />
 
-                                                    <Label text="Numéro Carte" GridPane.rowIndex="1" />
-                                                    <TextField fx:id="cardNumberField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                            <Label text="Numéro Carte" GridPane.rowIndex="1" />
+                                                            <TextField fx:id="cardNumberField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
 
-                                                    <Label text="Mois" GridPane.rowIndex="2" />
-                                                    <TextField fx:id="expMonthField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                            <Label text="Mois" GridPane.rowIndex="2" />
+                                                            <TextField fx:id="expMonthField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
 
-                                                    <Label text="Année" GridPane.rowIndex="3" />
-                                                    <TextField fx:id="expYearField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                       <rowConstraints>
-                                          <RowConstraints />
-                                          <RowConstraints />
-                                          <RowConstraints />
-                                          <RowConstraints />
-                                       </rowConstraints>
+                                                            <Label text="Année" GridPane.rowIndex="3" />
+                                                            <TextField fx:id="expYearField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                            <rowConstraints>
+                                                                <RowConstraints />
+                                                                <RowConstraints />
+                                                                <RowConstraints />
+                                                                <RowConstraints />
+                                                            </rowConstraints>
 
-                                                </GridPane>
+                                                        </GridPane>
 
-                                                <HBox alignment="CENTER">
-                                                    <Button onAction="#handleSave" style="-fx-background-color:#1a5f7a;                        -fx-text-fill:white;" text="💾 Sauvegarder" />
-                                                </HBox>
-                                                <HBox alignment="CENTER" spacing="10">
+                                                        <HBox alignment="CENTER">
+                                                            <Button onAction="#handleSave" style="-fx-background-color:#1a5f7a;                        -fx-text-fill:white;" text="💾 Sauvegarder" />
+                                                        </HBox>
+                                                        <HBox alignment="CENTER" spacing="10">
 
-                                                    <Button onAction="#handleCloseCardForm" style="-fx-background-color:#e74c3c;                    -fx-text-fill:white;                    -fx-background-radius:5;                    -fx-cursor:hand;" text="❌ Fermer" />
+                                                            <Button onAction="#handleCloseCardForm" style="-fx-background-color:#e74c3c;                    -fx-text-fill:white;                    -fx-background-radius:5;                    -fx-cursor:hand;" text="❌ Fermer" />
 
-                                                </HBox>
+                                                        </HBox>
 
+                                                    </VBox>
+                                                    <StackPane alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="40.0"><children><Rectangle arcHeight="5.0" arcWidth="5.0" fill="#fcd34d" height="28.0" width="40.0" /><GridPane gridLinesVisible="true" maxHeight="28.0" maxWidth="40.0" style="-fx-border-color: #b48a04; -fx-border-width: 0.2;"><columnConstraints><ColumnConstraints prefWidth="13.3" /><ColumnConstraints prefWidth="13.3" /><ColumnConstraints prefWidth="13.3" /></columnConstraints><rowConstraints><RowConstraints prefHeight="14.0" /><RowConstraints prefHeight="14.0" /></rowConstraints></GridPane></children></StackPane>
+                                                    <Label fx:id="rib" text="**** **** **** 4589" textFill="WHITE"><font><Font name="Monospaced Bold" size="18.0" /></font><VBox.margin><Insets top="15.0" /></VBox.margin></Label>
+                                                    <HBox alignment="BOTTOM_LEFT" VBox.vgrow="ALWAYS"><children><Label fx:id="nom" opacity="0.9" text="JOHN DOE" textFill="WHITE"><font><Font name="System Bold" size="12.0" /></font></Label><Region HBox.hgrow="ALWAYS" /><HBox spacing="-10.0"><children><Circle fill="#eb001b" radius="12.0" /><Circle fill="#f79e1b" opacity="0.85" radius="12.0" /></children></HBox></children></HBox>
+                                                </children>
                                             </VBox>
-                                            <StackPane alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="40.0"><children><Rectangle arcHeight="5.0" arcWidth="5.0" fill="#fcd34d" height="28.0" width="40.0" /><GridPane gridLinesVisible="true" maxHeight="28.0" maxWidth="40.0" style="-fx-border-color: #b48a04; -fx-border-width: 0.2;"><columnConstraints><ColumnConstraints prefWidth="13.3" /><ColumnConstraints prefWidth="13.3" /><ColumnConstraints prefWidth="13.3" /></columnConstraints><rowConstraints><RowConstraints prefHeight="14.0" /><RowConstraints prefHeight="14.0" /></rowConstraints></GridPane></children></StackPane>
-                                            <Label fx:id="rib" text="**** **** **** 4589" textFill="WHITE"><font><Font name="Monospaced Bold" size="18.0" /></font><VBox.margin><Insets top="15.0" /></VBox.margin></Label>
-                                            <HBox alignment="BOTTOM_LEFT" VBox.vgrow="ALWAYS"><children><Label fx:id="nom" opacity="0.9" text="JOHN DOE" textFill="WHITE"><font><Font name="System Bold" size="12.0" /></font></Label><Region HBox.hgrow="ALWAYS" /><HBox spacing="-10.0"><children><Circle fill="#eb001b" radius="12.0" /><Circle fill="#f79e1b" opacity="0.85" radius="12.0" /></children></HBox></children></HBox>
                                         </children>
-                                    </VBox>
-                                </children>
+                                    </StackPane>
+
+                                    <HBox alignment="CENTER" spacing="10.0">
+                                        <Button fx:id="btnInfosCarte" onAction="#handleInfosCarte" prefHeight="35.0" prefWidth="130.0" style="-fx-background-color: transparent; -fx-border-color: #1a5f7a; -fx-border-radius: 5; -fx-text-fill: #1a5f7a; -fx-cursor: hand;" text="💳 Infos" />
+                                        <Button fx:id="btnDeleteCarte" onAction="#handleDeleteCarte" prefHeight="35.0" prefWidth="130.0" style="-fx-background-color: transparent; -fx-border-color: #e74c3c; -fx-border-radius: 5; -fx-text-fill: #e74c3c; -fx-cursor: hand;" text="🗑 Suppr." />
+                                    </HBox>
+                                </VBox>
                             </StackPane>
-                            <HBox alignment="CENTER" spacing="10.0">
-
-                                <!-- Bouton Infos Carte -->
-                                <Button fx:id="btnInfosCarte"
-                                        onAction="#handleInfosCarte"
-                                        prefHeight="35.0" prefWidth="145.0"
-                                        style="-fx-background-color: transparent;
-                   -fx-border-color: #1a5f7a;
-                   -fx-border-radius: 5;
-                   -fx-text-fill: #1a5f7a;
-                   -fx-cursor: hand;"
-                                        text="💳 Infos Carte" />
-
-                                <!-- Bouton Delete Carte -->
-                                <Button fx:id="btnDeleteCarte"
-                                        onAction="#handleDeleteCarte"
-                                        prefHeight="35.0" prefWidth="145.0"
-                                        style="-fx-background-color: transparent;
-                   -fx-border-color: #e74c3c;
-                   -fx-border-radius: 5;
-                   -fx-text-fill: #e74c3c;
-                   -fx-cursor: hand;"
-                                        text="🗑 Supprimer" />
-
-                            </HBox>
-                        </VBox>
-                    </StackPane>
+                        </content>
+                    </ScrollPane>
 
                     <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
                         <content>
