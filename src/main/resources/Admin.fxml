@@ -31,6 +31,7 @@
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="USER MANAGEMENT" />
                         <Button fx:id="btnGestionUsers" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Pending Approvals" />
                         <Button fx:id="btnListeUsers" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="User Directory" />
+                        <Button fx:id="btnLogs" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="System Logs" />
                         <Region prefHeight="20" />
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="CONTENT" />
                         <Button fx:id="btnCourses" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Fintech Courses" />
@@ -86,6 +87,13 @@
                         <VBox prefWidth="220" spacing="10" styleClass="stat-card">
                             <Label styleClass="brand-subtext" text="Banned/Rejected" />
                             <Label styleClass="brand-title" fx:id="lblDisabledUsers" style="-fx-font-size: 32; -fx-text-fill: #FF4D4D;" text="0" />
+                        </VBox>
+                        <VBox prefWidth="220" spacing="10" styleClass="stat-card">
+                            <Label styleClass="brand-subtext" text="Active Platform Users" />
+                            <Label styleClass="brand-title" fx:id="lblActiveUsers" style="-fx-font-size: 32; -fx-text-fill: #10b981;" text="0" />
+                            <HBox style="-fx-background-color: rgba(16,185,129,0.1); -fx-padding: 4; -fx-background-radius: 4;">
+                                <Label style="-fx-text-fill: #10b981; -fx-font-size: 10;" text="Verified and Live" />
+                            </HBox>
                         </VBox>
                     </children>
                 </FlowPane>

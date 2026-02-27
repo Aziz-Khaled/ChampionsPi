@@ -289,4 +289,13 @@ public class UtilisateurService implements CRUD<Utilisateur>{
         }
         return distribution;
     }
+    public int getActiveUsersCount() throws SQLException {
+        String query = "SELECT COUNT(*) FROM utilisateur WHERE statut = 'ACTIVE'";
+        try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        }
+        return 0;
+    }
+
 }
