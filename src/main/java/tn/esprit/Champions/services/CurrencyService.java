@@ -112,4 +112,35 @@ public class CurrencyService implements CRUD<currency>
         }
         return "N/A";
     }
+    // À ajouter dans CurrencyService.java
+    public currency getByName(String nom) throws SQLException {
+        String sql = "SELECT * FROM currency WHERE nom = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setString(1, nom);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    currency c = new currency();
+                    c.setId_currency(rs.getInt("id_currency"));
+                    c.setCode(rs.getString("code"));
+                    c.setNom(rs.getString("nom"));
+                    c.setType_currency(typeCurrency.valueOf(rs.getString("type_currency")));
+                    c.setIs_trading(rs.getInt("is_trading") == 1);
+                    return c;
+                }
+            }
+        }
+        throw new SQLException("Devise avec le nom " + nom + " introuvable.");
+    }
+    public String getCurrencyTypeById(int idCurrency) throws SQLException {
+        String sql = "SELECT type_currency FROM currency WHERE id_currency = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setInt(1, idCurrency);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("type_currency"); // Retourne "fiat" ou "crypto"
+                }
+            }
+        }
+        return "";
+    }
 }

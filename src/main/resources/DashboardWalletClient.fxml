@@ -105,7 +105,7 @@
                                         </rowConstraints>
                                     </GridPane>
                                     <Button fx:id="convertBtn" maxWidth="Infinity" onAction="#handleConvert" style="-fx-background-color: #1abc9c; -fx-text-fill: white; -fx-font-weight: bold;" text="Convert" />
-                                    <Button fx:id="quickTransactionBtn" maxWidth="Infinity" style="-fx-background-color: #1abc9c; -fx-text-fill: white; -fx-font-weight: bold;" text="💸 Quick Transaction">
+                                    <Button fx:id="quickTransactionBtn" maxWidth="Infinity" style="-fx-background-color: #1abc9c; -fx-text-fill: white; -fx-font-weight: bold;" onAction="#handleQuickTransaction" text="💸 Quick Transaction">
                                         <VBox.margin><Insets top="10.0" /></VBox.margin>
                                     </Button>
                                     <Separator prefWidth="200.0">

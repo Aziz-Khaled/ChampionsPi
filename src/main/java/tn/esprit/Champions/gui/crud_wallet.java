@@ -158,6 +158,7 @@ public class crud_wallet {
         loadCurrencies();
         loadWallets();
         loadWalletRIBs();
+        resetConversionFields();
 
         if (searchField != null) {
             searchField.setOnKeyReleased(this::handleSearch);
@@ -987,88 +988,93 @@ public class crud_wallet {
             try {
                 TransactionService transactionService = new TransactionService();
                 CreditCardService creditCardService = new CreditCardService();
+                ConversionService conversionService = new ConversionService();
+                CurrencyService currencyService = new CurrencyService(); // Assurez-vous qu'il est instancié
 
                 List<transaction> transactions = transactionService.getTransactionsByWallet(w.getIdWallet());
                 int walletId = w.getIdWallet();
 
                 TableView<transaction> table = new TableView<>();
 
+                // 🔹 Colonne Type
+                TableColumn<transaction, String> typeCol = new TableColumn<>("Type");
+                typeCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getType().name()));
+
                 // 🔹 Colonne Source
                 TableColumn<transaction, String> sourceCol = new TableColumn<>("Source");
                 sourceCol.setCellValueFactory(cell -> {
                     transaction t = cell.getValue();
-                    String display = "A/N"; // valeur par défaut
-
+                    String display = "A/N";
                     if (t.getType() != null) {
-                        switch (t.getType()) {
-                            case TRANSFERT, RETRAIT, ACHAT -> {
-                                // Affiche le RIB du wallet source
-                                try {
-                                    display = walletService.SelectById(t.getIdWalletSource()).getRib();
-                                } catch (Exception ex) {
-                                    ex.printStackTrace();
-                                }
-                            }
-                            case RECHARGE -> {
-                                // Affiche les 4 derniers chiffres de la carte
-                                int cardId = t.getId_card();
-                                if (cardId > 0) {
-                                    try {
-                                        CreditCard c = creditCardService.getCardById(cardId);
-                                        if (c != null && c.getLast4Digits() != null) {
-                                            display = c.getLast4Digits();
-                                        } else {
-                                            display = "A/N";
-                                        }
-                                    } catch (Exception ex) {
-                                        ex.printStackTrace();
-                                        display = "A/N";
-                                    }
-                                }
-                            }
-                            default -> display = "A/N";
+                        String typeName = t.getType().name().toUpperCase(); // Sécurité Majuscules
+                        if (typeName.equals("TRANSFERT") || typeName.equals("RETRAIT") ||
+                                typeName.equals("ACHAT") || typeName.equals("CONVERSION")) {
+                            try {
+                                display = walletService.SelectById(t.getIdWalletSource()).getRib();
+                            } catch (Exception ex) { display = "Erreur RIB"; }
+                        } else if (typeName.equals("RECHARGE")) {
+                            try {
+                                CreditCard c = creditCardService.getCardById(t.getId_card());
+                                display = (c != null) ? "**** " + c.getLast4Digits() : "Carte";
+                            } catch (Exception ex) { display = "A/N"; }
                         }
                     }
-
                     return new SimpleStringProperty(display);
                 });
+
                 // 🔹 Colonne Destination
                 TableColumn<transaction, String> destCol = new TableColumn<>("Destination");
                 destCol.setCellValueFactory(cell -> {
                     String display = "N/A";
                     try {
                         display = walletService.SelectById(cell.getValue().getIdWalletDestination()).getRib();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+                    } catch (Exception ex) { display = "Inconnu"; }
                     return new SimpleStringProperty(display);
                 });
 
-                // 🔹 Colonne Montant
-                TableColumn<transaction, Double> montantCol = new TableColumn<>("Montant");
-                montantCol.setCellValueFactory(new PropertyValueFactory<>("montant"));
+                // 🔹 Colonne Montant (CORRIGÉE)
+                TableColumn<transaction, String> montantCol = new TableColumn<>("Montant");
+                montantCol.setCellValueFactory(cell -> {
+                    transaction t = cell.getValue();
+                    // On vérifie les deux : le nom de l'enum et la présence de l'ID de conversion
+                    boolean isConv = t.getType() != null && t.getType().name().equalsIgnoreCase("CONVERSION");
 
-                // 🔹 Colonne Currency
+                    if (isConv && t.getId_conversion() > 0) {
+                        try {
+                            Conversion conv = conversionService.getById(t.getId_conversion());
+                            if (conv != null) {
+                                return new SimpleStringProperty(conv.getAmountFrom() + " ➔ " + conv.getAmountTo());
+                            }
+                        } catch (Exception ex) { ex.printStackTrace(); }
+                    }
+                    return new SimpleStringProperty(String.valueOf(t.getMontant()));
+                });
+
+                // 🔹 Colonne Currency (CORRIGÉE)
                 TableColumn<transaction, String> currencyCol = new TableColumn<>("Currency");
                 currencyCol.setCellValueFactory(cell -> {
-                    String name = "N/A";
+                    transaction t = cell.getValue();
+                    boolean isConv = t.getType() != null && t.getType().name().equalsIgnoreCase("CONVERSION");
+
                     try {
-                        name = currencyService.getCurrencyNameById(cell.getValue().getCurrencyId());
+                        if (isConv && t.getId_conversion() > 0) {
+                            Conversion conv = conversionService.getById(t.getId_conversion());
+                            if (conv != null) {
+                                String from = currencyService.getCurrencyNameById(conv.getCurrencyFrom());
+                                String to = currencyService.getCurrencyNameById(conv.getCurrencyTo());
+                                return new SimpleStringProperty(from + " ➔ " + to);
+                            }
+                        }
+                        // Si pas conversion ou erreur, affiche la currency standard
+                        return new SimpleStringProperty(currencyService.getCurrencyNameById(t.getCurrencyId()));
                     } catch (Exception ex) {
-                        ex.printStackTrace();
+                        return new SimpleStringProperty("Err");
                     }
-                    return new SimpleStringProperty(name);
                 });
 
                 // 🔹 Colonne Date
                 TableColumn<transaction, LocalDateTime> dateCol = new TableColumn<>("Date");
                 dateCol.setCellValueFactory(new PropertyValueFactory<>("dateTransaction"));
-
-                // 🔹 Colonne Type
-                TableColumn<transaction, String> typeCol = new TableColumn<>("Type");
-                typeCol.setCellValueFactory(cell ->
-                        new SimpleStringProperty(cell.getValue().getType().name())
-                );
 
                 // 🔹 Colonne Delete
                 TableColumn<transaction, Void> deleteCol = new TableColumn<>("Delete");
@@ -1081,22 +1087,19 @@ public class crud_wallet {
                             try {
                                 transactionService.deleteOne(t);
                                 getTableView().getItems().remove(t);
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
+                            } catch (Exception ex) { ex.printStackTrace(); }
                         });
                     }
-                    @Override
-                    protected void updateItem(Void item, boolean empty) {
+                    @Override protected void updateItem(Void item, boolean empty) {
                         super.updateItem(item, empty);
                         setGraphic(empty ? null : trash);
                     }
                 });
 
-                table.getColumns().addAll(sourceCol, destCol, montantCol, currencyCol, dateCol, typeCol, deleteCol);
+                table.getColumns().addAll(typeCol, sourceCol, destCol, montantCol, currencyCol, dateCol, deleteCol);
 
-                // 🔴🟢 Couleur ligne selon wallet
-                table.setRowFactory(tv -> new TableRow<>() {
+                // Couleur des lignes
+                table.setRowFactory(tv -> new TableRow<transaction>() {
                     @Override
                     protected void updateItem(transaction item, boolean empty) {
                         super.updateItem(item, empty);
@@ -1114,11 +1117,13 @@ public class crud_wallet {
 
                 table.setItems(FXCollections.observableArrayList(transactions));
 
+                // Fenêtre
                 Stage stage = new Stage();
-                VBox root = new VBox(table);
+                VBox root = new VBox(10, table);
                 root.setPadding(new Insets(10));
-                stage.setScene(new Scene(root, 800, 400));
-                stage.setTitle("Transactions Wallet RIB: " + w.getRib());
+                VBox.setVgrow(table, Priority.ALWAYS);
+                stage.setScene(new Scene(root, 950, 500));
+                stage.setTitle("Transactions du Wallet: " + w.getRib());
                 stage.show();
 
             } catch (Exception ex) {
@@ -1748,21 +1753,17 @@ public class crud_wallet {
     @FXML
     private void handleDeleteCarte() {
         try {
-            // 1️⃣ Récupérer la carte active
             CreditCard card = cardService.getActiveCardByUserId(USER_ID);
             if (card == null) {
                 Platform.runLater(() -> showError("Aucune carte active trouvée."));
                 return;
             }
 
-            // 2️⃣ Appeler le service pour "supprimer" la carte (changer le statut)
             cardService.deleteCard(card.getIdCard());
 
-            // 3️⃣ Vider les champs visibles dans la carte transaction
             rib.setText("");
             nom.setText("");
 
-            // 4️⃣ Afficher le message de succès sur le thread UI
             Platform.runLater(() -> showSuccess("✅ Carte supprimée avec succès (statut DELETED)."));
 
         } catch (Exception e) {
@@ -1794,16 +1795,13 @@ public class crud_wallet {
     }
     @FXML
     private void handleConvert(ActionEvent event) {
-
         try {
-
             if (convAmountField.getText().isEmpty()) {
                 showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez entrer un montant.");
                 return;
             }
 
             double amountFrom = Double.parseDouble(convAmountField.getText());
-
             if (convFromBox.getValue() == null || convToBox.getValue() == null) {
                 showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez sélectionner les monnaies.");
                 return;
@@ -1813,20 +1811,23 @@ public class crud_wallet {
             String toCurrency = convToBox.getValue().toString();
 
             ConversionService service = new ConversionService();
-
             double rate = service.getExchangeRate(fromCurrency, toCurrency);
-
             double amountTo = amountFrom * rate;
 
             convResultField.setText(String.format("%.8f", amountTo));
 
-            showAlert(Alert.AlertType.INFORMATION, "Succès", "Conversion réussie.");
+            convFromBox.setDisable(true);
+            convToBox.setDisable(true);
+            convAmountField.setDisable(true);
 
-        } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, "Erreur", "Montant invalide.");
+            walletSourceBox.setDisable(false);
+            walletDestBox.setDisable(false);   
+
+            showAlert(Alert.AlertType.INFORMATION, "Succès", "Taux récupéré. Sélectionnez maintenant les Wallets pour valider la transaction.");
+
         } catch (Exception e) {
             e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur", "Problème API.");
+            showAlert(Alert.AlertType.ERROR, "Erreur", "Problème API : " + e.getMessage());
         }
     }
     private void loadWalletRIBs() {
@@ -1856,5 +1857,75 @@ public class crud_wallet {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    @FXML
+    private void handleQuickTransaction(ActionEvent event) {
+        try {
+            // Validation des sélections
+            if (walletSourceBox.getValue() == null || walletDestBox.getValue() == null) {
+                showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez sélectionner les wallets source et destination.");
+                return;
+            }
+
+            WalletService walletService = new WalletService();
+            wallet sourceW = walletService.getByRib(walletSourceBox.getValue().toString());
+            wallet destW = walletService.getByRib(walletDestBox.getValue().toString());
+
+            CurrencyService cs = new CurrencyService();
+            currency fromCurr = cs.getByName(convFromBox.getValue().toString());
+            currency toCurr = cs.getByName(convToBox.getValue().toString());
+
+            ConversionService convService = new ConversionService();
+            Conversion conversion = new Conversion();
+            conversion.setAmountFrom(Double.parseDouble(convAmountField.getText()));
+            conversion.setCurrencyFrom(fromCurr.getId_currency());
+            conversion.setAmountTo(Double.parseDouble(convResultField.getText().replace(",", "."))); // Sécurité virgule
+            conversion.setCurrencyTo(toCurr.getId_currency());
+
+            double rate = convService.getExchangeRate(fromCurr.getCode(), toCurr.getCode());
+            conversion.setExchangeRate(rate);
+
+            int generatedConversionId = convService.insertConversion(conversion);
+
+            // Préparer Transaction
+            transaction t = new transaction();
+            t.setIdWalletSource(sourceW.getIdWallet());
+            t.setIdWalletDestination(destW.getIdWallet());
+            t.setMontant(Double.parseDouble(convAmountField.getText()));
+            t.setType(typeTransaction.CONVERSION);
+            t.setStatut(StatutTransaction.Completed);
+            t.setCurrencyId(fromCurr.getId_currency());
+            t.setId_conversion(generatedConversionId);
+
+            TransactionService transService = new TransactionService();
+            transService.insertOne(t);
+
+            showAlert(Alert.AlertType.INFORMATION, "Succès", "Conversion et transaction enregistrées !");
+
+            resetConversionFields();
+            updateGlobalCurrencyChart();
+            loadCard();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Erreur Transaction", e.getMessage());
+        }
+    }
+
+    private void resetConversionFields() {
+        convAmountField.clear();
+        convResultField.clear();
+
+        convFromBox.setDisable(false);
+        convToBox.setDisable(false);
+        convAmountField.setDisable(false);
+
+        walletSourceBox.setDisable(true);
+        walletDestBox.setDisable(true);
+
+        walletSourceBox.setValue(null);
+        walletDestBox.setValue(null);
     }
 }

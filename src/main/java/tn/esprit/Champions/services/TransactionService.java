@@ -45,6 +45,8 @@ public class TransactionService implements CRUD<transaction> {
     public void insertOne(transaction t) throws SQLException {
         WalletService walletService = new WalletService();
         wallet_currencyService walletCurrencyService = new wallet_currencyService();
+        ConversionService conversionService = new ConversionService();
+        CurrencyService currencyService = new CurrencyService();
 
         wallet sourceWallet = walletService.SelectById(t.getIdWalletSource());
         wallet destWallet = walletService.SelectById(t.getIdWalletDestination());
@@ -52,52 +54,123 @@ public class TransactionService implements CRUD<transaction> {
         if (sourceWallet == null) throw new SQLException("Wallet source introuvable !");
         if (destWallet == null) throw new SQLException("Wallet destinataire introuvable !");
         if (sourceWallet.getIdWallet() == destWallet.getIdWallet()) throw new SQLException("Source et destination identiques !");
-        if (sourceWallet.getStatut() == statutWallet.bloque) throw new SQLException("Le wallet source est bloqué !");
 
-        wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(sourceWallet.getIdWallet(), t.getCurrencyId());
-        if (sourceCurrency == null) throw new SQLException("La currency n'existe pas dans le wallet source !");
+        // --- LOGIQUE DE SÉCURITÉ DES TYPES ---
+        boolean isConversion = java.util.Objects.equals("conversion", t.getType().name().toLowerCase());
+
+        if (!java.util.Objects.equals(sourceWallet.getTypeWallet(), destWallet.getTypeWallet())) {
+            if (!isConversion) {
+                throw new SQLException("Transaction interdite : Types de wallets différents sans conversion.");
+            }
+        }
+
+        if (java.util.Objects.equals(sourceWallet.getStatut(), statutWallet.bloque)) {
+            throw new SQLException("Le wallet source est bloqué !");
+        }
+
+        // --- INITIALISATION DES MONTANTS ET DEVISES ---
+        double amountToDebit = t.getMontant();
+        int currencyToDebit = t.getCurrencyId();
+        double amountToCredit = t.getMontant();
+        int currencyToCredit = t.getCurrencyId();
+
+        if (isConversion) {
+            if (t.getId_conversion() <= 0) throw new SQLException("ID de conversion manquant.");
+
+            Conversion convDetails = conversionService.getById(t.getId_conversion());
+            if (convDetails == null) throw new SQLException("Détails de conversion introuvables.");
+
+            // On écrase avec les vraies valeurs de la table conversion
+            amountToDebit = convDetails.getAmountFrom();
+            currencyToDebit = convDetails.getCurrencyFrom();
+            amountToCredit = convDetails.getAmountTo();
+            currencyToCredit = convDetails.getCurrencyTo();
+        }
+
+        // --- VÉRIFICATION COMPATIBILITÉ WALLET / DEVISE ---
+        String typeDeviseDebit = currencyService.getCurrencyTypeById(currencyToDebit);
+        String typeDeviseCredit = currencyService.getCurrencyTypeById(currencyToCredit);
+
+        // 1. Sécurité Wallet Source (Débit)
+        if (java.util.Objects.equals("FIAT", sourceWallet.getTypeWallet()) &&
+                java.util.Objects.equals("crypto", typeDeviseDebit)) {
+            throw new SQLException("Le wallet source est de type FIAT, il ne peut pas contenir/vendre de la CRYPTO.");
+        }
+
+        // 2. Sécurité Wallet Destination (Crédit) - ✅ TA DEMANDE
+        // Si wallet destination est FIAT, il ne peut recevoir que du FIAT
+        if (java.util.Objects.equals("FIAT", destWallet.getTypeWallet()) &&
+                java.util.Objects.equals("crypto", typeDeviseCredit)) {
+            throw new SQLException("Le wallet de destination est de type FIAT, il ne peut pas recevoir la monnaie CRYPTO issue de la conversion.");
+        }
+
+        // Si wallet destination est TRADING/CRYPTO, il ne peut recevoir que de la CRYPTO (optionnel, à toi de voir)
+        if (java.util.Objects.equals("TRADING", destWallet.getTypeWallet()) &&
+                java.util.Objects.equals("fiat", typeDeviseCredit)) {
+            throw new SQLException("Le wallet de destination est de type TRADING, il ne peut pas recevoir de monnaie FIAT.");
+        }
+
+        // --- VÉRIFICATION DU SOLDE (DEVISE SOURCE) ---
+        wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(sourceWallet.getIdWallet(), currencyToDebit);
+
+        if (sourceCurrency == null) {
+            throw new SQLException("La devise source (" + currencyToDebit + ") n'existe pas dans votre wallet !");
+        }
 
         BigDecimal soldeSource = BigDecimal.valueOf(sourceCurrency.getSolde());
-        BigDecimal montant = BigDecimal.valueOf(t.getMontant());
-        if (soldeSource.compareTo(montant) < 0) throw new SQLException("Solde insuffisant !");
+        BigDecimal montantDebit = BigDecimal.valueOf(amountToDebit);
 
+        if (soldeSource.compareTo(montantDebit) < 0) {
+            throw new SQLException("Solde insuffisant ! Vous tentez de vendre " + amountToDebit + " mais vous n'avez que " + sourceCurrency.getSolde());
+        }
+
+        // --- EXECUTION TRANSACTIONNELLE ---
         boolean previousAutoCommit = cnx.getAutoCommit();
         try {
             cnx.setAutoCommit(false);
 
-            // 1. Débite le wallet source
-            sourceCurrency.setSolde(soldeSource.subtract(montant).doubleValue());
+            // 1. Débit du montant "From"
+            sourceCurrency.setSolde(soldeSource.subtract(montantDebit).doubleValue());
             walletCurrencyService.updateOne(sourceCurrency);
 
-            // 2. Créditer le wallet destinataire
-            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(destWallet.getIdWallet(), t.getCurrencyId());
+            // 2. Crédit du montant "To"
+            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(destWallet.getIdWallet(), currencyToCredit);
             if (destCurrency == null) {
                 destCurrency = new wallet_currency();
                 destCurrency.setId_wallet(destWallet.getIdWallet());
-                destCurrency.setId_currency(t.getCurrencyId());
-                destCurrency.setNom_currency(sourceCurrency.getNom_currency());
+                destCurrency.setId_currency(currencyToCredit);
+                destCurrency.setNom_currency(currencyService.getCurrencyNameById(currencyToCredit));
                 destCurrency.setSolde(0);
                 walletCurrencyService.insertOne(destCurrency);
             }
-            destCurrency.setSolde(destCurrency.getSolde() + t.getMontant());
+
+            BigDecimal soldeDestActuel = BigDecimal.valueOf(destCurrency.getSolde());
+            BigDecimal montantCredit = BigDecimal.valueOf(amountToCredit);
+            destCurrency.setSolde(soldeDestActuel.add(montantCredit).doubleValue());
             walletCurrencyService.updateOne(destCurrency);
 
-            // 3. Insérer la transaction en BDD
-            String insertTransactionSql = "INSERT INTO transaction (id_wallet_source, id_wallet_destination, montant, type, statut, date_transaction, id_currency) VALUES (?, ?, ?, ?, ?, NOW(), ?)";
+            // 3. Insertion de la ligne transaction
+            String insertTransactionSql = "INSERT INTO transaction (id_wallet_source, id_wallet_destination, montant, type, statut, date_transaction, id_currency, id_conversion) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)";
             try (PreparedStatement pst = cnx.prepareStatement(insertTransactionSql, Statement.RETURN_GENERATED_KEYS)) {
                 pst.setInt(1, sourceWallet.getIdWallet());
                 pst.setInt(2, destWallet.getIdWallet());
-                pst.setDouble(3, t.getMontant());
+                pst.setDouble(3, t.getMontant()); // On garde le montant saisi par l'user
                 pst.setString(4, t.getType().name());
                 pst.setString(5, t.getStatut().name());
                 pst.setInt(6, t.getCurrencyId());
+
+                if (t.getId_conversion() > 0) {
+                    pst.setInt(7, t.getId_conversion());
+                } else {
+                    pst.setNull(7, java.sql.Types.INTEGER);
+                }
                 pst.executeUpdate();
 
                 ResultSet rs = pst.getGeneratedKeys();
                 if (rs.next()) t.setIdTransaction(rs.getInt(1));
             }
 
-            // 4. Update date modification wallets
+            // 4. Maj date modification
             String updateWalletSql = "UPDATE wallet SET date_derniere_modification = NOW() WHERE id_wallet IN (?, ?)";
             try (PreparedStatement pst = cnx.prepareStatement(updateWalletSql)) {
                 pst.setInt(1, sourceWallet.getIdWallet());
@@ -105,23 +178,16 @@ public class TransactionService implements CRUD<transaction> {
                 pst.executeUpdate();
             }
 
-            // 🔹 5. SÉCURITÉ BLOCKCHAIN (PLACHÉ AVANT LE COMMIT)
-            // Si la blockchain est brisée, addBlock jette une RuntimeException.
-            // Le code saute au catch, et cnx.commit() n'est JAMAIS appelé.
-            blockchainService.addBlock(t);
-
-            // 🔹 6. TOUT EST OK, ON VALIDE
             cnx.commit();
-            System.out.println("Transaction et Bloc validés.");
+            System.out.println("Conversion réussie.");
 
         } catch (Exception ex) {
-            if (cnx != null) cnx.rollback(); // 🚨 ANNULATION TOTALE SI BLOCKCHAIN BRISÉE
-            throw new SQLException("Transaction annulée par sécurité : " + ex.getMessage());
+            if (cnx != null) cnx.rollback();
+            throw new SQLException("Transaction annulée : " + ex.getMessage());
         } finally {
             cnx.setAutoCommit(previousAutoCommit);
         }
     }
-
     public void insertRechargeTransaction(
             int walletDestinationId,
             int currencyId,
@@ -356,20 +422,21 @@ public class TransactionService implements CRUD<transaction> {
     public List<transaction> getTransactionsByWallet(int walletId) throws SQLException {
         List<transaction> transactions = new ArrayList<>();
 
-        // 🔹 Requête pour récupérer toutes les colonnes nécessaires + id_card
+        // 🔹 Ajout de id_conversion dans la requête SELECT
         String query = """
-        SELECT t.id_transaction,
-               t.id_wallet_source,
-               t.id_wallet_destination,
-               t.montant,
-               t.id_currency,
-               t.type,
-               t.statut,
-               t.date_transaction,
-               t.id_card
-        FROM transaction t
-        WHERE t.id_wallet_source = ? OR t.id_wallet_destination = ?
-    """;
+    SELECT t.id_transaction,
+           t.id_wallet_source,
+           t.id_wallet_destination,
+           t.montant,
+           t.id_currency,
+           t.type,
+           t.statut,
+           t.date_transaction,
+           t.id_card,
+           t.id_conversion
+    FROM transaction t
+    WHERE t.id_wallet_source = ? OR t.id_wallet_destination = ?
+""";
 
         try (PreparedStatement ps = cnx.prepareStatement(query)) {
             ps.setInt(1, walletId);
@@ -379,23 +446,29 @@ public class TransactionService implements CRUD<transaction> {
                 while (rs.next()) {
                     transaction t = new transaction();
 
-                    // 🔹 Remplissage des champs
+                    // 🔹 Remplissage des champs de base
                     t.setIdTransaction(rs.getInt("id_transaction"));
                     t.setIdWalletSource(rs.getInt("id_wallet_source"));
                     t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
                     t.setMontant(rs.getDouble("montant"));
                     t.setCurrencyId(rs.getInt("id_currency"));
 
-                    String typeStr = rs.getString("type").trim();
+                    // 🔹 Gestion sécurisée de l'Enum Type (pour éviter les erreurs de casse)
+                    String typeStr = rs.getString("type").trim().toUpperCase();
                     t.setType(typeTransaction.valueOf(typeStr));
 
+                    // 🔹 Gestion sécurisée de l'Enum Statut
                     String statutStr = rs.getString("statut").trim();
+                    // Assurez-vous que StatutTransaction contient bien les valeurs en majuscules (ex: PENDING, SUCCESS)
                     t.setStatut(StatutTransaction.valueOf(statutStr));
 
                     t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
 
-                    // 🔹 Très important : id_card pour les recharges
+                    // 🔹 id_card pour les recharges
                     t.setId_card(rs.getInt("id_card"));
+
+                    // 🔹 CRUCIAL : Remplissage de id_conversion pour l'affichage des flèches
+                    t.setId_conversion(rs.getInt("id_conversion"));
 
                     transactions.add(t);
                 }
@@ -404,7 +477,6 @@ public class TransactionService implements CRUD<transaction> {
 
         return transactions;
     }
-
 
 
 

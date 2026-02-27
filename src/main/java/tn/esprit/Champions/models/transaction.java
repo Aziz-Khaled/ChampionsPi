@@ -15,6 +15,8 @@ public class transaction {
     private StatutTransaction statut;
     private LocalDateTime dateTransaction;
     private int CurrencyId;
+    private int id_conversion;
+
 
 
     public transaction() {
@@ -23,7 +25,7 @@ public class transaction {
 
     public transaction(int idTransaction, int idWalletSource, int idWalletDestination,int id_card,
                        double montant, typeTransaction type, StatutTransaction statut,
-                       LocalDateTime dateTransaction) {
+                       LocalDateTime dateTransaction, int id_conversion) {
         this.idTransaction = idTransaction;
         this.idWalletSource = idWalletSource;
         this.idWalletDestination = idWalletDestination;
@@ -32,6 +34,7 @@ public class transaction {
         this.statut = statut;
         this.dateTransaction = dateTransaction;
         this.id_card = id_card;
+        this.id_conversion = id_conversion;
 
     }
 
@@ -108,15 +111,23 @@ public class transaction {
         this.id_card = id_card;
     }
 
+    public int getId_conversion() {
+        return id_conversion;
+    }
+
+    public void setId_conversion(int id_conversion) {
+        this.id_conversion = id_conversion;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         transaction that = (transaction) o;
-        return idTransaction == that.idTransaction && idWalletSource == that.idWalletSource && id_card == that.id_card && idWalletDestination == that.idWalletDestination && Double.compare(montant, that.montant) == 0 && CurrencyId == that.CurrencyId && type == that.type && statut == that.statut && Objects.equals(dateTransaction, that.dateTransaction);
+        return idTransaction == that.idTransaction && idWalletSource == that.idWalletSource && id_card == that.id_card && idWalletDestination == that.idWalletDestination && Double.compare(montant, that.montant) == 0 && CurrencyId == that.CurrencyId && id_conversion == that.id_conversion && type == that.type && statut == that.statut && Objects.equals(dateTransaction, that.dateTransaction);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idTransaction, idWalletSource, id_card, idWalletDestination, montant, type, statut, dateTransaction, CurrencyId);
+        return Objects.hash(idTransaction, idWalletSource, id_card, idWalletDestination, montant, type, statut, dateTransaction, CurrencyId, id_conversion);
     }
 }

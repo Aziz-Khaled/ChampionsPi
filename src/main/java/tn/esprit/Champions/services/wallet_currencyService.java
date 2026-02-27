@@ -29,10 +29,27 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
 
     @Override
     public void insertOne(wallet_currency walletCurrency) throws SQLException {
-        int idCurrency = getCurrencyIdByName(walletCurrency.getNom_currency());
-        walletCurrency.setId_currency(idCurrency);
 
-        // Vérifier type du wallet
+        // 1. Déterminer l'ID de la devise et s'assurer que le nom est présent
+        int idCurrency = walletCurrency.getId_currency();
+        String nomCurrency = walletCurrency.getNom_currency();
+
+        if (idCurrency == 0 && nomCurrency != null) {
+            idCurrency = getCurrencyIdByName(nomCurrency);
+            walletCurrency.setId_currency(idCurrency);
+        } else if (nomCurrency == null && idCurrency != 0) {
+            // Optionnel : Récupérer le nom à partir de l'ID si le nom est manquant
+            // nécessite une méthode getCurrencyNameById(idCurrency) dans ce service
+        }
+
+        if (idCurrency == 0) {
+            throw new SQLException("Impossible de déterminer l'ID de la devise.");
+        }
+        if (walletCurrency.getNom_currency() == null) {
+            throw new SQLException("Le nom de la devise est obligatoire.");
+        }
+
+        // 2. Vérifier type du wallet
         String walletTypeQuery = "SELECT type_wallet FROM wallet WHERE id_wallet = ?";
         String walletType = "";
         try (PreparedStatement stmt = cnx.prepareStatement(walletTypeQuery)) {
@@ -44,7 +61,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             }
         }
 
-        // Vérifier si currency est trading
+        // 3. Vérifier si currency est trading
         String currencyTradingQuery = "SELECT is_trading FROM currency WHERE id_currency = ?";
         boolean isTradingCurrency = false;
         try (PreparedStatement stmt = cnx.prepareStatement(currencyTradingQuery)) {
@@ -60,7 +77,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             throw new SQLException("Cette currency n'est pas autorisée dans un wallet de type TRADING.");
         }
 
-        // Vérifier si la currency existe déjà
+        // 4. Vérifier si la currency existe déjà dans ce wallet
         String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
         try (PreparedStatement checkStmt = cnx.prepareStatement(checkQuery)) {
             checkStmt.setInt(1, walletCurrency.getId_wallet());
@@ -72,19 +89,18 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             }
         }
 
-        // INSERT wallet_currency
-        // INSERT wallet_currency avec solde
+        // 5. INSERT wallet_currency
         String insertQuery = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency, solde) VALUES (?,?,?,?)";
         try (PreparedStatement pst = cnx.prepareStatement(insertQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
-            pst.setString(3, walletCurrency.getNom_currency());
-            pst.setDouble(4, walletCurrency.getSolde()); // 🔹 ajouter le solde ici
+            pst.setString(3, walletCurrency.getNom_currency()); // Maintenant garanti non-null
+            pst.setDouble(4, walletCurrency.getSolde());
             pst.executeUpdate();
             System.out.println("wallet_currency ajouté avec succès : " + walletCurrency.getNom_currency() + " solde : " + walletCurrency.getSolde());
         }
 
-        // Mettre à jour la date_derniere_modification du wallet
+        // 6. Mettre à jour la date_derniere_modification du wallet
         updateWalletModificationDate(walletCurrency.getId_wallet());
     }
 
