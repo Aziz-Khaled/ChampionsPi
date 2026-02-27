@@ -1,32 +1,49 @@
 package tn.esprit.Champions.models;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class wallet {
-
+    private Utilisateur user;
     private int idWallet;
     private int idUser;
     private typeWallet typeWallet;   // fiat, crypto, trading
-    private String categorie;
     private double solde;
-    private statutWallet statut;       // bloque, actif
+    private statutWallet statut;     // bloque, actif
+    private String rib;
+    private LocalDateTime dateCreation;
+    private LocalDateTime dateDerniereModification;
 
-
+    // Constructeur vide
     public wallet() {
     }
 
-
-    public wallet(int idWallet, int idUser, typeWallet typeWallet,
-                  String categorie, double solde, statutWallet statut) {
+    // Constructeur complet
+    public wallet(int idWallet, int idUser, typeWallet typeWallet, double solde, statutWallet statut, String rib) {
         this.idWallet = idWallet;
         this.idUser = idUser;
         this.typeWallet = typeWallet;
-        this.categorie = categorie;
         this.solde = solde;
         this.statut = statut;
+        this.rib = rib;
     }
 
+    // Constructeur sans idWallet ni solde
+    public wallet(int idUser, typeWallet typeWallet, statutWallet statut, String rib) {
+        this.idUser = idUser;
+        this.typeWallet = typeWallet;
+        this.statut = statut;
+        this.rib = rib;
+    }
 
+    // Constructeur minimal (idUser non fourni)
+    public wallet(typeWallet typeWallet, statutWallet statut, String rib) {
+        this.typeWallet = typeWallet;
+        this.statut = statut;
+        this.rib = rib;
+    }
+
+    // ----- Getters et Setters -----
     public int getIdWallet() {
         return idWallet;
     }
@@ -51,14 +68,6 @@ public class wallet {
         this.typeWallet = typeWallet;
     }
 
-    public String getCategorie() {
-        return categorie;
-    }
-
-    public void setCategorie(String categorie) {
-        this.categorie = categorie;
-    }
-
     public double getSolde() {
         return solde;
     }
@@ -75,15 +84,55 @@ public class wallet {
         this.statut = statut;
     }
 
+    public String getRib() {
+        return rib;
+    }
+
+    public void setRib(String rib) {
+        this.rib = rib;
+    }
+
+    public Utilisateur getUser() {
+        return user;
+    }
+
+    public void setUser(Utilisateur user) {
+        this.user = user;
+    }
+
+    public LocalDateTime getDateCreation() {
+        return dateCreation;
+    }
+
+    public void setDateCreation(LocalDateTime dateCreation) {
+        this.dateCreation = dateCreation;
+    }
+
+    public LocalDateTime getDateDerniereModification() {
+        return dateDerniereModification;
+    }
+
+    public void setDateDerniereModification(LocalDateTime dateDerniereModification) {
+        this.dateDerniereModification = dateDerniereModification;
+    }
+
+    // ----- Equals et hashCode -----
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         wallet wallet = (wallet) o;
-        return idWallet == wallet.idWallet && idUser == wallet.idUser && Double.compare(solde, wallet.solde) == 0 && Objects.equals(typeWallet, wallet.typeWallet) && Objects.equals(categorie, wallet.categorie) && Objects.equals(statut, wallet.statut);
+        return idWallet == wallet.idWallet &&
+                idUser == wallet.idUser &&
+                Double.compare(wallet.solde, solde) == 0 &&
+                Objects.equals(user, wallet.user) &&
+                typeWallet == wallet.typeWallet &&
+                statut == wallet.statut &&
+                Objects.equals(rib, wallet.rib);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idWallet, idUser, typeWallet, categorie, solde, statut);
+        return Objects.hash(user, idWallet, idUser, typeWallet, solde, statut, rib);
     }
 }

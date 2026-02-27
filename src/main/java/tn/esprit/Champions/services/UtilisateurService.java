@@ -1,5 +1,6 @@
 package tn.esprit.Champions.services;
 
+import tn.esprit.Champions.models.AccountStatus;
 import tn.esprit.Champions.models.Role;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
@@ -99,7 +100,7 @@ public class UtilisateurService implements CRUD<Utilisateur>{
                         rs.getString("telephone"),
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),
-                        Status.valueOf(rs.getString("statut")),
+                        AccountStatus.valueOf(rs.getString("statut")),
                         Role.valueOf(rs.getString("role"))
                 ));
             }
@@ -130,7 +131,7 @@ public class UtilisateurService implements CRUD<Utilisateur>{
                         rs.getString("telephone"),
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),
-                        Status.valueOf(rs.getString("statut")),
+                        AccountStatus.valueOf(rs.getString("statut")),
                         Role.valueOf(rs.getString("role"))
                 ));
             }
@@ -198,7 +199,7 @@ public class UtilisateurService implements CRUD<Utilisateur>{
                         rs.getString("telephone"),
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),
-                        tn.esprit.Champions.models.Status.valueOf(rs.getString("statut")),
+                        tn.esprit.Champions.models.AccountStatus.valueOf(rs.getString("statut")),
                         tn.esprit.Champions.models.Role.valueOf(rs.getString("role"))
                 );
             }

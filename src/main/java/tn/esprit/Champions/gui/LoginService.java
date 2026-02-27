@@ -191,7 +191,7 @@ public class LoginService {
                     showAlert(Alert.AlertType.INFORMATION, "Verification Required", "Please complete your KYC to access the platform.");
                     openPage("/KYC_Setup.fxml", "Identity Verification");
                 }
-                else if (authenticatedUser.getStatut() == tn.esprit.Champions.models.Status.PENDING) {
+                else if (authenticatedUser.getStatut() == tn.esprit.Champions.models.AccountStatus.PENDING) {
                     showAlert(Alert.AlertType.WARNING, "Pending Approval", "Your account is currently under review by our team.");
                 }
                 else {
@@ -223,7 +223,7 @@ public class LoginService {
             if (user != null && BCrypt.checkpw(password, user.getMot_de_passe())) {
 
                 // 2. Check if account is disabled
-                if (user.getStatut() == tn.esprit.Champions.models.Status.DESACTIVE) {
+                if (user.getStatut() == tn.esprit.Champions.models.AccountStatus.DESACTIVE) {
                     showAlert(Alert.AlertType.ERROR, "Account Disabled", "Your account has been suspended.");
                     return;
                 }
@@ -254,7 +254,7 @@ public class LoginService {
         if (user.getRole() == tn.esprit.Champions.models.Role.ADMIN) {
             openPage("/Admin.fxml", "Admin Panel");
         } else {
-            openPage("/ClientPanel.fxml", "Client Panel");
+            openPage("/DashboardWalletClient.fxml", "Client Panel");
         }
     }
 

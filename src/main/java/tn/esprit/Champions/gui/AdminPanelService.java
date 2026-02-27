@@ -14,6 +14,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import tn.esprit.Champions.models.AccountStatus;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.models.LogEntry;
@@ -149,7 +150,7 @@ public class AdminPanelService {
         }).start();
     }
 
-    private void confirmAndUpdate(Utilisateur user, Status status) {
+    private void confirmAndUpdate(Utilisateur user, AccountStatus status) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Confirm Status Change");
         confirm.setContentText("Set " + user.getNom() + " status to " + status + "?");
@@ -278,8 +279,8 @@ public class AdminPanelService {
                     btnReject.setStyle("-fx-background-color: #f43f5e; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
 
                     btnAI.setOnAction(e -> runAIVerification(getTableView().getItems().get(getIndex()), table));
-                    btnAccept.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), Status.ACTIVE));
-                    btnReject.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), Status.DESACTIVE));
+                    btnAccept.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), AccountStatus.ACTIVE));
+                    btnReject.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), AccountStatus.DESACTIVE));
                 }
                 @Override protected void updateItem(Void item, boolean empty) {
                     super.updateItem(item, empty);
@@ -435,7 +436,7 @@ public class AdminPanelService {
                     user.setPrenom(tfPrenom.getText());
                     user.setEmail(tfEmail.getText());
                     user.setRole(cbRole.getValue());
-                    user.setStatut(Status.valueOf(cbStatus.getValue()));
+                    user.setStatut(AccountStatus.valueOf(cbStatus.getValue()));
                     userService.updateOne(user);
                     showAllUsers();
                 } catch (SQLException e) {

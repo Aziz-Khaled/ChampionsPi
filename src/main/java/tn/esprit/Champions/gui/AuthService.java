@@ -11,6 +11,7 @@ import java.awt.BorderLayout;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
+import tn.esprit.Champions.models.AccountStatus;
 import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -311,7 +312,7 @@ public class AuthService {
                 telephone,
                 identityFile.getName(),
                 personalImageFile.getName(),
-                Status.PENDING,
+                AccountStatus.PENDING,
                 selectedRole
         );
 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox prefHeight="500.0" prefWidth="450.0" spacing="15.0"
+      style="-fx-background-color: #131722; -fx-border-color: #2a2e39; -fx-border-width: 2;"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="tn.esprit.Champions.gui.BotController">
+
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+
+    <children>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <children>
+                <Label text="🤖" style="-fx-font-size: 24;" />
+                <VBox>
+                    <Label text="FINTECH AI ENGINE" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16;" />
+                    <Label fx:id="lblBotStatus" text="Status: Initializing..." style="-fx-text-fill: #00ff88; -fx-font-size: 12;" />
+                </VBox>
+            </children>
+        </HBox>
+
+        <Separator opacity="0.1" />
+
+        <Label text="LIVE EXECUTION LOGS" style="-fx-text-fill: #b2b5be; -fx-font-size: 10; -fx-font-weight: bold;" />
+
+        <ListView fx:id="listLogs" VBox.vgrow="ALWAYS"
+                  style="-fx-background-color: #1e222d; -fx-control-inner-background: #1e222d; -fx-text-fill: #00ff88; -fx-font-family: 'Consolas'; -fx-border-color: #2a2e39;" />
+
+        <HBox spacing="10">
+            <children>
+                <Button maxWidth="Infinity" HBox.hgrow="ALWAYS" onAction="#handleStop" text="STOP BOT"
+                        style="-fx-background-color: #f23645; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 10;" />
+            </children>
+        </HBox>
+
+        <Label text="Note: This bot monitors PENDING limit orders in your database."
+               style="-fx-text-fill: #b2b5be; -fx-font-size: 9;" wrapText="true" />
+    </children>
+</VBox>

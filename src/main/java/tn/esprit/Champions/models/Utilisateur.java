@@ -1,11 +1,11 @@
 package tn.esprit.Champions.models;
 
 public class Utilisateur {
-    private int id_user ;
-    private String nom,prenom ,email,  mot_de_passe, telephone ;
-    private String piece_identite , user_image ;
-    private Role role ;
-    private Status statut ;
+    private int id_user;
+    private String nom, prenom, email, mot_de_passe, telephone;
+    private String piece_identite, user_image;
+    private Role role;
+    private AccountStatus statut;
 
     public String getEmail() {
         return email;
@@ -18,7 +18,7 @@ public class Utilisateur {
     public Utilisateur(int id_user, String nom, String prenom,
                        String email, String mot_de_passe,
                        String telephone, String piece_identite,
-                       String user_image, Status statut, Role role) {
+                       String user_image, AccountStatus statut, Role role) {
 
         this.id_user = id_user;
         this.nom = nom;
@@ -32,11 +32,11 @@ public class Utilisateur {
         this.role = role;
     }
 
-    public Status getStatut() {
+    public AccountStatus getStatut() {
         return statut;
     }
 
-    public void setStatut(Status statut) {
+    public void setStatut(AccountStatus statut) {
         this.statut = statut;
     }
 
@@ -103,6 +103,7 @@ public class Utilisateur {
     public void setRole(Role role) {
         this.role = role;
     }
-
-
 }
+
+
+

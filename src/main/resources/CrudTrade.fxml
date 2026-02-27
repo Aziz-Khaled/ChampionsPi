@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane prefHeight="750.0" prefWidth="1200.0" stylesheets="@/css/style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.CrudTrade">
+    <children>
+        <VBox layoutX="0.0" layoutY="0.0" prefHeight="750.0" prefWidth="1200.0" spacing="0.0">
+
+
+            <HBox prefHeight="80.0" prefWidth="1200.0" spacing="15.0" style="-fx-background-color: #1a5f7a; -fx-padding: 15;" VBox.vgrow="NEVER">
+                <children>
+
+                    <Label style="-fx-font-size: 32px; -fx-alignment: CENTER;" text="💼" />
+
+
+                    <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                        <Label style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;" text="TRADING PLATFORM" />
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #e0f0f7; -fx-font-style: italic;" text="Front Office - Client Trading Interface" />
+                    </VBox>
+
+
+                    <VBox spacing="5.0" style="-fx-padding: 10; -fx-background-color: rgba(255,255,255,0.1); -fx-border-radius: 4;">
+                        <Label fx:id="labelUser" style="-fx-font-size: 11px; -fx-text-fill: white; -fx-font-weight: bold;" text="👤 Client User" />
+                        <Label fx:id="labelDateTime" style="-fx-font-size: 10px; -fx-text-fill: #b8d4e0;" text="📅 " />
+                    </VBox>
+
+
+                    <VBox spacing="5.0" style="-fx-padding: 10; -fx-background-color: rgba(39,174,96,0.3); -fx-border-radius: 4;">
+                        <Label style="-fx-font-size: 11px; -fx-text-fill: #27ae60; -fx-font-weight: bold;" text="🟢 ONLINE" />
+                        <Label style="-fx-font-size: 10px; -fx-text-fill: #27ae60;" text="Ready to Trade" />
+                    </VBox>
+                </children>
+            </HBox>
+
+
+            <Separator prefWidth="1200.0" />
+
+
+            <HBox layoutX="0.0" layoutY="80.0" prefHeight="650.0" prefWidth="1200.0" spacing="15.0" style="-fx-padding: 15;" VBox.vgrow="ALWAYS">
+
+
+                <VBox prefHeight="620.0" prefWidth="380.0" spacing="10.0" style="-fx-padding: 20;" styleClass="card" HBox.hgrow="NEVER">
+
+
+                    <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="📝 New Trade Order" />
+
+                    <Separator prefWidth="360.0" />
+
+
+                    <GridPane hgap="10.0" vgap="12.0">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="100.0" />
+                            <ColumnConstraints hgrow="ALWAYS" minWidth="200.0" prefWidth="240.0" />
+                        </columnConstraints>
+                        <rowConstraints>
+                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="30.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        </rowConstraints>
+
+
+                        <Label styleClass="label-header" text="🔀 Type" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                        <ComboBox fx:id="boxType" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+
+
+                        <Label styleClass="label-header" text="📊 Order" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                        <ComboBox fx:id="boxOrder" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+
+
+                        <Label styleClass="label-header" text="💵 Price" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                        <TextField fx:id="txtPrice" promptText="0.00" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+
+                        <Label styleClass="label-header" text="📦 Qty" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                        <TextField fx:id="txtQuantity" promptText="0.00" styleClass="text-field" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+
+                        <Label styleClass="label-header" text="⚙️ Status" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                        <ComboBox fx:id="boxStatus" prefHeight="26.0" prefWidth="250.0" styleClass="combo-box" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                    </GridPane>
+
+
+                    <Separator prefWidth="340.0" />
+
+
+                    <HBox spacing="8.0" style="-fx-padding: 10 0 0 0;">
+                        <Button fx:id="btnAdd" minWidth="85.0" onAction="#handleAdd" styleClass="button-primary" text="➕ Submit" />
+                        <Button fx:id="btnUpdate" minWidth="85.0" onAction="#handleUpdate" styleClass="button-success" text="✏️ Update" />
+                        <Button fx:id="btnClear" minWidth="85.0" onAction="#handleClear" styleClass="button-secondary" text="🔄 Reset" />
+                    </HBox>
+
+
+                    <Button fx:id="btnDelete" minWidth="260.0" onAction="#handleDelete" styleClass="button-danger" text="❌ Cancel Order" />
+
+
+                    <VBox spacing="5.0" style="-fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-padding: 10; -fx-border-radius: 4;" VBox.vgrow="ALWAYS">
+                        <Label style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #2d9cdb;" text="💡 Info" />
+                        <Label style="-fx-font-size: 10px; -fx-text-fill: #666; -fx-wrap-text: true;" text="Select a trade from the list to edit or delete" />
+                    </VBox>
+                </VBox>
+
+
+                <VBox prefHeight="620.0" prefWidth="780.0" spacing="10.0" HBox.hgrow="ALWAYS">
+
+
+                    <VBox spacing="8.0">
+                        <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="📊 Your Trading History" />
+
+
+                        <HBox spacing="10.0" style="-fx-padding: 12;" styleClass="card">
+                            <Label style="-fx-font-size: 14px;" text="🔍" />
+                            <TextField fx:id="txtSearch" onKeyReleased="#handleSearch" prefWidth="200.0" promptText="Search by type, order, status, price, quantity..." styleClass="text-field" HBox.hgrow="ALWAYS" />
+                            <Button fx:id="btnClearSearch" minWidth="70.0" onAction="#handleClearSearch" styleClass="button-secondary" text="Clear" />
+                        </HBox>
+                    </VBox>
+
+
+                    <TableView fx:id="table" prefHeight="400.0" prefWidth="750.0" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="type" prefWidth="106.39996641874313" text="Type" />
+                            <TableColumn fx:id="order" prefWidth="106.4000244140625" text="Order Mode" />
+                            <TableColumn fx:id="price" prefWidth="72.79997253417969" text="Price" />
+                            <TableColumn fx:id="quantity" prefWidth="89.5999755859375" text="Quantity" />
+                            <TableColumn fx:id="status" prefWidth="91.20001220703125" text="Status" />
+                            <TableColumn fx:id="created" prefWidth="100.0" text="Created" />
+                            <TableColumn fx:id="executed" prefWidth="107.20001220703125" text="Executed" />
+                            <TableColumn fx:id="colAction" prefWidth="103.2000732421875" text="Actions" />
+                        </columns>
+                    </TableView>
+
+
+                    <HBox spacing="10.0" style="-fx-padding: 12;" styleClass="card">
+                        <Label fx:id="labelStatus" style="-fx-font-weight: bold; -fx-text-fill: #27ae60;" text="📈 Ready" />
+                        <Region prefWidth="1" HBox.hgrow="ALWAYS" />
+                        <Label style="-fx-font-weight: bold; -fx-text-fill: #1a5f7a;" text="📊 Total Orders:" />
+                        <Label fx:id="labelCount" style="-fx-font-weight: bold; -fx-text-fill: #2d9cdb; -fx-font-size: 12px;" text="0" />
+                    </HBox>
+                </VBox>
+            </HBox>
+        </VBox>
+    </children>
+</AnchorPane>
