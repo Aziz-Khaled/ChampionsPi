@@ -1,3 +1,7 @@
+
+
+
+
 package tn.esprit.Champions.models;
 
 public enum StatutTransaction {
@@ -7,3 +11,4 @@ public enum StatutTransaction {
     Failed,
     Completed
 }
+

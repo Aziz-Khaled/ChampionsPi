@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.admin_wallet_controller">
+    <BorderPane prefHeight="750.0" prefWidth="1450.0">
+        <left>
+            <VBox prefWidth="240.0" style="-fx-background-color: #2c3e50;">
+                <VBox alignment="CENTER" spacing="15.0" style="-fx-padding: 30 15; -fx-background-color: #1a252f;">
+                    <Circle fill="#ecf0f1" radius="45.0" stroke="#1abc9c" strokeWidth="3.0" />
+                    <Label style="-fx-font-size: 16; -fx-font-weight: bold;" text="ADMIN PANEL" textFill="WHITE" />
+                    <Label style="-fx-font-size: 12;" text="Blockchain Monitor" textFill="#bdc3c7" />
+                </VBox>
+                <VBox spacing="5.0" style="-fx-padding: 15 0;">
+                    <Button maxWidth="Infinity" alignment="BASELINE_LEFT" style="-fx-text-fill: white; -fx-background-color: transparent; -fx-padding: 12 25;" text="📊 Statistiques Globales" />
+                    <Button maxWidth="Infinity" alignment="BASELINE_LEFT" style="-fx-text-fill: #1abc9c; -fx-background-color: #34495e; -fx-padding: 12 25; -fx-border-color: #1abc9c; -fx-border-width: 0 0 0 4;" text="💸 Flux Transactions" />
+                    <Button maxWidth="Infinity" alignment="BASELINE_LEFT" style="-fx-text-fill: white; -fx-background-color: transparent; -fx-padding: 12 25;" text="🛡️ Sécurité Blockchain" />
+                </VBox>
+                <Region VBox.vgrow="ALWAYS" />
+                <VBox alignment="CENTER" style="-fx-padding: 20;">
+                    <Button fx:id="btnSignOut" onAction="#handleSignOut" maxWidth="Infinity" style="-fx-text-fill: #e74c3c; -fx-background-color: #3d1b1b; -fx-background-radius: 5;" text="🚪 Déconnexion" />
+                </VBox>
+            </VBox>
+        </left>
+
+        <center>
+            <VBox spacing="0.0" style="-fx-background-color: #f4f7f6;">
+                <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="20.0" style="-fx-background-color: white; -fx-padding: 0 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, 1);">
+                    <Label style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Historique des Transactions" />
+                    <Region HBox.hgrow="ALWAYS" />
+
+                    <AnchorPane onMouseClicked="#toggleNotifications" style="-fx-cursor: hand;">
+                        <Label style="-fx-font-size: 26;" text="🔔" />
+                        <Circle fx:id="notifBadge" fill="#e74c3c" layoutX="24" layoutY="8" radius="10" stroke="WHITE" strokeWidth="2.0" visible="false" />
+                        <Label fx:id="notifCountLabel" layoutX="19" layoutY="2" style="-fx-font-size: 11; -fx-font-weight: bold;" text="0" textFill="WHITE" visible="false" />
+                    </AnchorPane>
+
+                    <Separator orientation="VERTICAL" prefHeight="30.0" />
+                    <Label style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #34495e;" text="Super Admin" />
+                </HBox>
+
+                <VBox spacing="20.0" style="-fx-padding: 25;" VBox.vgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT">
+                        <TextField promptText="Rechercher une transaction (ID, Nom, RIB...)" prefWidth="400.0" style="-fx-background-radius: 20; -fx-padding: 8 15; -fx-border-color: #bdc3c7; -fx-border-radius: 20;" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button onAction="#refreshTransactions" style="-fx-background-color: #1abc9c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 5;" text="🔄 Actualiser la Blockchain" />
+                    </HBox>
+
+                    <TableView fx:id="table" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #dfe6e9;" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="userCol" prefWidth="200" text="Propriétaire (Nom Prénom)" />
+                            <TableColumn fx:id="sourceCol" prefWidth="200" text="Source (RIB / Carte)" />
+                            <TableColumn fx:id="destCol" prefWidth="200" text="Destination (RIB)" />
+                            <TableColumn fx:id="montantCol" prefWidth="120" text="Montant" />
+                            <TableColumn fx:id="currencyCol" prefWidth="100" text="Devise" />
+                            <TableColumn fx:id="typeCol" prefWidth="120" text="Type" />
+                            <TableColumn fx:id="dateCol" prefWidth="180" text="Date &amp; Heure" />
+                            <TableColumn fx:id="statutCol" prefWidth="120" text="Statut" />
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                        </columnResizePolicy>
+                    </TableView>
+                </VBox>
+            </VBox>
+        </center>
+    </BorderPane>
+
+    <AnchorPane fx:id="notifPane" mouseTransparent="false" visible="false">
+        <VBox layoutX="1120.0" layoutY="75.0" prefWidth="310.0" style="-fx-background-color: white; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 20, 0, 0, 10); -fx-border-color: #dcdde1; -fx-border-radius: 8;">
+            <HBox alignment="CENTER_LEFT" style="-fx-padding: 15; -fx-background-color: #f5f6fa; -fx-background-radius: 8 8 0 0;">
+                <Label style="-fx-font-weight: bold; -fx-text-fill: #2f3640; -fx-font-size: 14;" text="Alertes de Sécurité" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#toggleNotifications" style="-fx-background-color: transparent; -fx-text-fill: #7f8c8d;" text="✕" />
+            </HBox>
+            <ScrollPane fitToWidth="true" prefHeight="400.0" style="-fx-background-color: transparent; -fx-padding: 5;">
+                <VBox fx:id="notifContainer" spacing="12.0" style="-fx-padding: 10;" />
+            </ScrollPane>
+        </VBox>
+    </AnchorPane>
+</StackPane>

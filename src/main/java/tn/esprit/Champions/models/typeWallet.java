@@ -4,4 +4,7 @@ public enum typeWallet {
     fiat,
     crypto,
     trading,
+
 }
+
+

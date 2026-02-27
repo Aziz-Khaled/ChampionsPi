@@ -1,0 +1,94 @@
+.side_ankerpane{
+-fx-background-color:#6b6e50;
+-fx-border-color:#6b6e50;
+-fx-border-width: 2px 2px 2px 2px;
+-fx-border-radius: 5px;
+-fx-background-radius: 5px;
+-fx-border-style: solid;
+}
+
+.pane {
+-fx-background-color: #FFFFFF;
+-fx-border-color: #C1C1C1;
+-fx-background-radius: 30px Opx 30px 0px;
+-fx-border-radius: 0px 0px 30px 30px;
+}
+
+.plus_btn{
+-fx-background-color: transparent;
+-fx-background-radius: 5px;
+-fx-border-radius: 5px;
+-fx-border-color: #C1C1C1;
+-fx-border-style: dashed;
+}
+
+/* Scroll wallets */
+.wallet-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.wallet-container {
+    -fx-padding: 5 10 5 10;
+}
+
+/* Wallet card */
+.wallet-card {
+    -fx-background-color: linear-gradient(to bottom right, #6b6e50, #8a8d6a);
+    -fx-background-radius: 15;
+    -fx-border-radius: 15;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.3, 0, 3);
+}
+
+/* Wallet texts */
+.wallet-title {
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.wallet-balance {
+    -fx-text-fill: #f3f3f3;
+    -fx-font-size: 11px;
+}
+
+/* Currency item */
+.currency-item {
+    -fx-background-color: rgba(255,255,255,0.15);
+    -fx-background-radius: 8;
+    -fx-padding: 4 8 4 8;
+}
+
+.currency-name {
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+}
+
+.currency-balance {
+    -fx-text-fill: #eeeeee;
+    -fx-font-size: 10px;
+}
+
+/* Voir plus button */
+.see-more-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-border-color: white;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-font-size: 10px;
+}
+
+.see-more-btn:hover {
+    -fx-background-color: rgba(255,255,255,0.2);
+}
+
+Button btnTransactions = new Button("💸");
+btnTransactions.setStyle(
+        "-fx-font-size: 18px;" +
+        "-fx-background-color: #ffffff;" +
+        "-fx-border-radius: 10;" +
+        "-fx-background-radius: 10;" +
+        "-fx-cursor: hand;"
+);

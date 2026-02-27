@@ -82,6 +82,7 @@ public class currency {
                 ", is_trading=" + is_trading +
                 '}';
     }
+
 }
 
 
