@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class CertificatController {
 
@@ -98,11 +99,36 @@ public class CertificatController {
     private void updateStats() {
         int total = masterData.size();
         lblTotalCertifs.setText(String.valueOf(total));
-        lblMonthCertifs.setText(String.valueOf(masterData.stream().filter(c -> c.getDateEmission().getMonth() == LocalDate.now().getMonth()).count()));
 
-        // Calcul de la mention la plus fréquente
-        if(total > 0) {
-            lblTopMention.setText(masterData.get(0).getMention().toString());
+        // Calcul pour ce mois
+        long countMonth = masterData.stream()
+                .filter(c -> c.getDateEmission().getMonth() == LocalDate.now().getMonth()
+                        && c.getDateEmission().getYear() == LocalDate.now().getYear())
+                .count();
+        lblMonthCertifs.setText(String.valueOf(countMonth));
+
+        // --- CALCUL RÉEL DE LA MENTION DOMINANTE ---
+        if (total > 0) {
+            // On groupe par mention et on compte les occurrences
+            Map<MentionCertificat, Long> counts = masterData.stream()
+                    .collect(Collectors.groupingBy(certificats::getMention, Collectors.counting()));
+
+            // On cherche la mention qui a le maximum de votes
+            MentionCertificat dominante = counts.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse(MentionCertificat.VALIDE);
+
+            lblTopMention.setText(dominante.toString());
+
+            // Petit bonus : Changer la couleur selon la mention dominante
+            if (dominante == MentionCertificat.EXCELLENT) {
+                lblTopMention.setStyle("-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: #f1c40f;"); // Or
+            } else {
+                lblTopMention.setStyle("-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: #27ae60;"); // Vert
+            }
+        } else {
+            lblTopMention.setText("-");
         }
     }
 
