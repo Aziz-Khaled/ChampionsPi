@@ -163,93 +163,76 @@ public class TradingDashboard {
     }
 
     private void processTrade(TradeType type) {
-        if (selectedAsset == null) {
-            showAlert("Erreur", "Veuillez sélectionner un actif.");
+        if (selectedAsset == null || comboWalletSelection.getValue() == null) {
+            showAlert("Erreur", "Sélectionnez un actif et un wallet.");
             return;
         }
-        if (txtQty.getText() == null || txtQty.getText().trim().isEmpty()) {
-            showAlert("Erreur de saisie", "Veuillez entrer une quantité.");
-            return;
-        }
-
-        wallet selectedWallet = comboWalletSelection.getValue();
-        if (selectedWallet == null) {
-            showAlert("Erreur", "Veuillez sélectionner un wallet Trading.");
-            return;
-        }
-        int walletId = selectedWallet.getIdWallet();
 
         try {
-            // ✅ CORRECTION: Utilisation de BigDecimal pour la précision
             BigDecimal qty = new BigDecimal(txtQty.getText().replace(",", "."));
-            if (qty.compareTo(BigDecimal.ZERO) <= 0) {
-                showAlert("Erreur", "La quantité doit être supérieure à zéro.");
+            BigDecimal price = (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.LIMIT)
+                    ? new BigDecimal(txtTargetPrice.getText().replace(",", "."))
+                    : BigDecimal.valueOf(selectedAsset.getCurrentPrice());
+
+            BigDecimal totalAmountUSDT = qty.multiply(price);
+            int walletId = comboWalletSelection.getValue().getIdWallet();
+
+            // --- RÉCUPÉRATION SÉCURISÉE DES IDS ---
+            currency usdtObj = currencyService.getByName("USDT");
+            if (usdtObj == null) {
+                showAlert("Erreur", "La devise USDT n'existe pas en base de données.");
                 return;
             }
+            int usdtId = usdtObj.getId_currency();
+            int assetCurrencyId = selectedAsset.getId();
 
-            OrderMode mode = OrderMode.valueOf(comboOrderMode.getValue());
-            BigDecimal price;
-            if (mode == OrderMode.LIMIT) {
-                if (txtTargetPrice.getText() == null || txtTargetPrice.getText().trim().isEmpty()) {
-                    showAlert("Erreur de saisie", "Veuillez entrer un prix cible.");
-                    return;
-                }
-                price = new BigDecimal(txtTargetPrice.getText().replace(",", "."));
-            } else {
-                price = BigDecimal.valueOf(selectedAsset.getCurrentPrice());
-            }
-
-            BigDecimal totalAmount = qty.multiply(price);
-
-            // ✅ CORRECTION: ID USDT Dynamique
-            int usdtId = currencyService.getByName("USDT").getId_currency();
-            wallet_currency usdtWC = wcService.getWalletCurrencyByWalletAndId(walletId, usdtId);
-            wallet_currency cryptoWC = wcService.getWalletCurrencyByWalletAndId(walletId, selectedAsset.getId());
-
-            // Vérification du solde (avec BigDecimal)
-            if (type == TradeType.BUY) {
-                if (usdtWC == null || BigDecimal.valueOf(usdtWC.getSolde()).compareTo(totalAmount) < 0) {
-                    showAlert("Solde insuffisant", "Pas assez d'USDT dans le wallet.");
-                    return;
-                }
-            } else { // Vente
-                if (cryptoWC == null || BigDecimal.valueOf(cryptoWC.getSolde()).compareTo(qty) < 0) {
-                    showAlert("Solde insuffisant", "Pas assez de " + selectedAsset.getSymbol() + " pour cette vente.");
-                    return;
-                }
-            }
-
-            // Enregistrer le Trade
-            Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price.doubleValue(), qty.doubleValue(),
-                    (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
-                    LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
+            // 1. Enregistrement du Trade dans la table 'trade'
+            Trade trade = new Trade(0, CURRENT_USER_ID, assetCurrencyId, type,
+                    OrderMode.valueOf(comboOrderMode.getValue()), price.doubleValue(), qty.doubleValue(),
+                    (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
+                    LocalDateTime.now(), (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.MARKET ? LocalDateTime.now() : null));
             tradeService.insertOne(trade);
 
-            // Enregistrer la Transaction (si marché, mise à jour immédiate)
-            if (mode == OrderMode.MARKET) {
-                transaction t = new transaction();
-                t.setIdWalletSource(walletId);
-                t.setIdWalletDestination(walletId);
-                t.setMontant(totalAmount.doubleValue());
-                t.setCurrencyId(usdtId);
-                t.setType(type == TradeType.BUY ? typeTransaction.ACHAT : typeTransaction.VENTE);
-                t.setStatut(StatutTransaction.Completed);
-                t.setDateTransaction(LocalDateTime.now());
+            // 2. Mise à jour des soldes (MARKET uniquement)
+            if (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.MARKET) {
+                if (type == TradeType.BUY) {
+                    // ACHAT : On utilise le même walletId pour source et destination car
+                    // ton insertOne gère déjà le passage du USDT vers la Crypto à l'intérieur du wallet.
 
-                // 🔥 CRUCIAL: transactionService gère le débit/crédit atomique
-                transactionService.insertOne(t);
+                    // Transaction : Débiter USDT, Créditer Crypto
+                    // IMPORTANT: On passe l'ID de la devise qu'on DÉBITE (USDT)
+                    transaction t = new transaction();
+                    t.setIdWalletSource(walletId);
+                    t.setIdWalletDestination(walletId);
+                    t.setMontant(totalAmountUSDT.doubleValue());
+                    t.setCurrencyId(usdtId); // On définit la devise source
+                    t.setType(typeTransaction.ACHAT);
+                    t.setStatut(StatutTransaction.Completed);
+
+                    // Pour que ton insertOne sache quelle crypto créditer,
+                    // assure-toi que ton service transaction utilise selectedAsset.getId()
+                    transactionService.insertOne(t);
+
+                } else {
+                    // VENTE : Débiter Crypto, Créditer USDT
+                    transaction t = new transaction();
+                    t.setIdWalletSource(walletId);
+                    t.setIdWalletDestination(walletId);
+                    t.setMontant(qty.doubleValue());
+                    t.setCurrencyId(assetCurrencyId); // On débite la Crypto
+                    t.setType(typeTransaction.VENTE);
+                    t.setStatut(StatutTransaction.Completed);
+                    transactionService.insertOne(t);
+                }
             }
 
-            showAlert("Success", "Ordre " + type + " placé !");
+            showAlert("Succès", "Ordre " + type + " effectué avec succès !");
             updateSpecificWalletBalance(walletId);
             txtQty.clear();
-            if (paneHistory.isVisible()) loadTradeHistory();
 
-        } catch (NumberFormatException e) {
-            showAlert("Erreur de format", "Veuillez entrer des nombres valides.");
         } catch (Exception e) {
-            showAlert("Erreur système", e.getMessage());
             e.printStackTrace();
+            showAlert("Erreur Transaction", e.getMessage());
         }
     }
 

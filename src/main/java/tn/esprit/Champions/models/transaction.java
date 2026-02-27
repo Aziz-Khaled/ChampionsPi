@@ -26,7 +26,7 @@ public class transaction {
 
     public transaction(int idTransaction, int idWalletSource, int idWalletDestination,int id_card,
                        double montant, typeTransaction type, StatutTransaction statut,
-                       LocalDateTime dateTransaction, int id_conversion) {
+                       LocalDateTime dateTransaction ) {
         this.idTransaction = idTransaction;
         this.idWalletSource = idWalletSource;
         this.idWalletDestination = idWalletDestination;
@@ -35,8 +35,22 @@ public class transaction {
         this.statut = statut;
         this.dateTransaction = dateTransaction;
         this.id_card = id_card;
-        this.id_conversion = id_conversion;
 
+
+    }
+    // Constructeur spécifique au Trading (sans carte bancaire)
+    public transaction(int idTransaction, int idWalletSource, int idWalletDestination,
+                       double montant, typeTransaction type, StatutTransaction statut,
+                       LocalDateTime dateTransaction, int id_conversion) {
+        this.idTransaction = idTransaction;
+        this.idWalletSource = idWalletSource;
+        this.idWalletDestination = idWalletDestination;
+        this.montant = montant;
+        this.type = type;
+        this.statut = statut;
+        this.dateTransaction = dateTransaction;
+        this.id_card = 0; // Valeur par défaut car pas de carte en trading
+        this.id_conversion = id_conversion;
     }
 
 

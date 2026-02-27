@@ -37,9 +37,6 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         if (idCurrency == 0 && nomCurrency != null) {
             idCurrency = getCurrencyIdByName(nomCurrency);
             walletCurrency.setId_currency(idCurrency);
-        } else if (nomCurrency == null && idCurrency != 0) {
-            // Optionnel : Récupérer le nom à partir de l'ID si le nom est manquant
-            // nécessite une méthode getCurrencyNameById(idCurrency) dans ce service
         }
 
         if (idCurrency == 0) {
@@ -49,33 +46,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             throw new SQLException("Le nom de la devise est obligatoire.");
         }
 
-        // 2. Vérifier type du wallet
-        String walletTypeQuery = "SELECT type_wallet FROM wallet WHERE id_wallet = ?";
-        String walletType = "";
-        try (PreparedStatement stmt = cnx.prepareStatement(walletTypeQuery)) {
-            stmt.setInt(1, walletCurrency.getId_wallet());
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    walletType = rs.getString("type_wallet");
-                }
-            }
-        }
-
-        // 3. Vérifier si currency est trading
-        String currencyTradingQuery = "SELECT is_trading FROM currency WHERE id_currency = ?";
-        boolean isTradingCurrency = false;
-        try (PreparedStatement stmt = cnx.prepareStatement(currencyTradingQuery)) {
-            stmt.setInt(1, walletCurrency.getId_currency());
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    isTradingCurrency = rs.getBoolean("is_trading");
-                }
-            }
-        }
-
-        if (walletType.equalsIgnoreCase("TRADING") && !isTradingCurrency) {
-            throw new SQLException("Cette currency n'est pas autorisée dans un wallet de type TRADING.");
-        }
+        // --- LA RÈGLE DE RESTRICTION TRADING A ÉTÉ SUPPRIMÉE ICI ---
 
         // 4. Vérifier si la currency existe déjà dans ce wallet
         String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
@@ -94,7 +65,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         try (PreparedStatement pst = cnx.prepareStatement(insertQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
-            pst.setString(3, walletCurrency.getNom_currency()); // Maintenant garanti non-null
+            pst.setString(3, walletCurrency.getNom_currency());
             pst.setDouble(4, walletCurrency.getSolde());
             pst.executeUpdate();
             System.out.println("wallet_currency ajouté avec succès : " + walletCurrency.getNom_currency() + " solde : " + walletCurrency.getSolde());
@@ -105,7 +76,6 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
     }
 
     public wallet_currency getWalletCurrencyForUpdate(int walletId, int currencyId) throws SQLException {
-        // Le "FOR UPDATE" verrouille la ligne jusqu'au commit/rollback
         String query = "SELECT * FROM wallet_currency WHERE id_wallet = ? AND id_currency = ? FOR UPDATE";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setInt(1, walletId);
@@ -124,6 +94,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         }
         return null;
     }
+
     @Override
     public void updateOne(wallet_currency wc) throws SQLException {
         String query = "UPDATE wallet_currency SET solde = ? WHERE id_wallet = ? AND id_currency = ?";
@@ -133,8 +104,6 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             pst.setInt(3, wc.getId_currency());
             pst.executeUpdate();
         }
-
-        // Mettre à jour la date_derniere_modification du wallet
         updateWalletModificationDate(wc.getId_wallet());
     }
 
@@ -163,11 +132,8 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             pst.executeUpdate();
             System.out.println("wallet_currency supprimé avec succès : " + walletCurrency.getNom_currency());
         }
-
-        // Mettre à jour la date_derniere_modification du wallet
         updateWalletModificationDate(walletCurrency.getId_wallet());
     }
-
 
     @Override
     public List<wallet_currency> SelectAll() throws SQLException {
@@ -242,7 +208,6 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         return 0;
     }
 
-    // 🔹 Méthode pour mettre à jour date_derniere_modification du wallet
     private void updateWalletModificationDate(int walletId) throws SQLException {
         String updateQuery = "UPDATE wallet SET date_derniere_modification = NOW() WHERE id_wallet = ?";
         try (PreparedStatement pst = cnx.prepareStatement(updateQuery)) {
@@ -250,28 +215,8 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             pst.executeUpdate();
         }
     }
-    public double getTotalUSDTTradingBalanceByUser(int userId) throws SQLException {
 
-        String sql = """
-        SELECT COALESCE(SUM(wc.solde),0)
-        FROM wallet_currency wc
-        JOIN wallet w ON wc.id_wallet = w.id_wallet
-        JOIN currency c ON wc.id_currency = c.id_currency
-        WHERE w.id_user = ?
-        AND w.type_wallet = 'TRADING'
-        AND c.code = 'USDT'
-    """;
 
-        try (PreparedStatement pst = cnx.prepareStatement(sql)) {
-            pst.setInt(1, userId);
-            ResultSet rs = pst.executeQuery();
-            if (rs.next()) {
-                return rs.getDouble(1);
-            }
-        }
-
-        return 0;
-    }
     public int getTradingWalletIdByUser(int userId) throws SQLException {
         String sql = "SELECT id_wallet FROM wallet WHERE id_user = ? AND type_wallet = 'TRADING' LIMIT 1";
         try (PreparedStatement pst = cnx.prepareStatement(sql)) {
@@ -281,6 +226,6 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
                 return rs.getInt("id_wallet");
             }
         }
-        return -1; // ou lever une exception si pas trouvé
+        return -1;
     }
 }
