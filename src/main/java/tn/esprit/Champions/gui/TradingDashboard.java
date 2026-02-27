@@ -15,7 +15,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
@@ -25,7 +24,6 @@ import tn.esprit.Champions.services.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,13 +60,11 @@ public class TradingDashboard {
     private final TransactionService transactionService = new TransactionService();
     private final GroqService aiService = new GroqService();
 
-    private final int MY_WALLET_ID = 3;
-    private final int MARKET_WALLET_ID = 4;
     private final int USDT_ID = 1;
     private final int CURRENT_USER_ID = 1;
+    private final int MARKET_WALLET_ID = 4; // garde fixe pour le marché
 
     private final Map<String, Image> logoCache = new HashMap<>();
-    private final Map<String, List<Label>> tickerPriceLabels = new HashMap<>();
     private Map<Integer, String> assetNamesCache;
     private Asset selectedAsset;
     private double initialEntryPrice = 0.0;
@@ -97,6 +93,7 @@ public class TradingDashboard {
         comboOrderMode.valueProperty().addListener((obs, old, newVal) -> calculateTotal());
 
         updateBalances();
+        startBalanceAutoRefresh();
         startGlobalPriceUpdates();
         updateAllNews();
     }
@@ -110,7 +107,7 @@ public class TradingDashboard {
                 for (News n : newsList) {
                     Label l = new Label("• " + n.getTitle());
                     l.setWrapText(true);
-                    l.setMaxWidth(230); // Largeur max pour forcer le retour à la ligne
+                    l.setMaxWidth(230);
                     l.setStyle("-fx-text-fill: white; -fx-padding: 8; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
                     vboxNews.getChildren().add(l);
                 }
@@ -136,27 +133,23 @@ public class TradingDashboard {
         }).start();
     }
 
-    @FXML
-    private void showAIChat() {
+    @FXML private void showAIChat() {
         paneMarket.setVisible(false); paneHistory.setVisible(false);
         if (paneAIChat != null) paneAIChat.setVisible(true);
     }
 
-    @FXML
-    private void showMarket() {
+    @FXML private void showMarket() {
         paneMarket.setVisible(true); paneHistory.setVisible(false);
         if (paneAIChat != null) paneAIChat.setVisible(false);
     }
 
-    @FXML
-    private void showHistory() {
+    @FXML private void showHistory() {
         paneMarket.setVisible(false); paneHistory.setVisible(true);
         if (paneAIChat != null) paneAIChat.setVisible(false);
         loadTradeHistory();
     }
 
-    @FXML
-    private void onSendMessage() {
+    @FXML private void onSendMessage() {
         String userText = txtChatInput.getText();
         if (userText == null || userText.trim().isEmpty()) return;
         chatArea.appendText("Moi: " + userText + "\n");
@@ -187,10 +180,14 @@ public class TradingDashboard {
             double price = mode == OrderMode.MARKET ? selectedAsset.getCurrentPrice() : Double.parseDouble(txtTargetPrice.getText());
             Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty, (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING), LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
             tradeService.insertOne(trade);
+
             if (mode == OrderMode.MARKET) {
+                // Récupération dynamique des wallets
+                int userWalletId = wcService.getTradingWalletIdByUser(CURRENT_USER_ID);
+
                 transaction t = new transaction();
-                t.setIdWalletSource(type == TradeType.BUY ? MY_WALLET_ID : MARKET_WALLET_ID);
-                t.setIdWalletDestination(type == TradeType.BUY ? MARKET_WALLET_ID : MY_WALLET_ID);
+                t.setIdWalletSource(type == TradeType.BUY ? userWalletId : MARKET_WALLET_ID);
+                t.setIdWalletDestination(type == TradeType.BUY ? MARKET_WALLET_ID : userWalletId);
                 t.setMontant(qty * price);
                 t.setType(type == TradeType.BUY ? typeTransaction.ACHAT : typeTransaction.VENTE);
                 t.setCurrencyId(USDT_ID);
@@ -198,6 +195,7 @@ public class TradingDashboard {
                 t.setDateTransaction(LocalDateTime.now());
                 transactionService.insertOne(t);
             }
+
             showAlert("Success", "Order Placed!");
             updateBalances();
             if (paneHistory.isVisible()) loadTradeHistory();
@@ -206,12 +204,21 @@ public class TradingDashboard {
 
     private void updateBalances() {
         try {
-            double usdt = wcService.getBalance(MY_WALLET_ID, USDT_ID);
-            lblBalance.setText(String.format("%.2f USDT", usdt));
-            lblBalanceTND.setText(String.format("≈ %.3f TND", usdt * 3.12));
-        } catch (Exception e) {}
+            double totalUSDT = wcService.getTotalUSDTTradingBalanceByUser(CURRENT_USER_ID);
+            lblBalance.setText(String.format("%.2f USDT", totalUSDT));
+            lblBalanceTND.setText(String.format("≈ %.3f TND", totalUSDT * 3.12));
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
+    private void startBalanceAutoRefresh() {
+        Timeline timeline = new Timeline(
+                new KeyFrame(Duration.seconds(2), event -> updateBalances())
+        );
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    // --- Reste du code inchangé ---
     private void setupTables() {
         colSymbol.setCellFactory(column -> new TableCell<>() {
             private final ImageView img = new ImageView();
@@ -276,7 +283,32 @@ public class TradingDashboard {
     @FXML private void onBuy() { processTrade(TradeType.BUY); }
     @FXML private void onSell() { processTrade(TradeType.SELL); }
     private void loadTradeHistory() { try { tableHistory.getItems().setAll(tradeService.SelectAll()); } catch (Exception e) {} }
-    @FXML private void onSuggestQuantity() { if (selectedAsset == null) return; try { double bal = wcService.getBalance(MY_WALLET_ID, USDT_ID); txtQty.setText(String.format("%.4f", (bal * 0.1) / selectedAsset.getCurrentPrice())); } catch (Exception e) {} }
-    private void showAlert(String title, String content) { Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(title); a.setHeaderText(null); a.setContentText(content); a.show(); }
+    @FXML
+    private void onSuggestQuantity() {
+
+        if (selectedAsset == null) return;
+
+        try {
+
+            // 🔥 Balance dynamique (tous les wallets TRADING de l'utilisateur)
+            double bal = wcService.getTotalUSDTTradingBalanceByUser(CURRENT_USER_ID);
+
+            if (bal <= 0) {
+                showAlert("Info", "Solde USDT insuffisant !");
+                return;
+            }
+
+            // 10% du solde
+            double tenPercent = bal * 0.1;
+
+            // Calcul quantité
+            double qty = tenPercent / selectedAsset.getCurrentPrice();
+
+            txtQty.setText(String.format("%.4f", qty));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }    private void showAlert(String title, String content) { Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(title); a.setHeaderText(null); a.setContentText(content); a.show(); }
     @FXML private void openBotWindow() { try { Parent root = FXMLLoader.load(getClass().getResource("/BotView.fxml")); Stage s = new Stage(); s.setScene(new Scene(root)); s.show(); } catch (IOException e) {} }
 }

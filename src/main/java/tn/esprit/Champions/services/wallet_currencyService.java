@@ -214,4 +214,37 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             pst.executeUpdate();
         }
     }
+    public double getTotalUSDTTradingBalanceByUser(int userId) throws SQLException {
+
+        String sql = """
+        SELECT COALESCE(SUM(wc.solde),0)
+        FROM wallet_currency wc
+        JOIN wallet w ON wc.id_wallet = w.id_wallet
+        JOIN currency c ON wc.id_currency = c.id_currency
+        WHERE w.id_user = ?
+        AND w.type_wallet = 'TRADING'
+        AND c.code = 'USDT'
+    """;
+
+        try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+            pst.setInt(1, userId);
+            ResultSet rs = pst.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        }
+
+        return 0;
+    }
+    public int getTradingWalletIdByUser(int userId) throws SQLException {
+        String sql = "SELECT id_wallet FROM wallet WHERE id_user = ? AND type_wallet = 'TRADING' LIMIT 1";
+        try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+            pst.setInt(1, userId);
+            ResultSet rs = pst.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id_wallet");
+            }
+        }
+        return -1; // ou lever une exception si pas trouvé
+    }
 }

@@ -22,7 +22,7 @@ public class Test extends Application {
         }
 
         // 2. Chargement de l'interface principale (TradingDashboard)
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/TradingDashboard.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
 
         Parent root = loader.load();
         Scene scene = new Scene(root);
