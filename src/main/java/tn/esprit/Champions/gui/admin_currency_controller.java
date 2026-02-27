@@ -48,6 +48,7 @@ public class admin_currency_controller {
 
     @FXML
     public void initialize() {
+        // Initialisation des colonnes
 
         TableColumn<currency, String> colCode = new TableColumn<>("Code");
         colCode.setCellValueFactory(new PropertyValueFactory<>("code"));
@@ -65,14 +66,14 @@ public class admin_currency_controller {
         table.getColumns().addAll(colCode, colNom, colType, colTrading);
         table.setItems(assetList);
 
-
+        // Charger les currencies existantes
         loadCurrenciesFromDB();
 
-
+        // ComboBox type readonly
         boxType.setItems(FXCollections.observableArrayList("FIAT", "CRYPTO"));
         boxType.setDisable(true);
 
-
+        // Charger FIAT et CRYPTO depuis API
         fetchFiatList();
         fetchCryptoList();
 
@@ -177,13 +178,8 @@ public class admin_currency_controller {
 
         lblName.setText(selectedCode);
 
-        // Bloquer si crypto ou fiat non chargés
-        if (!fiatLoaded) {
-            showAlert("Patience", "Chargement des devises FIAT en cours...");
-            return;
-        }
-        if (!cryptoLoaded) {
-            showAlert("Patience", "Chargement des cryptos en cours...");
+        if (!fiatLoaded || !cryptoLoaded) {
+            showAlert("Patience", "Chargement des données en cours, réessayez dans quelques secondes.");
             return;
         }
 
@@ -227,7 +223,7 @@ public class admin_currency_controller {
         try {
             currencyService.insertOne(newCurrency);
 
-
+            // Ajouter à la table
             assetList.add(newCurrency);
 
             showAlert("Succès", "Currency ajoutée : " + name + " (" + currentType + ")");
@@ -258,15 +254,15 @@ public class admin_currency_controller {
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
                 try {
-
+                    // Supprimer de la base avec contrôle
                     currencyService.deleteOne(selectedCurrency);
 
-
+                    // Supprimer de la table
                     assetList.remove(selectedCurrency);
 
                     showAlert("Succès", "Currency supprimée avec succès !");
 
-
+                    // Réinitialiser le formulaire
                     boxCode.setValue(null);
                     lblName.setText("");
                     boxType.setValue(null);
@@ -275,7 +271,7 @@ public class admin_currency_controller {
 
                     selectedCurrency = null;
                 } catch (SQLException ex) {
-
+                    // Affiche le message d'erreur si solde != 0 ou autre erreur
                     showAlert("Erreur", ex.getMessage());
                 }
             }
@@ -293,14 +289,14 @@ public class admin_currency_controller {
             return;
         }
 
-
+        // Récupérer la valeur actuelle du checkbox pour CRYPTO
         boolean newIsTrading = chkIsTrading.isSelected();
         selectedCurrency.setIs_trading(newIsTrading);
 
         try {
             currencyService.updateOne(selectedCurrency);
 
-
+            // Mettre à jour la table (rafraîchir)
             table.refresh();
 
             showAlert("Succès", "Currency mise à jour avec succès !");
@@ -311,11 +307,11 @@ public class admin_currency_controller {
     @FXML
     private void handleSignOut() {
         try {
-
+            // Charger le FXML depuis resources racine
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
             Parent root = loader.load();
 
-
+            // Remplacer la scène actuelle par le Dashboard client
             btnSignOut.getScene().setRoot(root);
 
         } catch (IOException e) {

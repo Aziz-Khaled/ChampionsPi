@@ -1520,16 +1520,14 @@ public class crud_wallet {
             String stripePaymentMethodId
     ) throws StripeException {
 
-        // Stripe attend le montant en centimes
         long amountInCents = (long) (amount * 100);
 
-        // Création du PaymentIntent (paiement immédiat)
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 .setAmount(amountInCents)
                 .setCurrency(currency.toLowerCase())
                 .setCustomer(stripeCustomerId)
                 .setPaymentMethod(stripePaymentMethodId)
-                .setConfirm(true) // paiement immédiat
+                .setConfirm(true)
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)
@@ -1821,7 +1819,7 @@ public class crud_wallet {
             convAmountField.setDisable(true);
 
             walletSourceBox.setDisable(false);
-            walletDestBox.setDisable(false);   
+            walletDestBox.setDisable(false);
 
             showAlert(Alert.AlertType.INFORMATION, "Succès", "Taux récupéré. Sélectionnez maintenant les Wallets pour valider la transaction.");
 
@@ -1907,7 +1905,7 @@ public class crud_wallet {
             resetConversionFields();
             updateGlobalCurrencyChart();
             loadCard();
-
+            loadCurrencies();
         } catch (Exception e) {
             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Erreur Transaction", e.getMessage());

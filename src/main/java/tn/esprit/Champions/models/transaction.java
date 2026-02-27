@@ -16,6 +16,7 @@ public class transaction {
     private LocalDateTime dateTransaction;
     private int CurrencyId;
     private int id_conversion;
+    private int id_trade;
 
 
 
@@ -119,15 +120,23 @@ public class transaction {
         this.id_conversion = id_conversion;
     }
 
+    public int getId_trade() {
+        return id_trade;
+    }
+
+    public void setId_trade(int id_trade) {
+        this.id_trade = id_trade;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         transaction that = (transaction) o;
-        return idTransaction == that.idTransaction && idWalletSource == that.idWalletSource && id_card == that.id_card && idWalletDestination == that.idWalletDestination && Double.compare(montant, that.montant) == 0 && CurrencyId == that.CurrencyId && id_conversion == that.id_conversion && type == that.type && statut == that.statut && Objects.equals(dateTransaction, that.dateTransaction);
+        return idTransaction == that.idTransaction && idWalletSource == that.idWalletSource && id_card == that.id_card && idWalletDestination == that.idWalletDestination && Double.compare(montant, that.montant) == 0 && CurrencyId == that.CurrencyId && id_conversion == that.id_conversion && id_trade == that.id_trade && type == that.type && statut == that.statut && Objects.equals(dateTransaction, that.dateTransaction);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idTransaction, idWalletSource, id_card, idWalletDestination, montant, type, statut, dateTransaction, CurrencyId, id_conversion);
+        return Objects.hash(idTransaction, idWalletSource, id_card, idWalletDestination, montant, type, statut, dateTransaction, CurrencyId, id_conversion, id_trade);
     }
 }

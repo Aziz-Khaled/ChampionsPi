@@ -104,6 +104,26 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         updateWalletModificationDate(walletCurrency.getId_wallet());
     }
 
+    public wallet_currency getWalletCurrencyForUpdate(int walletId, int currencyId) throws SQLException {
+        // Le "FOR UPDATE" verrouille la ligne jusqu'au commit/rollback
+        String query = "SELECT * FROM wallet_currency WHERE id_wallet = ? AND id_currency = ? FOR UPDATE";
+        try (PreparedStatement pst = cnx.prepareStatement(query)) {
+            pst.setInt(1, walletId);
+            pst.setInt(2, currencyId);
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    wallet_currency wc = new wallet_currency();
+                    wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
+                    wc.setId_wallet(rs.getInt("id_wallet"));
+                    wc.setId_currency(rs.getInt("id_currency"));
+                    wc.setSolde(rs.getDouble("solde"));
+                    wc.setNom_currency(rs.getString("nom_currency"));
+                    return wc;
+                }
+            }
+        }
+        return null;
+    }
     @Override
     public void updateOne(wallet_currency wc) throws SQLException {
         String query = "UPDATE wallet_currency SET solde = ? WHERE id_wallet = ? AND id_currency = ?";

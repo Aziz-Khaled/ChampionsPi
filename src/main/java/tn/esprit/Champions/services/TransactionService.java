@@ -53,13 +53,14 @@ public class TransactionService implements CRUD<transaction> {
 
         if (sourceWallet == null) throw new SQLException("Wallet source introuvable !");
         if (destWallet == null) throw new SQLException("Wallet destinataire introuvable !");
-        if (sourceWallet.getIdWallet() == destWallet.getIdWallet()) throw new SQLException("Source et destination identiques !");
+
+        boolean isConversion = java.util.Objects.equals("conversion", t.getType().name().toLowerCase());
+        boolean isTrade = java.util.Objects.equals("achat", t.getType().name().toLowerCase()) ||
+                java.util.Objects.equals("vente", t.getType().name().toLowerCase());
 
         // --- LOGIQUE DE SÉCURITÉ DES TYPES ---
-        boolean isConversion = java.util.Objects.equals("conversion", t.getType().name().toLowerCase());
-
         if (!java.util.Objects.equals(sourceWallet.getTypeWallet(), destWallet.getTypeWallet())) {
-            if (!isConversion) {
+            if (!isConversion && !isTrade) {
                 throw new SQLException("Transaction interdite : Types de wallets différents sans conversion.");
             }
         }
@@ -76,65 +77,36 @@ public class TransactionService implements CRUD<transaction> {
 
         if (isConversion) {
             if (t.getId_conversion() <= 0) throw new SQLException("ID de conversion manquant.");
-
             Conversion convDetails = conversionService.getById(t.getId_conversion());
             if (convDetails == null) throw new SQLException("Détails de conversion introuvables.");
 
-            // On écrase avec les vraies valeurs de la table conversion
             amountToDebit = convDetails.getAmountFrom();
             currencyToDebit = convDetails.getCurrencyFrom();
             amountToCredit = convDetails.getAmountTo();
             currencyToCredit = convDetails.getCurrencyTo();
         }
-
-        // --- VÉRIFICATION COMPATIBILITÉ WALLET / DEVISE ---
-        String typeDeviseDebit = currencyService.getCurrencyTypeById(currencyToDebit);
-        String typeDeviseCredit = currencyService.getCurrencyTypeById(currencyToCredit);
-
-        // 1. Sécurité Wallet Source (Débit)
-        if (java.util.Objects.equals("FIAT", sourceWallet.getTypeWallet()) &&
-                java.util.Objects.equals("crypto", typeDeviseDebit)) {
-            throw new SQLException("Le wallet source est de type FIAT, il ne peut pas contenir/vendre de la CRYPTO.");
-        }
-
-        // 2. Sécurité Wallet Destination (Crédit) - ✅ TA DEMANDE
-        // Si wallet destination est FIAT, il ne peut recevoir que du FIAT
-        if (java.util.Objects.equals("FIAT", destWallet.getTypeWallet()) &&
-                java.util.Objects.equals("crypto", typeDeviseCredit)) {
-            throw new SQLException("Le wallet de destination est de type FIAT, il ne peut pas recevoir la monnaie CRYPTO issue de la conversion.");
-        }
-
-        // Si wallet destination est TRADING/CRYPTO, il ne peut recevoir que de la CRYPTO (optionnel, à toi de voir)
-        if (java.util.Objects.equals("TRADING", destWallet.getTypeWallet()) &&
-                java.util.Objects.equals("fiat", typeDeviseCredit)) {
-            throw new SQLException("Le wallet de destination est de type TRADING, il ne peut pas recevoir de monnaie FIAT.");
-        }
-
-        // --- VÉRIFICATION DU SOLDE (DEVISE SOURCE) ---
-        wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(sourceWallet.getIdWallet(), currencyToDebit);
-
-        if (sourceCurrency == null) {
-            throw new SQLException("La devise source (" + currencyToDebit + ") n'existe pas dans votre wallet !");
-        }
-
-        BigDecimal soldeSource = BigDecimal.valueOf(sourceCurrency.getSolde());
-        BigDecimal montantDebit = BigDecimal.valueOf(amountToDebit);
-
-        if (soldeSource.compareTo(montantDebit) < 0) {
-            throw new SQLException("Solde insuffisant ! Vous tentez de vendre " + amountToDebit + " mais vous n'avez que " + sourceCurrency.getSolde());
-        }
+        // Pour les trades (achat/vente), currencyToDebit est déjà correct (dynamique)
 
         // --- EXECUTION TRANSACTIONNELLE ---
         boolean previousAutoCommit = cnx.getAutoCommit();
         try {
             cnx.setAutoCommit(false);
 
-            // 1. Débit du montant "From"
+            // 1. Débit avec verrouillage pessimiste pour la concurrence
+            wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyForUpdate(sourceWallet.getIdWallet(), currencyToDebit);
+
+            if (sourceCurrency == null || BigDecimal.valueOf(sourceCurrency.getSolde()).compareTo(BigDecimal.valueOf(amountToDebit)) < 0) {
+                throw new SQLException("Solde insuffisant dans le wallet source pour la devise ID: " + currencyToDebit);
+            }
+
+            BigDecimal soldeSource = BigDecimal.valueOf(sourceCurrency.getSolde());
+            BigDecimal montantDebit = BigDecimal.valueOf(amountToDebit);
             sourceCurrency.setSolde(soldeSource.subtract(montantDebit).doubleValue());
             walletCurrencyService.updateOne(sourceCurrency);
 
-            // 2. Crédit du montant "To"
-            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyByWalletAndId(destWallet.getIdWallet(), currencyToCredit);
+            // 2. Crédit avec verrouillage pessimiste
+            wallet_currency destCurrency = walletCurrencyService.getWalletCurrencyForUpdate(destWallet.getIdWallet(), currencyToCredit);
+
             if (destCurrency == null) {
                 destCurrency = new wallet_currency();
                 destCurrency.setId_wallet(destWallet.getIdWallet());
@@ -142,6 +114,8 @@ public class TransactionService implements CRUD<transaction> {
                 destCurrency.setNom_currency(currencyService.getCurrencyNameById(currencyToCredit));
                 destCurrency.setSolde(0);
                 walletCurrencyService.insertOne(destCurrency);
+                // Re-fetch to lock it after insertion
+                destCurrency = walletCurrencyService.getWalletCurrencyForUpdate(destWallet.getIdWallet(), currencyToCredit);
             }
 
             BigDecimal soldeDestActuel = BigDecimal.valueOf(destCurrency.getSolde());
@@ -154,16 +128,14 @@ public class TransactionService implements CRUD<transaction> {
             try (PreparedStatement pst = cnx.prepareStatement(insertTransactionSql, Statement.RETURN_GENERATED_KEYS)) {
                 pst.setInt(1, sourceWallet.getIdWallet());
                 pst.setInt(2, destWallet.getIdWallet());
-                pst.setDouble(3, t.getMontant()); // On garde le montant saisi par l'user
+                pst.setDouble(3, t.getMontant());
                 pst.setString(4, t.getType().name());
                 pst.setString(5, t.getStatut().name());
                 pst.setInt(6, t.getCurrencyId());
 
-                if (t.getId_conversion() > 0) {
-                    pst.setInt(7, t.getId_conversion());
-                } else {
-                    pst.setNull(7, java.sql.Types.INTEGER);
-                }
+                if (t.getId_conversion() > 0) pst.setInt(7, t.getId_conversion());
+                else pst.setNull(7, java.sql.Types.INTEGER);
+
                 pst.executeUpdate();
 
                 ResultSet rs = pst.getGeneratedKeys();
@@ -179,7 +151,7 @@ public class TransactionService implements CRUD<transaction> {
             }
 
             cnx.commit();
-            System.out.println("Conversion réussie.");
+            System.out.println("Transaction " + t.getType() + " réussie.");
 
         } catch (Exception ex) {
             if (cnx != null) cnx.rollback();

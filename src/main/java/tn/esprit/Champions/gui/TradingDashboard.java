@@ -19,39 +19,43 @@ import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.*;
 
 import java.io.IOException;
+import java.math.BigDecimal; // ✅ CORRECTION: IMPORT MANQUANT
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects; // ✅ CORRECTION: IMPORT MANQUANT
 import java.util.stream.Collectors;
 
 public class TradingDashboard {
 
+    // --- Éléments FXML ---
     @FXML private TableView<Asset> tableAssets;
     @FXML private TableColumn<Asset, String> colSymbol;
     @FXML private TableColumn<Asset, Double> colPrice;
-
     @FXML private TableView<Trade> tableHistory;
     @FXML private TableColumn<Trade, String> colHistSymbol, colHistType;
     @FXML private TableColumn<Trade, Double> colHistQty, colHistPrice;
     @FXML private TableColumn<Trade, Status> colHistStatus;
-
     @FXML private Label lblBalance, lblBalanceTND, lblSelected, lblPnL, lblAdvice, lblTotal;
     @FXML private TextField txtQty, txtTargetPrice;
     @FXML private ComboBox<String> comboOrderMode;
     @FXML private VBox paneHistory, vboxNews, paneMarket;
     @FXML private WebView chartWebView;
     @FXML private HBox tickerContainer;
-
     @FXML private VBox paneAIChat;
     @FXML private TextArea chatArea;
     @FXML private TextField txtChatInput;
     @FXML private Button btnSend;
+    @FXML private ComboBox<wallet> comboWalletSelection;
 
+    // --- Services ---
     private final TradeService tradeService = new TradeService();
     private final MarketApiService marketApi = new MarketApiService();
     private final wallet_currencyService wcService = new wallet_currencyService();
@@ -59,10 +63,11 @@ public class TradingDashboard {
     private final NewsService newsService = new NewsService();
     private final TransactionService transactionService = new TransactionService();
     private final GroqService aiService = new GroqService();
+    private final WalletService walletService = new WalletService();
+    private final CurrencyService currencyService = new CurrencyService(); // ✅ CORRECTION: AJOUTÉ
 
-    private final int USDT_ID = 1;
+    // ID Utilisateur fixé pour cet exemple
     private final int CURRENT_USER_ID = 1;
-    private final int MARKET_WALLET_ID = 4; // garde fixe pour le marché
 
     private final Map<String, Image> logoCache = new HashMap<>();
     private Map<Integer, String> assetNamesCache;
@@ -75,6 +80,7 @@ public class TradingDashboard {
         setupTables();
         setupOrderInputs();
         setupTickerLoop();
+        setupWalletSelector();
 
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
@@ -92,63 +98,237 @@ public class TradingDashboard {
         txtTargetPrice.textProperty().addListener((obs, old, newVal) -> calculateTotal());
         comboOrderMode.valueProperty().addListener((obs, old, newVal) -> calculateTotal());
 
-        updateBalances();
-        startBalanceAutoRefresh();
         startGlobalPriceUpdates();
         updateAllNews();
     }
 
+    private void setupWalletSelector() {
+        try {
+            List<wallet> tradingWallets = walletService.SelectAll().stream()
+                    .filter(w -> w.getIdUser() == CURRENT_USER_ID)
+                    .filter(w -> w.getTypeWallet() == typeWallet.trading)
+                    .collect(Collectors.toList());
+
+            comboWalletSelection.getItems().clear();
+            comboWalletSelection.getItems().addAll(tradingWallets);
+
+            comboWalletSelection.setConverter(new StringConverter<wallet>() {
+                @Override
+                public String toString(wallet w) { return w == null ? "" : "RIB: " + w.getRib(); }
+                @Override
+                public wallet fromString(String string) { return null; }
+            });
+
+            comboWalletSelection.getSelectionModel().selectedItemProperty().addListener((obs, oldW, newW) -> {
+                if (newW != null) {
+                    updateSpecificWalletBalance(newW.getIdWallet());
+                }
+            });
+
+            if (!tradingWallets.isEmpty()) {
+                comboWalletSelection.getSelectionModel().selectFirst();
+            } else {
+                lblBalance.setText("Aucun Wallet Trading");
+                lblBalanceTND.setText("0.00 TND");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            lblBalance.setText("Erreur chargement");
+        }
+    }
+
+    private void updateSpecificWalletBalance(int walletId) {
+        try {
+            List<wallet_currency> allCurrenciesInWallet = wcService.SelectAll().stream()
+                    .filter(wc -> wc.getId_wallet() == walletId)
+                    .collect(Collectors.toList());
+
+            // ✅ CORRECTION: Recherche plus robuste de l'USDT
+            wallet_currency usdtWalletCurrency = allCurrenciesInWallet.stream()
+                    .filter(wc -> wc.getNom_currency() != null && wc.getNom_currency().equalsIgnoreCase("USDT"))
+                    .findFirst()
+                    .orElse(null);
+
+            if (usdtWalletCurrency != null) {
+                lblBalance.setText(String.format("%.2f USDT", usdtWalletCurrency.getSolde()));
+            } else {
+                lblBalance.setText("0.00 USDT");
+            }
+            lblBalanceTND.setText("0.00 TND");
+        } catch (SQLException e) {
+            lblBalance.setText("Error");
+            e.printStackTrace();
+        }
+    }
+
+    private void processTrade(TradeType type) {
+        if (selectedAsset == null) {
+            showAlert("Erreur", "Veuillez sélectionner un actif.");
+            return;
+        }
+        if (txtQty.getText() == null || txtQty.getText().trim().isEmpty()) {
+            showAlert("Erreur de saisie", "Veuillez entrer une quantité.");
+            return;
+        }
+
+        wallet selectedWallet = comboWalletSelection.getValue();
+        if (selectedWallet == null) {
+            showAlert("Erreur", "Veuillez sélectionner un wallet Trading.");
+            return;
+        }
+        int walletId = selectedWallet.getIdWallet();
+
+        try {
+            // ✅ CORRECTION: Utilisation de BigDecimal pour la précision
+            BigDecimal qty = new BigDecimal(txtQty.getText().replace(",", "."));
+            if (qty.compareTo(BigDecimal.ZERO) <= 0) {
+                showAlert("Erreur", "La quantité doit être supérieure à zéro.");
+                return;
+            }
+
+            OrderMode mode = OrderMode.valueOf(comboOrderMode.getValue());
+            BigDecimal price;
+            if (mode == OrderMode.LIMIT) {
+                if (txtTargetPrice.getText() == null || txtTargetPrice.getText().trim().isEmpty()) {
+                    showAlert("Erreur de saisie", "Veuillez entrer un prix cible.");
+                    return;
+                }
+                price = new BigDecimal(txtTargetPrice.getText().replace(",", "."));
+            } else {
+                price = BigDecimal.valueOf(selectedAsset.getCurrentPrice());
+            }
+
+            BigDecimal totalAmount = qty.multiply(price);
+
+            // ✅ CORRECTION: ID USDT Dynamique
+            int usdtId = currencyService.getByName("USDT").getId_currency();
+            wallet_currency usdtWC = wcService.getWalletCurrencyByWalletAndId(walletId, usdtId);
+            wallet_currency cryptoWC = wcService.getWalletCurrencyByWalletAndId(walletId, selectedAsset.getId());
+
+            // Vérification du solde (avec BigDecimal)
+            if (type == TradeType.BUY) {
+                if (usdtWC == null || BigDecimal.valueOf(usdtWC.getSolde()).compareTo(totalAmount) < 0) {
+                    showAlert("Solde insuffisant", "Pas assez d'USDT dans le wallet.");
+                    return;
+                }
+            } else { // Vente
+                if (cryptoWC == null || BigDecimal.valueOf(cryptoWC.getSolde()).compareTo(qty) < 0) {
+                    showAlert("Solde insuffisant", "Pas assez de " + selectedAsset.getSymbol() + " pour cette vente.");
+                    return;
+                }
+            }
+
+            // Enregistrer le Trade
+            Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price.doubleValue(), qty.doubleValue(),
+                    (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
+                    LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
+            tradeService.insertOne(trade);
+
+            // Enregistrer la Transaction (si marché, mise à jour immédiate)
+            if (mode == OrderMode.MARKET) {
+                transaction t = new transaction();
+                t.setIdWalletSource(walletId);
+                t.setIdWalletDestination(walletId);
+                t.setMontant(totalAmount.doubleValue());
+                t.setCurrencyId(usdtId);
+                t.setType(type == TradeType.BUY ? typeTransaction.ACHAT : typeTransaction.VENTE);
+                t.setStatut(StatutTransaction.Completed);
+                t.setDateTransaction(LocalDateTime.now());
+
+                // 🔥 CRUCIAL: transactionService gère le débit/crédit atomique
+                transactionService.insertOne(t);
+            }
+
+            showAlert("Success", "Ordre " + type + " placé !");
+            updateSpecificWalletBalance(walletId);
+            txtQty.clear();
+            if (paneHistory.isVisible()) loadTradeHistory();
+
+        } catch (NumberFormatException e) {
+            showAlert("Erreur de format", "Veuillez entrer des nombres valides.");
+        } catch (Exception e) {
+            showAlert("Erreur système", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void showAlert(String title, String content) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle(title);
+        a.setHeaderText(null);
+        a.setContentText(content);
+        a.showAndWait();
+    }
+
+    @FXML private void onBuy() { processTrade(TradeType.BUY); }
+    @FXML private void onSell() { processTrade(TradeType.SELL); }
+
+    @FXML
+    private void onSuggestQuantity() {
+        if (selectedAsset == null || comboWalletSelection.getValue() == null) return;
+        try {
+            wallet selectedWallet = comboWalletSelection.getValue();
+            List<wallet_currency> allCurrencies = wcService.SelectAll().stream()
+                    .filter(wc -> wc.getId_wallet() == selectedWallet.getIdWallet())
+                    .collect(Collectors.toList());
+            wallet_currency usdtWC = allCurrencies.stream()
+                    .filter(wc -> wc.getNom_currency() != null && wc.getNom_currency().equalsIgnoreCase("USDT"))
+                    .findFirst()
+                    .orElse(null);
+
+            double bal = (usdtWC != null) ? usdtWC.getSolde() : 0;
+            if (bal <= 0) {
+                showAlert("Info", "Solde USDT insuffisant !");
+                return;
+            }
+
+            double tenPercent = bal * 0.1;
+            double qty = tenPercent / selectedAsset.getCurrentPrice();
+            txtQty.setText(String.format("%.4f", qty));
+
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    // --- Fonctions utilitaires ---
     private void updateAllNews() {
         new Thread(() -> {
             List<News> newsList = newsService.getLatestNews("CRYPTO");
-            Platform.runLater(() -> {
-                vboxNews.getChildren().clear();
-                vboxNews.setSpacing(10);
-                for (News n : newsList) {
-                    Label l = new Label("• " + n.getTitle());
-                    l.setWrapText(true);
-                    l.setMaxWidth(230);
-                    l.setStyle("-fx-text-fill: white; -fx-padding: 8; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
-                    vboxNews.getChildren().add(l);
-                }
-            });
+            Platform.runLater(() -> renderNews(newsList));
         }).start();
     }
-
     private void updateNews(String symbol) {
         new Thread(() -> {
             String cleanSymbol = symbol.toUpperCase().replace("USDT", "");
             List<News> newsList = newsService.getLatestNews(cleanSymbol);
-            Platform.runLater(() -> {
-                vboxNews.getChildren().clear();
-                vboxNews.setSpacing(10);
-                for (News n : newsList) {
-                    Label l = new Label("• " + n.getTitle());
-                    l.setWrapText(true);
-                    l.setMaxWidth(230);
-                    l.setStyle("-fx-text-fill: white; -fx-padding: 8; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
-                    vboxNews.getChildren().add(l);
-                }
-            });
+            Platform.runLater(() -> renderNews(newsList));
         }).start();
+    }
+    private void renderNews(List<News> newsList) {
+        vboxNews.getChildren().clear();
+        vboxNews.setSpacing(10);
+        for (News n : newsList) {
+            Label l = new Label("• " + n.getTitle());
+            l.setWrapText(true);
+            l.setMaxWidth(230);
+            l.setStyle("-fx-text-fill: white; -fx-padding: 8; -fx-border-color: #2b3139; -fx-border-width: 0 0 1 0;");
+            vboxNews.getChildren().add(l);
+        }
     }
 
     @FXML private void showAIChat() {
         paneMarket.setVisible(false); paneHistory.setVisible(false);
         if (paneAIChat != null) paneAIChat.setVisible(true);
     }
-
     @FXML private void showMarket() {
         paneMarket.setVisible(true); paneHistory.setVisible(false);
         if (paneAIChat != null) paneAIChat.setVisible(false);
     }
-
     @FXML private void showHistory() {
         paneMarket.setVisible(false); paneHistory.setVisible(true);
         if (paneAIChat != null) paneAIChat.setVisible(false);
         loadTradeHistory();
     }
-
     @FXML private void onSendMessage() {
         String userText = txtChatInput.getText();
         if (userText == null || userText.trim().isEmpty()) return;
@@ -171,54 +351,6 @@ public class TradingDashboard {
             }
         }).start();
     }
-
-    private void processTrade(TradeType type) {
-        if (selectedAsset == null || txtQty.getText().isEmpty()) return;
-        try {
-            double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
-            OrderMode mode = OrderMode.valueOf(comboOrderMode.getValue());
-            double price = mode == OrderMode.MARKET ? selectedAsset.getCurrentPrice() : Double.parseDouble(txtTargetPrice.getText());
-            Trade trade = new Trade(0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty, (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING), LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null));
-            tradeService.insertOne(trade);
-
-            if (mode == OrderMode.MARKET) {
-                // Récupération dynamique des wallets
-                int userWalletId = wcService.getTradingWalletIdByUser(CURRENT_USER_ID);
-
-                transaction t = new transaction();
-                t.setIdWalletSource(type == TradeType.BUY ? userWalletId : MARKET_WALLET_ID);
-                t.setIdWalletDestination(type == TradeType.BUY ? MARKET_WALLET_ID : userWalletId);
-                t.setMontant(qty * price);
-                t.setType(type == TradeType.BUY ? typeTransaction.ACHAT : typeTransaction.VENTE);
-                t.setCurrencyId(USDT_ID);
-                t.setStatut(StatutTransaction.Completed);
-                t.setDateTransaction(LocalDateTime.now());
-                transactionService.insertOne(t);
-            }
-
-            showAlert("Success", "Order Placed!");
-            updateBalances();
-            if (paneHistory.isVisible()) loadTradeHistory();
-        } catch (Exception e) { showAlert("Error", e.getMessage()); }
-    }
-
-    private void updateBalances() {
-        try {
-            double totalUSDT = wcService.getTotalUSDTTradingBalanceByUser(CURRENT_USER_ID);
-            lblBalance.setText(String.format("%.2f USDT", totalUSDT));
-            lblBalanceTND.setText(String.format("≈ %.3f TND", totalUSDT * 3.12));
-        } catch (Exception e) { e.printStackTrace(); }
-    }
-
-    private void startBalanceAutoRefresh() {
-        Timeline timeline = new Timeline(
-                new KeyFrame(Duration.seconds(2), event -> updateBalances())
-        );
-        timeline.setCycleCount(Animation.INDEFINITE);
-        timeline.play();
-    }
-
-    // --- Reste du code inchangé ---
     private void setupTables() {
         colSymbol.setCellFactory(column -> new TableCell<>() {
             private final ImageView img = new ImageView();
@@ -248,7 +380,6 @@ public class TradingDashboard {
         colHistStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         loadInitialAssets();
     }
-
     private void startGlobalPriceUpdates() {
         for (Asset asset : tableAssets.getItems()) {
             marketApi.startPriceStream(asset.getSymbol().toUpperCase() + "USDT", (Double livePrice) -> {
@@ -263,7 +394,6 @@ public class TradingDashboard {
             });
         }
     }
-
     private void calculateTotal() {
         if (selectedAsset == null) return;
         try {
@@ -272,7 +402,6 @@ public class TradingDashboard {
             lblTotal.setText(String.format("%.2f USDT", qty * price));
         } catch (Exception e) { lblTotal.setText("0.00 USDT"); }
     }
-
     private void loadInitialAssets() { try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) {} }
     private void loadAssetCache() { try { assetNamesCache = assetService.SelectAll().stream().collect(Collectors.toMap(Asset::getId, Asset::getSymbol)); } catch (Exception e) {} }
     private void setupOrderInputs() { comboOrderMode.getItems().setAll("MARKET", "LIMIT"); comboOrderMode.setValue("MARKET"); txtTargetPrice.disableProperty().bind(comboOrderMode.valueProperty().isEqualTo("MARKET")); }
@@ -280,35 +409,6 @@ public class TradingDashboard {
     private void updateAISignal(String symbol) { new Thread(() -> { double rsi = marketApi.calculateRSI(symbol); Platform.runLater(() -> lblAdvice.setText("AI SIGNAL: " + (rsi < 35 ? "BUY" : rsi > 65 ? "SELL" : "NEUTRAL") + " (RSI: " + String.format("%.2f", rsi) + ")")); }).start(); }
     private void setupTickerLoop() { Timeline timeline = new Timeline(new KeyFrame(Duration.millis(50), e -> { if (tickerContainer != null) { tickerContainer.setLayoutX(tickerContainer.getLayoutX() - 1); if (tickerContainer.getLayoutX() < -500) tickerContainer.setLayoutX(800); } })); timeline.setCycleCount(Animation.INDEFINITE); timeline.play(); }
     private void updatePnL(double currentPrice) { if (initialEntryPrice <= 0) return; double pnl = (currentPrice - initialEntryPrice) / initialEntryPrice * 100; lblPnL.setText(String.format("%+.2f%%", pnl)); lblPnL.setStyle("-fx-text-fill: " + (pnl >= 0 ? "#0ecb81" : "#f6465d") + ";"); }
-    @FXML private void onBuy() { processTrade(TradeType.BUY); }
-    @FXML private void onSell() { processTrade(TradeType.SELL); }
     private void loadTradeHistory() { try { tableHistory.getItems().setAll(tradeService.SelectAll()); } catch (Exception e) {} }
-    @FXML
-    private void onSuggestQuantity() {
-
-        if (selectedAsset == null) return;
-
-        try {
-
-            // 🔥 Balance dynamique (tous les wallets TRADING de l'utilisateur)
-            double bal = wcService.getTotalUSDTTradingBalanceByUser(CURRENT_USER_ID);
-
-            if (bal <= 0) {
-                showAlert("Info", "Solde USDT insuffisant !");
-                return;
-            }
-
-            // 10% du solde
-            double tenPercent = bal * 0.1;
-
-            // Calcul quantité
-            double qty = tenPercent / selectedAsset.getCurrentPrice();
-
-            txtQty.setText(String.format("%.4f", qty));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }    private void showAlert(String title, String content) { Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(title); a.setHeaderText(null); a.setContentText(content); a.show(); }
     @FXML private void openBotWindow() { try { Parent root = FXMLLoader.load(getClass().getResource("/BotView.fxml")); Stage s = new Stage(); s.setScene(new Scene(root)); s.show(); } catch (IOException e) {} }
 }
