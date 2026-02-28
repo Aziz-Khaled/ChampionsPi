@@ -12,10 +12,11 @@ import java.io.IOException;
 public class MainController {
 
     @FXML private StackPane contentArea;
-    @FXML private Button btnFormations, btnParticipations, btnCertificats;
+    @FXML private Button btnFormations, btnParticipations, btnCertificats, btnReclamations;
 
     @FXML
     public void initialize() {
+        // Charge la vue par défaut au démarrage
         showFormations();
     }
 
@@ -33,14 +34,23 @@ public class MainController {
 
     @FXML
     public void showCertificats() {
-        // CORRIGÉ selon votre capture d'écran
         loadView("/certificat_interface.fxml");
         updateUI(btnCertificats);
     }
 
+    @FXML
+    public void showReclamations() {
+        // Assure-toi que le nom du fichier FXML est exact (BackOfficeReclamations.fxml)
+        loadView("/BackOfficeReclamations.fxml");
+        updateUI(btnReclamations);
+    }
+
     private void loadView(String fxmlPath) {
         try {
-            Parent view = FXMLLoader.load(getClass().getResource(fxmlPath));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent view = loader.load();
+
+            // Animation de transition fluide
             view.setOpacity(0);
             contentArea.getChildren().setAll(view);
 
@@ -49,18 +59,23 @@ public class MainController {
             fade.setToValue(1);
             fade.play();
         } catch (IOException e) {
-            System.err.println("Fichier introuvable : " + fxmlPath);
+            System.err.println("Erreur de chargement : " + fxmlPath);
             e.printStackTrace();
+        } catch (NullPointerException e) {
+            System.err.println("Chemin FXML introuvable : " + fxmlPath);
         }
     }
 
     private void updateUI(Button selected) {
-        Button[] btns = {btnFormations, btnParticipations, btnCertificats};
+        Button[] btns = {btnFormations, btnParticipations, btnCertificats, btnReclamations};
+
+        String selectedStyle = "-fx-background-color: #2c3e50; -fx-text-fill: white; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210; -fx-background-radius: 5;";
+        String defaultStyle = "-fx-background-color: transparent; -fx-text-fill: #bdc3c7; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;";
+
         for (Button b : btns) {
-            if (b == null) continue;
-            b.setStyle(b == selected ?
-                    "-fx-background-color: #2c3e50; -fx-text-fill: white;" :
-                    "-fx-background-color: transparent; -fx-text-fill: #bdc3c7;");
+            if (b != null) {
+                b.setStyle(b == selected ? selectedStyle : defaultStyle);
+            }
         }
     }
 }

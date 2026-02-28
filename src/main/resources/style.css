@@ -342,3 +342,19 @@
     -fx-font-weight: bold;
 }
 .button-add:hover { -fx-background-color: #4f46e5; }
+/* style.css */
+.table-view {
+    -fx-background-color: transparent;
+}
+.table-view .column-header {
+    -fx-background-color: #f8f9fa;
+    -fx-text-fill: #7f8c8d;
+    -fx-font-weight: bold;
+}
+.table-row-cell:filled {
+    -fx-background-color: white;
+    -fx-background-insets: 0, 0 0 1 0;
+}
+.table-row-cell:selected {
+    -fx-background-color: #e3f2fd;
+}

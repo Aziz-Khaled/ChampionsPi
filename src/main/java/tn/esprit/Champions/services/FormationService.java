@@ -82,4 +82,12 @@ public class FormationService {
         }
         return list;
     }
+    public void updateRating(int id, int note) throws SQLException {
+        String sql = "UPDATE formations SET rating = ? WHERE idFormation = ?";
+        try (PreparedStatement ps = cnx.prepareStatement(sql)) {
+            ps.setDouble(1, (double) note);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        }
+    }
 }

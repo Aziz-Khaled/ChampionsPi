@@ -13,6 +13,7 @@ public class formations {
     private double prix;
     private int capaciteMax;
     private StatutFormation statut;
+    private double rating;
 
     public formations(){}
 
@@ -26,6 +27,8 @@ public class formations {
         this.prix = prix;
         this.capaciteMax = capaciteMax;
         this.statut = StatutFormation.valueOf(statut);
+        this.rating = rating;
+
     }
 
     public int getIdFormation() {
@@ -63,6 +66,10 @@ public class formations {
     public StatutFormation getStatut() {
         return statut;
     }
+
+    public double getRating() { return rating; }
+
+    public void setRating(double rating) { this.rating = rating; }
 
     public void setIdFormation(int idFormation) {
         this.idFormation = idFormation;

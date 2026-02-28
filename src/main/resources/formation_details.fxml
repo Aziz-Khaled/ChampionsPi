@@ -18,6 +18,14 @@
         <Region HBox.hgrow="ALWAYS" />
         <Label styleClass="logo-text" text="CHAMPIONS" />
     </HBox>
+    <HBox spacing="5.0" alignment="CENTER_LEFT">
+        <Label text="Évaluer cette formation : " style="-fx-font-weight: bold;" />
+        <Button text="⭐" onAction="#handleRate1" styleClass="btn-star" />
+        <Button text="⭐" onAction="#handleRate2" styleClass="btn-star" />
+        <Button text="⭐" onAction="#handleRate3" styleClass="btn-star" />
+        <Button text="⭐" onAction="#handleRate4" styleClass="btn-star" />
+        <Button text="⭐" onAction="#handleRate5" styleClass="btn-star" />
+    </HBox>
 
     <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F8FAFC;" VBox.vgrow="ALWAYS">
         <HBox spacing="40.0">

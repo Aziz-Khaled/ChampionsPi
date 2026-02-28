@@ -122,4 +122,37 @@ public class StudentDashboardController {
             e.printStackTrace();
         }
     }
+    @FXML
+    private void handleOpenReclamations(ActionEvent event) {
+        try {
+            // Assure-toi que le chemin vers le FXML est correct
+            URL resource = getClass().getResource("/ReclamationForm.fxml");
+
+            if (resource == null) {
+                System.err.println("Erreur : Fichier ReclamationForm.fxml introuvable !");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(resource);
+            Parent root = loader.load();
+
+            // Création d'une nouvelle fenêtre (Pop-up)
+            Stage stage = new Stage();
+            stage.setTitle("Déposer une réclamation");
+            stage.setScene(new Scene(root));
+
+            // Rend la fenêtre modale (bloque la fenêtre principale)
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+
+            stage.show();
+        } catch (IOException e) {
+            System.err.println("Erreur lors de l'ouverture du formulaire de réclamation : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    @FXML
+    private void handleGoToMyReclamations(ActionEvent event) {
+        // Utilise ta méthode loadPage existante pour changer de vue
+        loadPage(event, "/mes_reclamations.fxml", null);
+    }
 }

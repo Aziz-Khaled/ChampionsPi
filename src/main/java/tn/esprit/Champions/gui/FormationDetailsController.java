@@ -17,6 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import tn.esprit.Champions.models.Reclamation;
 import tn.esprit.Champions.models.formations;
 import tn.esprit.Champions.models.participations;
 import tn.esprit.Champions.models.StatutParticipation;
@@ -232,5 +233,70 @@ public class FormationDetailsController {
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+    // Dans FormationDetailsController.java
+
+    @FXML
+    private void handleRate1() { submitRating(1); }
+    @FXML
+    private void handleRate2() { submitRating(2); }
+    @FXML
+    private void handleRate3() { submitRating(3); }
+    @FXML
+    private void handleRate4() { submitRating(4); }
+    @FXML
+    private void handleRate5() { submitRating(5); }
+
+    private void submitRating(int note) {
+        try {
+            // On met à jour l'objet local
+            selectedFormation.setRating((double) note);
+
+            // On appelle le service pour sauvegarder en base
+            // Tu dois ajouter cette méthode updateRating dans ton FormationService
+            FormationService fs = new FormationService();
+            fs.updateRating(selectedFormation.getIdFormation(), note);
+
+            showStyledAlert(Alert.AlertType.INFORMATION, "Évaluation enregistrée",
+                    "Merci d'avoir noté cette formation : " + note + "/5 ⭐");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'enregistrer la note.");
+        }
+    }
+    @FXML
+    private void handleEnvoyerRec() {
+        try {
+            Reclamation r = new Reclamation();
+            r.setIdUtilisateur(1); // À remplacer par l'ID de l'utilisateur connecté
+            r.setIdFormation(selectedFormation.getIdFormation());
+            r.setSujet("Problème avec le cours");
+            r.setDescription("Je n'arrive pas à accéder aux ressources.");
+
+            ReclamationService rs = new ReclamationService();
+            rs.insertOne(r);
+
+            showStyledAlert(Alert.AlertType.INFORMATION, "Succès", "Réclamation envoyée !");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    @FXML
+    private void openReclamationForm() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tn/esprit/Champions/gui/ReclamationForm.fxml"));
+            Parent root = loader.load();
+
+            ReclamationController controller = loader.getController();
+            controller.setFormation(selectedFormation); // On passe la formation !
+
+            Stage stage = new Stage();
+            stage.setTitle("Nouvelle Réclamation - " + selectedFormation.getTitre());
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

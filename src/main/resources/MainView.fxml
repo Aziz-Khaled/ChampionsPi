@@ -3,36 +3,54 @@
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
-
-<BorderPane fx:id="mainContainer" prefHeight="800" prefWidth="1300" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.MainController">
+<?import javafx.scene.shape.Circle?> <BorderPane fx:id="mainContainer" prefHeight="800" prefWidth="1300" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.MainController">
 
     <left>
-        <VBox spacing="15" prefWidth="250" style="-fx-background-color: #1a2a3a;">
-            <padding><Insets top="40" left="20" right="20"/></padding>
+        <VBox spacing="10" prefWidth="260" style="-fx-background-color: #1e272e;">
+            <padding><Insets top="40" left="15" right="15" bottom="20"/></padding>
 
-            <Label text="Champions" style="-fx-text-fill: #00d4ff; -fx-font-size: 26; -fx-font-weight: bold;">
-                <VBox.margin><Insets bottom="20"/></VBox.margin>
-            </Label>
+            <Label text="Champions" style="-fx-text-fill: #00d4ff; -fx-font-size: 28; -fx-font-weight: bold; -fx-padding: 0 0 30 10;" />
 
-            <Button fx:id="btnFormations" onAction="#showFormations" text="📚  Formations"
-                    style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;"/>
+            <VBox spacing="8" VBox.vgrow="ALWAYS">
+                <children>
+                    <Button fx:id="btnFormations" onAction="#showFormations" text="📚  Formations"
+                            style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 15; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 230; -fx-padding: 12 15;"/>
 
-            <Button fx:id="btnParticipations" onAction="#showParticipations" text="👥  Participations"
-                    style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;"/>
+                    <Button fx:id="btnParticipations" onAction="#showParticipations" text="👥  Participations"
+                            style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 15; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 230; -fx-padding: 12 15;"/>
 
-            <Button fx:id="btnCertificats" onAction="#showCertificats" text="🏆  Certificats"
-                    style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;"/>
+                    <Button fx:id="btnCertificats" onAction="#showCertificats" text="🏆  Certificats"
+                            style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 15; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 230; -fx-padding: 12 15;"/>
 
-            <Region VBox.vgrow="ALWAYS" />
+                    <Button fx:id="btnReclamations" onAction="#showReclamations" text="⚠️  Réclamations"
+                            style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 15; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 230; -fx-padding: 12 15;"/>
+                </children>
+            </VBox>
+
             <Separator opacity="0.1" />
-            <Label text="v1.2.0" style="-fx-text-fill: #576574; -fx-font-size: 10;" />
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <children>
+                    <Label text="v1.2.0" style="-fx-text-fill: #576574; -fx-font-size: 11;" />
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Circle fill="#2ecc71" radius="4.0" />
+                    <Label text="Online" style="-fx-text-fill: #576574; -fx-font-size: 11;" />
+                </children>
+                <padding>
+                    <Insets top="10" />
+                </padding>
+            </HBox>
         </VBox>
     </left>
 
     <center>
-        <StackPane fx:id="contentArea" style="-fx-background-color: #f8f9fa;">
+        <StackPane fx:id="contentArea" style="-fx-background-color: #f1f2f6;">
             <children>
-                <Label text="Sélectionnez un module dans le menu" style="-fx-text-fill: #7f8c8d; -fx-font-size: 18;"/>
+                <VBox alignment="CENTER" spacing="20">
+                    <children>
+                        <Label text="Bienvenue sur le Panel Administration" style="-fx-text-fill: #2f3542; -fx-font-size: 24; -fx-font-weight: bold;"/>
+                        <Label text="Veuillez sélectionner un module dans le menu à gauche pour commencer." style="-fx-text-fill: #747d8c; -fx-font-size: 16;"/>
+                    </children>
+                </VBox>
             </children>
         </StackPane>
     </center>

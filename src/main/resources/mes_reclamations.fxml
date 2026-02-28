@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+
+<VBox spacing="25" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.MesReclamationsController">
+
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="15">
+        <VBox>
+            <Label text="Mes Réclamations" style="-fx-text-fill: #1a2a3a; -fx-font-size: 28; -fx-font-weight: bold;"/>
+            <Label text="Suivez l'état de vos demandes en temps réel" style="-fx-text-fill: #7f8c8d; -fx-font-size: 14;"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="🔄 Actualiser" onAction="#refreshTable"
+                style="-fx-background-color: white; -fx-border-color: #dcdde1; -fx-border-radius: 5; -fx-cursor: hand;"/>
+    </HBox>
+
+    <TableView fx:id="tableMesRec" VBox.vgrow="ALWAYS"
+               style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #dcdde1; -fx-background-insets: 0;">
+        <columns>
+            <TableColumn fx:id="colSujet" text="SUJET DE LA DEMANDE" prefWidth="250"
+                         style="-fx-font-weight: bold;"/>
+
+            <TableColumn fx:id="colDate" text="DATE D'ENVOI" prefWidth="200" />
+
+            <TableColumn fx:id="colStatut" text="STATUT" prefWidth="150" />
+
+            <TableColumn fx:id="colAction" text="ACTIONS" prefWidth="120" />
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+        </columnResizePolicy>
+    </TableView>
+
+    <HBox alignment="CENTER_RIGHT">
+        <Button text="← Retour au Dashboard" onAction="#handleBack"
+                style="-fx-background-color: #1a2a3a; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 5; -fx-cursor: hand;"/>
+    </HBox>
+
+</VBox>
