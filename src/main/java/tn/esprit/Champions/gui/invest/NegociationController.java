@@ -119,12 +119,28 @@ public class NegociationController {
         });
     }
 
+
     @FXML
     private void retourDetails(ActionEvent event) {
         try {
+            // 1. Charger le FXML avec le chemin complet
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/DetailsCredit.fxml"));
             Parent root = loader.load();
+
+            // 2. Récupérer le contrôleur de la page de détails
+            DetailsCreditController controller = loader.getController();
+
+            // 3. Transmettre le crédit actuel pour que la page ne soit pas vide
+            if (controller != null && currentCredit != null) {
+                controller.initData(currentCredit);
+            }
+
+            // 4. Changer la racine de la scène actuelle
             negocRoot.getScene().setRoot(root);
-        } catch (IOException e) { e.printStackTrace(); }
+
+        } catch (IOException e) {
+            System.err.println("Erreur lors du retour aux détails : " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

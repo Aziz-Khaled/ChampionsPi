@@ -2,14 +2,18 @@ package tn.esprit.Champions.gui.invest;
 
 import javafx.animation.*;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.RiskAnalysisService;
@@ -25,11 +29,11 @@ public class DetailsCreditController {
     @FXML private VBox detailsRoot;
     @FXML private Label lblTitle, lblSecteurBadge, lblWalletSolde;
     @FXML private Label lblDescription;
+
     @FXML private Label lblMontant, lblTaux, lblDuree, lblProfit;
     @FXML private Label lblProjetDescription, lblProjetStatut;
     @FXML private ImageView imgLarge;
 
-    // Conteneurs pour les animations (à vérifier dans votre FXML si vous voulez animer des blocs précis)
     @FXML private VBox boxAnalyseIA, boxConditions, boxProjet;
 
     private credit currentCredit;
@@ -39,7 +43,6 @@ public class DetailsCreditController {
 
     @FXML
     public void initialize() {
-        // Cacher les éléments au départ pour l'animation
         detailsRoot.setOpacity(0);
     }
 
@@ -47,13 +50,8 @@ public class DetailsCreditController {
         if (c == null) return;
         this.currentCredit = c;
 
-        // 1. Remplissage des données
         remplirInterface(c);
-
-        // 2. Lancement des animations de l'interface
         jouerAnimationsEntree();
-
-        // 3. Expertise IA en arrière-plan
         lancerExpertiseIA();
     }
 
@@ -66,8 +64,13 @@ public class DetailsCreditController {
         lblProfit.setText(String.format("+ %.2f TND", profitTotal));
 
         try {
-            // Simulation Wallet (A remplacer par votre service de session plus tard)
-            userWallet = new wallet(1, 101, typeWallet.FIAT, "Principal", 25000.0, statutWallet.actif);
+            // Simulation Wallet (Base statique pour l'intégration)
+            userWallet = new wallet();
+            userWallet.setIdWallet(1);
+            userWallet.setRib("TN59 0001 0002 0003");
+            userWallet.setSolde(25000.0);
+            userWallet.setStatut(statutWallet.actif);
+
             lblWalletSolde.setText(String.format("Solde: %.2f TND", userWallet.getSolde()));
 
             projet p = ps.findById(c.getProject_id());
@@ -75,7 +78,7 @@ public class DetailsCreditController {
                 lblTitle.setText(p.getTitle());
                 lblSecteurBadge.setText(p.getSecteur().toUpperCase());
                 lblProjetDescription.setText(p.getDescription());
-                lblProjetStatut.setText("STATUT : " + p.getSecteur()); // Ou p.getStatut()
+                lblProjetStatut.setText("STATUT : " + p.getSecteur());
 
                 chargerImageDynamique(p.getImageUrl());
             }
@@ -99,17 +102,13 @@ public class DetailsCreditController {
     }
 
     private void jouerAnimationsEntree() {
-        // 1. Fade In global de la page
         FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), detailsRoot);
         fadeIn.setToValue(1.0);
         fadeIn.play();
 
-        // 2. Animation "Slide Up" pour les composants
-        // On fait monter l'image et les blocs de 20 pixels en douceur
         animerSlideUp(imgLarge, 0);
         animerSlideUp(lblTitle, 100);
 
-        // Si vous avez mis des fx:id sur vos VBox dans le FXML :
         if (boxAnalyseIA != null) animerSlideUp(boxAnalyseIA, 200);
         if (boxConditions != null) animerSlideUp(boxConditions, 300);
         if (boxProjet != null) animerSlideUp(boxProjet, 400);
@@ -138,7 +137,6 @@ public class DetailsCreditController {
         new Thread(() -> {
             String resultIA = expertIA.getAiAnalysis(currentCredit, userWallet);
             Platform.runLater(() -> {
-                // Petit effet de fondu pour l'apparition du texte de l'IA
                 lblDescription.setOpacity(0);
                 lblDescription.setText(resultIA);
                 FadeTransition ft = new FadeTransition(Duration.millis(800), lblDescription);
@@ -148,19 +146,35 @@ public class DetailsCreditController {
         }).start();
     }
 
+    /**
+     * ACTION MISE À JOUR : Ouvre l'interface de transaction séparée
+     */
     @FXML
     private void investirCredit() {
-        if (userWallet.getSolde() < currentCredit.getMontant()) {
-            afficherAlerte("Solde Insuffisant", "Votre solde actuel est trop bas.", Alert.AlertType.ERROR);
-        } else {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Confirmer l'investissement ?", ButtonType.YES, ButtonType.NO);
-            // Application du style sombre à l'alerte si possible ou simple confirmation
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.YES) {
-                    System.out.println("Investissement validé !");
-                    // Ajouter ici l'appel service pour soustraire le montant
-                }
-            });
+        try {
+            // Chargement du FXML de confirmation
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/ConfirmTransaction.fxml"));
+            Parent root = loader.load();
+
+            // Récupération du contrôleur et injection des données
+            ConfirmTransactionController controller = loader.getController();
+            controller.setTransactionData(currentCredit, userWallet);
+
+            // Création d'une nouvelle fenêtre (Stage) pour la transaction
+            Stage stage = new Stage();
+            stage.initStyle(StageStyle.UNDECORATED); // Pour garder le design moderne
+            stage.setTitle("Confirmation de Transaction");
+
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+
+            // On affiche en mode bloquant pour que l'utilisateur finisse sa transaction
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Erreur chargement ConfirmTransaction: " + e.getMessage());
+            e.printStackTrace();
+            afficherAlerte("Erreur", "Impossible d'ouvrir l'interface de paiement.", Alert.AlertType.ERROR);
         }
     }
 
@@ -173,11 +187,15 @@ public class DetailsCreditController {
     }
 
     @FXML
-    private void retourMarketplace() {
+    private void handleRetourMarketplace(ActionEvent event) {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/invest/Marketplace.fxml"));
-            lblTitle.getScene().setRoot(root);
-        } catch (IOException e) { e.printStackTrace(); }
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/Marketplace.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

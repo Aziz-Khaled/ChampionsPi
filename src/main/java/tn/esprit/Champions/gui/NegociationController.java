@@ -2,6 +2,7 @@ package tn.esprit.Champions.gui;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -36,14 +37,15 @@ public class NegociationController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         if (containerOffres != null) {
             containerOffres.setSpacing(15);
+            containerOffres.setPadding(new Insets(10));
         }
     }
 
     public void setCreditSelectionne(credit c, String titreProjet) {
         this.creditSelectionne = c;
-        if (lblTitreCredit != null) lblTitreCredit.setText(titreProjet);
+        if (lblTitreCredit != null) lblTitreCredit.setText(titreProjet.toUpperCase());
         if (lblDetailsCredit != null) {
-            lblDetailsCredit.setText("Montant : " + c.getMontant() + " " + c.getDevise() +
+            lblDetailsCredit.setText("Besoin : " + c.getMontant() + " " + c.getDevise() +
                     " | Taux souhaité : " + c.getTaux() + "%");
         }
         chargerOffresRecues();
@@ -62,7 +64,7 @@ public class NegociationController implements Initializable {
 
             if (offresFiltrees.isEmpty()) {
                 Label msg = new Label("Aucune offre pour le moment.");
-                msg.setStyle("-fx-text-fill: #bdc3c7; -fx-font-style: italic;");
+                msg.setStyle("-fx-text-fill: #94a3b8; -fx-font-style: italic;");
                 containerOffres.getChildren().add(msg);
             } else {
                 for (Negociation n : offresFiltrees) {
@@ -74,33 +76,54 @@ public class NegociationController implements Initializable {
         }
     }
 
-    private HBox creerCarteOffre(Negociation n) {
-        HBox card = new HBox(15);
-        card.setStyle("-fx-background-color: #232e3e; -fx-padding: 15; -fx-background-radius: 12; -fx-border-color: #34495e; -fx-border-radius: 12;");
-        card.setAlignment(Pos.CENTER_LEFT);
+    /**
+     * Crée une carte d'offre complète avec toutes les données financières
+     */
+    private VBox creerCarteOffre(Negociation n) {
+        VBox card = new VBox(10);
+        card.setStyle("-fx-background-color: #1e293b; -fx-padding: 20; -fx-background-radius: 12; " +
+                "-fx-border-color: #334155; -fx-border-width: 1;");
 
-        VBox info = new VBox(5);
+        // 1. Ligne Investisseur
         Utilisateur invDetails = recupererUtilisateurSansErreur(n.getInvestor_id());
         String nomAffichage = (invDetails != null) ? invDetails.getNom() + " " + invDetails.getPrenom() : "ID #" + n.getInvestor_id();
+        Label lblInv = new Label("INVESTISSEUR : " + nomAffichage);
+        lblInv.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
 
-        Label inv = new Label("INVESTISSEUR : " + nomAffichage);
-        inv.setStyle("-fx-text-fill: #ecf0f1; -fx-font-weight: bold;");
-        Label prop = new Label(n.getMontant() + " TND à " + n.getTaux_propose() + "%");
-        prop.setStyle("-fx-text-fill: #3498db;");
-        info.getChildren().addAll(inv, prop);
+        // 2. Ligne Détails Financiers (Montant & Taux)
+        HBox finances = new HBox(20);
+        Label lblMontant = new Label("💰 Capital : " + n.getMontant() + " TND");
+        lblMontant.setStyle("-fx-text-fill: #38bdf8; -fx-font-weight: bold;");
+        Label lblTaux = new Label("📈 Taux proposé : " + n.getTaux_propose() + "%");
+        lblTaux.setStyle("-fx-text-fill: #38bdf8; -fx-font-weight: bold;");
+        finances.getChildren().addAll(lblMontant, lblTaux);
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+        // 3. Ligne Détails Temporels & Rendement
+        HBox rendement = new HBox(20);
+        Label lblDuree = new Label("⏱️ Durée : " + creditSelectionne.getDuree() + " mois");
+        lblDuree.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 12;");
+
+        // Calcul du montant total à rembourser (Capital + Intérêts)
+        double totalRemboursement = n.getMontant() + (n.getMontant() * (n.getTaux_propose() / 100));
+        Label lblTotal = new Label("🏁 Retour total estimé : " + String.format("%.2f", totalRemboursement) + " TND");
+        lblTotal.setStyle("-fx-text-fill: #10b981; -fx-font-size: 12; -fx-font-weight: bold;");
+        rendement.getChildren().addAll(lblDuree, lblTotal);
+
+        // 4. Ligne Boutons
+        HBox actions = new HBox(15);
+        actions.setAlignment(Pos.CENTER_RIGHT);
 
         Button btnRejeter = new Button("Rejeter");
-        btnRejeter.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8;");
+        btnRejeter.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 8 15;");
         btnRejeter.setOnAction(e -> handleRejet(n));
 
         Button btnAccepter = new Button("Accepter");
-        btnAccepter.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8;");
+        btnAccepter.setStyle("-fx-background-color: #22c55e; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 8 15;");
         btnAccepter.setOnAction(e -> handleAcceptation(n));
 
-        card.getChildren().addAll(info, spacer, btnRejeter, btnAccepter);
+        actions.getChildren().addAll(btnRejeter, btnAccepter);
+
+        card.getChildren().addAll(lblInv, finances, rendement, actions);
         return card;
     }
 
@@ -113,6 +136,7 @@ public class NegociationController implements Initializable {
             Utilisateur investisseur = recupererUtilisateurSansErreur(n.getInvestor_id());
 
             if (investisseur != null) {
+                // Déploiement du contrat et envoi d'email
                 scs.deployAndNotify(
                         creditSelectionne.getId(),
                         n.getMontant(),
@@ -122,24 +146,22 @@ public class NegociationController implements Initializable {
                         creditSelectionne.getDuree()
                 );
             } else {
-                new Alert(Alert.AlertType.ERROR, "Erreur fatale : Profil investisseur introuvable.").show();
+                new Alert(Alert.AlertType.ERROR, "Erreur : Profil investisseur introuvable.").show();
             }
 
             chargerOffresRecues();
         } catch (Exception e) {
             e.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Erreur : " + e.getMessage()).show();
+            new Alert(Alert.AlertType.ERROR, "Erreur lors de l'acceptation : " + e.getMessage()).show();
         }
     }
 
     private Utilisateur recupererUtilisateurSansErreur(int id) {
-        // Ajout de 'email', 'statut' et 'role' dans la requête pour correspondre au constructeur complet
         String query = "SELECT id_user, nom, prenom, email, mot_de_passe, telephone, piece_identite, user_image, statut, role FROM utilisateur WHERE id_user = ?";
         try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                // Appel du constructeur à 10 arguments défini dans Utilisateur.java
                 return new Utilisateur(
                         rs.getInt("id_user"),
                         rs.getString("nom"),
@@ -149,12 +171,12 @@ public class NegociationController implements Initializable {
                         rs.getString("telephone"),
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),
-                        null, // Remplacer par Status.valueOf(rs.getString("statut")) si ton Enum est prêt
-                        null  // Remplacer par Role.valueOf(rs.getString("role")) si ton Enum est prêt
+                        null,
+                        null
                 );
             }
         } catch (SQLException e) {
-            System.err.println("Erreur SQL lors de la récupération : " + e.getMessage());
+            System.err.println("Erreur SQL : " + e.getMessage());
         }
         return null;
     }
@@ -162,10 +184,9 @@ public class NegociationController implements Initializable {
     private void handleRejet(Negociation n) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Confirmation de rejet");
-        alert.setHeaderText("Supprimer l'offre");
-        alert.setContentText("Voulez-vous vraiment supprimer cette offre de " + n.getMontant() + " TND ?");
+        alert.setHeaderText("Supprimer cette offre d'investissement");
+        alert.setContentText("Voulez-vous vraiment rejeter l'offre de " + n.getMontant() + " TND ?");
 
-        // Style sombre
         alert.getDialogPane().setStyle("-fx-background-color: #1e293b;");
         alert.getDialogPane().lookupAll(".label").forEach(node -> node.setStyle("-fx-text-fill: white;"));
 
@@ -173,21 +194,10 @@ public class NegociationController implements Initializable {
             if (response == ButtonType.OK) {
                 try {
                     ns.deleteOne(n);
-
-                    // REMPLACÉ : Utilisation d'une Alert simple au lieu de Notifications
-                    Alert success = new Alert(Alert.AlertType.INFORMATION);
-                    success.setTitle("Succès");
-                    success.setHeaderText(null);
-                    success.setContentText("L'offre a été supprimée avec succès.");
-                    success.getDialogPane().setStyle("-fx-background-color: #1e293b;");
-                    success.getDialogPane().lookupAll(".label").forEach(node -> node.setStyle("-fx-text-fill: white;"));
-                    success.show();
-
                     chargerOffresRecues();
-
                 } catch (SQLException e) {
                     e.printStackTrace();
-                    new Alert(Alert.AlertType.ERROR, "Erreur lors de la suppression : " + e.getMessage()).show();
+                    new Alert(Alert.AlertType.ERROR, "Erreur lors du rejet : " + e.getMessage()).show();
                 }
             }
         });

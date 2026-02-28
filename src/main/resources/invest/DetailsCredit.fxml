@@ -15,7 +15,7 @@
         <HBox alignment="CENTER_LEFT" prefHeight="90.0" spacing="25.0"
               style="-fx-background-color: #1e293b; -fx-padding: 0 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 5);">
             <children>
-                <Button onAction="#retourMarketplace"
+                <Button onAction="#handleRetourMarketplace"
                         style="-fx-background-radius: 12; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.05); -fx-text-fill: white; -fx-border-color: rgba(255,255,255,0.2); -fx-border-radius: 12;"
                         text="← Retour" />
                 <VBox alignment="CENTER_LEFT">

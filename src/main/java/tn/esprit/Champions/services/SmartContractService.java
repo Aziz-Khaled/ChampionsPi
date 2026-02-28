@@ -1,8 +1,5 @@
 package tn.esprit.Champions.services;
 
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
@@ -32,20 +29,19 @@ import java.util.UUID;
 public class SmartContractService {
 
     private final OkHttpClient httpClient = new OkHttpClient();
-    private final Dotenv dotenv = Dotenv.load(); // Charge le fichier .env
+    private final Dotenv dotenv = Dotenv.load();
 
-    // === CONFIGURATION RÉCUPÉRÉE DEPUIS .ENV ===
-    private final String TWILIO_SID = dotenv.get("TWILIO_SID");
-    private final String TWILIO_TOKEN = dotenv.get("TWILIO_TOKEN");
-    private final String TWILIO_PHONE = dotenv.get("TWILIO_PHONE");
-
+    // Récupération sécurisée depuis le fichier .env
     private final String SMTP_EMAIL = dotenv.get("SMTP_EMAIL");
     private final String SMTP_PASS = dotenv.get("SMTP_PASS");
-    // ==========================================
 
+    /**
+     * Lance le processus de déploiement (Blockchain sim), génération PDF et notification Email.
+     */
     public void deployAndNotify(int creditId, double montant, String projet, Utilisateur investisseur, double taux, int dureeMois) {
         new Thread(() -> {
             try {
+                // 1. Simulation Blockchain (Appel API externe)
                 JSONObject json = new JSONObject();
                 json.put("creditId", creditId);
                 json.put("investisseur", investisseur.getNom());
@@ -57,19 +53,20 @@ public class SmartContractService {
                     if (response.isSuccessful()) {
                         String txHash = "0x" + UUID.randomUUID().toString().replace("-", "");
 
+                        // 2. Génération du PDF avec iText 7
                         File pdfContrat = generateContractPDF(investisseur, projet, txHash, montant, taux, dureeMois);
 
-                        // Envois sécurisés
-                        sendRealSms(investisseur.getTelephone(), investisseur.getNom(), projet, txHash);
+                        // 3. Envoi de l'Email avec le contrat en pièce jointe
                         sendRealEmail(investisseur.getEmail(), projet, pdfContrat);
 
-                        Platform.runLater(() -> showContractDetails(txHash, montant, projet, investisseur, taux, dureeMois));
+                        // 4. Affichage de l'interface graphique moderne
+                        Platform.runLater(() -> showContractDetails(txHash, montant, projet, investisseur));
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Erreur lors du déploiement : " + e.getMessage());
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Erreur système : " + e.getMessage());
                     alert.show();
                 });
             }
@@ -77,43 +74,26 @@ public class SmartContractService {
     }
 
     private File generateContractPDF(Utilisateur inv, String projet, String hash, double montant, double taux, int duree) throws Exception {
-        File file = File.createTempFile("Contrat_" + inv.getNom() + "_", ".pdf");
+        File file = File.createTempFile("Contrat_Champions_", ".pdf");
         PdfWriter writer = new PdfWriter(file);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
 
         document.add(new Paragraph("CERTIFICAT D'INVESTISSEMENT NUMÉRIQUE").setBold().setFontSize(18));
-        document.add(new Paragraph("Validé par Blockchain - Transaction : " + hash).setFontSize(10).setItalic());
+        document.add(new Paragraph("Transaction ID : " + hash).setFontSize(10).setItalic());
 
-        document.add(new Paragraph("\nDétails de l'accord :"));
+        document.add(new Paragraph("\nRécapitulatif de l'accord :"));
         Table table = new Table(UnitValue.createPercentArray(new float[]{1, 2})).useAllAvailableWidth();
         table.addCell("Investisseur :"); table.addCell(inv.getNom() + " " + inv.getPrenom());
         table.addCell("Projet :"); table.addCell(projet);
-        table.addCell("Capital :"); table.addCell(montant + " TND");
-        table.addCell("Taux proposé :"); table.addCell(taux + "%");
-        table.addCell("Durée :"); table.addCell(duree + " Mois");
+        table.addCell("Montant :"); table.addCell(montant + " TND");
+        table.addCell("Taux annuel :"); table.addCell(taux + "%");
+        table.addCell("Durée :"); table.addCell(duree + " mois");
 
         document.add(table);
-        document.add(new Paragraph("\nCe document certifie l'engagement financier sur la plateforme Champions."));
-
+        document.add(new Paragraph("\nValidé par le système intelligent de Champions Fintech."));
         document.close();
         return file;
-    }
-
-    private void sendRealSms(String phone, String nom, String projet, String hash) {
-        try {
-            Twilio.init(TWILIO_SID.trim(), TWILIO_TOKEN.trim());
-            String formattedDest = (phone.startsWith("+")) ? phone : "+216" + phone;
-
-            Message.creator(
-                    new PhoneNumber(formattedDest),
-                    new PhoneNumber(TWILIO_PHONE.trim()),
-                    "Champions: " + nom + ", votre investissement pour '" + projet + "' est validé. Hash: " + hash.substring(0,8)
-            ).create();
-            System.out.println("SMS envoyé avec succès !");
-        } catch (Exception e) {
-            System.err.println("Erreur SMS Twilio : " + e.getMessage());
-        }
     }
 
     private void sendRealEmail(String toEmail, String projet, File attachment) throws Exception {
@@ -122,6 +102,7 @@ public class SmartContractService {
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
@@ -133,10 +114,10 @@ public class SmartContractService {
         jakarta.mail.Message message = new MimeMessage(session);
         message.setFrom(new InternetAddress(SMTP_EMAIL, "Champions Fintech"));
         message.setRecipients(jakarta.mail.Message.RecipientType.TO, InternetAddress.parse(toEmail));
-        message.setSubject("📜 Votre Contrat Validé - " + projet);
+        message.setSubject("📜 Votre Contrat est disponible - " + projet);
 
         MimeBodyPart textPart = new MimeBodyPart();
-        textPart.setText("Félicitations ! Trouvez ci-joint votre certificat d'investissement.");
+        textPart.setText("Félicitations ! Votre investissement a été traité. Veuillez trouver votre contrat en pièce jointe.");
 
         MimeBodyPart filePart = new MimeBodyPart();
         filePart.attachFile(attachment);
@@ -147,45 +128,92 @@ public class SmartContractService {
 
         message.setContent(multipart);
         Transport.send(message);
-        System.out.println("Email envoyé avec succès !");
+        System.out.println("✅ Email envoyé avec succès !");
     }
 
-    private void showContractDetails(String hash, double montant, String projet, Utilisateur inv, double taux, int duree) {
+    /**
+     * Affiche la fenêtre de succès avec le design attractif.
+     */
+    private void showContractDetails(String hash, double montant, String projet, Utilisateur inv) {
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setTitle("📜 Signature du Smart Contract");
+        stage.setTitle("✅ Champions Fintech - Opération Réussie");
 
-        VBox root = new VBox(20);
-        root.setPadding(new Insets(25));
-        root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #0f172a; -fx-border-color: #38bdf8; -fx-border-width: 2;");
+        VBox root = new VBox();
+        root.setSpacing(0);
+        root.setAlignment(Pos.TOP_CENTER);
+        root.setStyle("-fx-background-color: #0f172a; -fx-border-color: #38bdf8; -fx-border-width: 1; -fx-border-radius: 8;");
 
-        Label title = new Label("INVESTISSEMENT SÉCURISÉ");
-        title.setStyle("-fx-text-fill: #38bdf8; -fx-font-size: 18; -fx-font-weight: bold;");
+        // -- Header Bleu Foncé --
+        VBox header = new VBox(10);
+        header.setPadding(new Insets(30, 0, 30, 0));
+        header.setAlignment(Pos.CENTER);
+        header.setStyle("-fx-background-color: #1e293b;");
 
-        VBox details = new VBox(10);
-        details.setPadding(new Insets(15));
-        details.setStyle("-fx-background-color: #1e293b; -fx-background-radius: 10;");
-        details.getChildren().addAll(
-                createDataRow("🔗 Blockchain Hash", hash.substring(0, 15) + "..."),
-                createDataRow("👤 Investisseur", inv.getNom() + " " + inv.getPrenom()),
-                createDataRow("💰 Capital", montant + " TND")
-        );
+        Label icon = new Label("✔️");
+        icon.setStyle("-fx-text-fill: #38bdf8; -fx-font-size: 40;");
 
-        Button btnClose = new Button("Fermer");
-        btnClose.setStyle("-fx-background-color: #38bdf8; -fx-text-fill: #0f172a; -fx-font-weight: bold;");
-        btnClose.setOnAction(e -> stage.close());
+        Label title = new Label("Investissement Réussi !");
+        title.setStyle("-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;");
 
-        root.getChildren().addAll(title, details, btnClose);
-        stage.setScene(new Scene(root, 450, 400));
+        Label sub = new Label("Le contrat a été généré et envoyé par email.");
+        sub.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 12;");
+
+        header.getChildren().addAll(icon, title, sub);
+
+        // -- Section Informations (Tableau) --
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(30, 40, 30, 40));
+
+        GridPane grid = new GridPane();
+        grid.setHgap(20);
+        grid.setVgap(15);
+
+        grid.add(createLabel("Bénéficiaire :"), 0, 0);
+        grid.add(createValue(inv.getNom() + " " + inv.getPrenom()), 1, 0);
+
+        grid.add(createLabel("E-mail :"), 0, 1);
+        grid.add(createValue(inv.getEmail(), "#38bdf8"), 1, 1);
+
+        grid.add(createLabel("Montant :"), 0, 2);
+        grid.add(createValue(String.format("%.2f TND", montant)), 1, 2);
+
+        grid.add(createLabel("Blockchain Hash :"), 0, 3);
+        String shortHash = hash.substring(0, 8) + "..." + hash.substring(hash.length()-8);
+        Label hLabel = createValue(shortHash);
+        hLabel.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11; -fx-font-family: 'Courier New';");
+        grid.add(hLabel, 1, 3);
+
+        content.getChildren().add(grid);
+
+        // -- Bouton Terminer --
+        Button btn = new Button("Terminer l'opération");
+        btn.setMaxWidth(Double.MAX_VALUE);
+        btn.setStyle("-fx-background-color: #38bdf8; -fx-text-fill: #0f172a; -fx-font-weight: bold; -fx-padding: 12; -fx-cursor: hand; -fx-background-radius: 5;");
+        btn.setOnAction(e -> stage.close());
+
+        VBox footer = new VBox(btn);
+        footer.setPadding(new Insets(0, 40, 30, 40));
+
+        root.getChildren().addAll(header, content, footer);
+
+        stage.setScene(new Scene(root, 480, 500));
         stage.show();
     }
 
-    private HBox createDataRow(String label, String value) {
-        HBox row = new HBox(10);
-        Label l = new Label(label + " :"); l.setStyle("-fx-text-fill: #94a3b8; -fx-min-width: 150;");
-        Label v = new Label(value); v.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
-        row.getChildren().addAll(l, v);
-        return row;
+    private Label createLabel(String text) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill: #94a3b8; -fx-font-size: 12;");
+        return l;
+    }
+
+    private Label createValue(String text) {
+        return createValue(text, "white");
+    }
+
+    private Label createValue(String text, String color) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill: " + color + "; -fx-font-weight: bold; -fx-font-size: 13;");
+        return l;
     }
 }
