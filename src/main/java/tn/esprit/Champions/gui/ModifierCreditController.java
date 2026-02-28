@@ -2,7 +2,10 @@ package tn.esprit.Champions.gui;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.projet;

@@ -9,13 +9,19 @@ import com.itextpdf.layout.properties.UnitValue;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.mail.*;
 import jakarta.mail.Authenticator;
-import jakarta.mail.internet.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import okhttp3.*;
@@ -111,9 +117,9 @@ public class SmartContractService {
             }
         });
 
-        jakarta.mail.Message message = new MimeMessage(session);
+        Message message = new MimeMessage(session);
         message.setFrom(new InternetAddress(SMTP_EMAIL, "Champions Fintech"));
-        message.setRecipients(jakarta.mail.Message.RecipientType.TO, InternetAddress.parse(toEmail));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
         message.setSubject("📜 Votre Contrat est disponible - " + projet);
 
         MimeBodyPart textPart = new MimeBodyPart();

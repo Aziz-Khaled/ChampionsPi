@@ -24,26 +24,38 @@ public class CartController {
 
     @FXML
     private TableView<OrderItem> cartTable;
+
     @FXML
     private TableColumn<OrderItem, String> colProduct;
+
     @FXML
     private TableColumn<OrderItem, String> colQuantity;
+
     @FXML
     private TableColumn<OrderItem, String> colPrice;
+
     @FXML
     private TableColumn<OrderItem, String> colTotal;
+
     @FXML
     private TableColumn<OrderItem, Void> colAction;
+
     @FXML
     private Label totalLabel;
+
     @FXML
     private HBox aiRecommendationBox;
 
     private final ProductService productService = new ProductService();
+
     private final OrderService orderService = new OrderService();
+
     private final OrderItemService orderItemService = new OrderItemService();
+
     private final tn.esprit.Champions.services.PdfService pdfService = new tn.esprit.Champions.services.PdfService();
+
     private final tn.esprit.Champions.services.GeminiService geminiService = new tn.esprit.Champions.services.GeminiService();
+
     private final tn.esprit.Champions.services.EmailService emailService = new tn.esprit.Champions.services.EmailService();
 
     @FXML

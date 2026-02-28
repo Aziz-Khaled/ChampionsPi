@@ -17,7 +17,6 @@
                         <Label text="CHAMPIONS" textFill="WHITE" style="-fx-font-weight: 900; -fx-font-size: 20px; -fx-letter-spacing: 2;" />
                     </children>
                 </HBox>
-
                 <VBox spacing="5.0" VBox.vgrow="ALWAYS">
                     <children>
                         <Button fx:id="btnDashboard" alignment="CENTER_LEFT" onAction="#showHome" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="🏠  Tableau de bord" />

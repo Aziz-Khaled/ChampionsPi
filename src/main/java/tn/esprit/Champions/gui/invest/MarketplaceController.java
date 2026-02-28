@@ -1,6 +1,7 @@
 package tn.esprit.Champions.gui.invest;
 
-import javafx.animation.*;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -10,7 +11,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -19,7 +23,7 @@ import javafx.util.Duration;
 import tn.esprit.Champions.models.Negociation;
 import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.projet;
-import tn.esprit.Champions.models.wallet; // Import du modèle wallet
+import tn.esprit.Champions.models.wallet;
 import tn.esprit.Champions.services.creditService;
 import tn.esprit.Champions.services.negociationService;
 import tn.esprit.Champions.services.projetService;

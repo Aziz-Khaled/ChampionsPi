@@ -1,24 +1,31 @@
 package tn.esprit.Champions.gui;
 
 import io.github.cdimascio.dotenv.Dotenv;
-import javafx.animation.*;
+import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.Cursor;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,7 +48,13 @@ public class MainDashboardController {
 
     @FXML
     public void initialize() {
-        lblWelcome.setText("Bienvenue, Sarra Gharbi 👋");
+        Utilisateur currentUser = UserSession.getLoggedInUser();
+
+        if (currentUser != null) {
+            lblWelcome.setText("Bienvenue, " + currentUser.getNom() + " " + currentUser.getPrenom() + " 👋");
+        } else {
+            lblWelcome.setText("Bienvenue 👋");
+        }
 
         // Sauvegarde immédiate des éléments de l'accueil (Stats + News Container)
         Platform.runLater(() -> {

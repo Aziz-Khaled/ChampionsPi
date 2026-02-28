@@ -1,9 +1,12 @@
 package tn.esprit.Champions.gui.invest;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.stage.Stage;
-import tn.esprit.Champions.models.*;
+import tn.esprit.Champions.models.credit;
+import tn.esprit.Champions.models.wallet;
 
 public class ConfirmTransactionController {
 

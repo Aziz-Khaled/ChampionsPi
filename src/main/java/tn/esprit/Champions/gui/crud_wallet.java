@@ -253,6 +253,38 @@ public class crud_wallet {
             e.printStackTrace();
         }
     }
+
+    @FXML
+    private void handleCreditClick(ActionEvent event) {
+        Utilisateur user = UserSession.getLoggedInUser();
+        if (user == null) return; // safety check
+
+        String fxmlPath;
+
+        switch (user.getRole()) {
+            case CLIENT, COMMERCANT -> fxmlPath = "/MainDashboard.fxml";
+            case INVESTISSEUR -> fxmlPath = "/invest/Marketplace.fxml";
+            case ADMIN -> {
+                // Optional: you can redirect admin to MainDashboard too
+                fxmlPath = "/MainDashboard.fxml";
+            }
+            default -> {
+                // fallback
+                fxmlPath = "/MainDashboard.fxml";
+            }
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     private boolean isWalletForm(Node node) {
         while (node != null) {
             if (node == walletForm || node == transactionForm) return true;

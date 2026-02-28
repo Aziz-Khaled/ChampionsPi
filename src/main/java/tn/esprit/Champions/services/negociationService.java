@@ -2,6 +2,7 @@ package tn.esprit.Champions.services;
 
 import tn.esprit.Champions.models.Negociation;
 import tn.esprit.Champions.utils.DbConnection;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -17,11 +18,12 @@ public class negociationService implements CRUD<Negociation> {
 
     @Override
     public void insertOne(Negociation n) throws SQLException {
+        int userId = UserSession.getLoggedInUser().getId_user();
         // Ajout du status par défaut 'PROPOSED' lors de l'insertion
         String req = "INSERT INTO `negociation` (`credit_id`, `investor_id`, `montant`, `taux_propose`, `status`) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement pst = cnx.prepareStatement(req)) {
             pst.setInt(1, n.getCredit_id());
-            pst.setInt(2, n.getInvestor_id());
+            pst.setInt(2, userId);
             pst.setDouble(3, n.getMontant());
             pst.setDouble(4, n.getTaux_propose());
             pst.setString(5, (n.getStatus() == null) ? "PROPOSED" : n.getStatus());

@@ -4,12 +4,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
-import tn.esprit.Champions.models.projet;
-import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.CreditStatus;
-import tn.esprit.Champions.models.Utilisateur; // <--- Import de ton modèle Utilisateur
-import tn.esprit.Champions.services.projetService;
+import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.models.credit;
+import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.services.creditService;
+import tn.esprit.Champions.services.projetService;
 
 import java.net.URL;
 import java.util.ResourceBundle;

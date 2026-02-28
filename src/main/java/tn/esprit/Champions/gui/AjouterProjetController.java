@@ -5,9 +5,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.projetStatus;
-import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.services.ImageAiService;
 import tn.esprit.Champions.services.projetService;
 

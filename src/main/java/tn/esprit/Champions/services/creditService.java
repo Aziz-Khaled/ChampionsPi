@@ -1,9 +1,10 @@
 package tn.esprit.Champions.services;
 
 import tn.esprit.Champions.models.CreditStatus;
-import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.models.credit;
 import tn.esprit.Champions.utils.DbConnection;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ public class creditService implements CRUD<credit> {
 
     @Override
     public void insertOne(credit c) throws SQLException {
+
+        int userId = UserSession.getLoggedInUser().getId_user();
         String req = "INSERT INTO `credit` (`project_id`, `borrower_id`, `montant`, `devise`, `taux`, `duree`, `description`, `status`, `date_demande`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         PreparedStatement pst = cnx.prepareStatement(req);
@@ -26,7 +29,7 @@ public class creditService implements CRUD<credit> {
         pst.setInt(1, c.getProject_id());
 
         // CORRECTION : On extrait l'ID de l'objet Utilisateur
-        pst.setInt(2, c.getBorrower_id().getId_user());
+        pst.setInt(2, userId);
 
         pst.setDouble(3, c.getMontant());
         pst.setString(4, c.getDevise());
@@ -34,7 +37,7 @@ public class creditService implements CRUD<credit> {
         pst.setInt(6, c.getDuree());
         pst.setString(7, c.getDescription());
         pst.setString(8, (c.getStatus() != null) ? c.getStatus().name() : "PENDING");
-        pst.setTimestamp(9, new java.sql.Timestamp(System.currentTimeMillis()));
+        pst.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
 
         pst.executeUpdate();
         pst.close();

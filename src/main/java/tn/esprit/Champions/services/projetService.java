@@ -1,9 +1,10 @@
 package tn.esprit.Champions.services;
 
+import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.models.projet;
 import tn.esprit.Champions.models.projetStatus;
 import tn.esprit.Champions.utils.DbConnection;
-import tn.esprit.Champions.models.projet;
-import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -31,11 +32,11 @@ public class projetService implements CRUD<projet> {
     @Override
     public void insertOne(projet p) throws SQLException {
         String secteurDetecte = detecterSecteur(p.getTitle(), p.getDescription());
-
+        int userId = UserSession.getLoggedInUser().getId_user();
         String req = "INSERT INTO `projet` (`owner_id`, `title`, `description`, `status`, `target_amount`, `start_date`, `end_date`, `image_url`, `secteur`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, p.getOwner_id().getId_user());
+            pst.setInt(1, userId);
             pst.setString(2, p.getTitle());
             pst.setString(3, p.getDescription());
             pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : "ACTIVE");
