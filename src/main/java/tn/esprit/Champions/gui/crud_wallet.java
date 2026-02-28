@@ -49,8 +49,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import tn.esprit.Champions.models.Conversion;
 import tn.esprit.Champions.services.ConversionService;
-
-
+import tn.esprit.Champions.utils.UserSession;
 
 
 public class crud_wallet {
@@ -116,6 +115,9 @@ public class crud_wallet {
     private TextField convResultField;
 
 
+    @FXML
+    private Button btnMarketplace;
+
 
     private VBox selectedCard = null;
 
@@ -167,14 +169,12 @@ public class crud_wallet {
             clearSearchButton.setOnAction(e -> handleClearSearch());
         }
 
-
         if (modify_wallet != null) {
             modify_wallet.setOnAction(e -> handleModifyWallet());
         }
         if (delete_wallet != null) {
             delete_wallet.setOnAction(e -> handleDeleteWallet());
         }
-
 
         if (btnSignOut != null) {
             btnSignOut.setOnAction(event -> {
@@ -206,6 +206,52 @@ public class crud_wallet {
             }
         });
 
+        var user = UserSession.getLoggedInUser();
+
+        if (user != null) {
+            switch (user.getRole()) {
+                case CLIENT, INVESTISSEUR -> {
+                    // CLIENT & INVESTISSEUR can see Marketplace
+                    btnMarketplace.setVisible(true);
+                }
+                case COMMERCANT -> {
+                    // COMMERCANT cannot access Marketplace
+                    btnMarketplace.setVisible(true);
+                }
+                case ADMIN -> {
+                    // Optional: Admin sees Marketplace or another admin dashboard
+                    btnMarketplace.setVisible(true);
+                }
+            }
+        }
+
+        if (btnMarketplace != null) {
+            btnMarketplace.setOnAction(this::openMarketplace);
+        }
+
+    }
+
+    @FXML
+    private void openMarketplace(ActionEvent event) {
+        Utilisateur user = UserSession.getLoggedInUser();
+
+
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainLayout.fxml"));
+            Parent root = loader.load();
+
+            // ✅ Get controller and pass the current user
+            MainLayoutController controller = loader.getController();
+            controller.setUser(user);
+
+            Stage stage = (Stage) btnMarketplace.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     private boolean isWalletForm(Node node) {
         while (node != null) {

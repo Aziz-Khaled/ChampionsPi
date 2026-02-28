@@ -32,6 +32,7 @@
                         <Button fx:id="btnGestionUsers" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Pending Approvals" />
                         <Button fx:id="btnListeUsers" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="User Directory" />
                         <Button fx:id="btnLogs" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="System Logs" />
+                        <Button fx:id="btnAssetManagement" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Asset management" />
                         <Region prefHeight="20" />
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="CONTENT" />
                         <Button fx:id="btnCourses" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Fintech Courses" />

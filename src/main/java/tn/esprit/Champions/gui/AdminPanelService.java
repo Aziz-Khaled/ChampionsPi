@@ -35,7 +35,7 @@ import java.util.Map;
 public class AdminPanelService {
 
     // Navigation and Layout
-    @FXML private Button btnOverview, btnGestionUsers, btnListeUsers, btnLogs, btnCourses, btnLogout, rv_now;
+    @FXML private Button btnOverview, btnGestionUsers, btnListeUsers, btnLogs, btnCourses, btnLogout, rv_now , btnAssetManagement;
     @FXML private VBox mainContent, recentActivityList;
     @FXML private Label lblTitle, lblTotalUsers, lblPendingUsers, lblDisabledUsers;
     @FXML private StackPane chartContainer, pieChartContainer;

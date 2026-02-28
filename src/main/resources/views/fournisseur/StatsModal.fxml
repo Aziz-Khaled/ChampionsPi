@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.fournisseur.StatsModalController" 
+      spacing="20" prefWidth="800" prefHeight="700" styleClass="main-container"
+      stylesheets="@/styles/app.css">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <children>
+        <Label text="Tableau de Bord Analytique" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: -fx-primary-dark;"/>
+        
+        <HBox spacing="20" alignment="CENTER">
+            <children>
+                <VBox alignment="CENTER" styleClass="card" prefWidth="200" prefHeight="100">
+                    <Label text="Total Produits" styleClass="card-brand"/>
+                    <Label fx:id="totalProductsLabel" text="0" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: -fx-primary-emerald;"/>
+                </VBox>
+                <VBox alignment="CENTER" styleClass="card" prefWidth="200" prefHeight="100">
+                    <Label text="Valeur du Stock" styleClass="card-brand"/>
+                    <Label fx:id="totalValueLabel" text="0.00" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: -fx-accent-orange;"/>
+                </VBox>
+            </children>
+        </HBox>
+
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+            <children>
+                <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="card">
+                    <PieChart fx:id="categoryChart" title="Répartition par Catégorie" />
+                </VBox>
+                <VBox spacing="10" HBox.hgrow="ALWAYS" styleClass="card">
+                    <BarChart fx:id="stockBarChart" title="Niveaux de Stock par Produit">
+                        <xAxis>
+                            <CategoryAxis label="Produit" />
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Quantité" />
+                        </yAxis>
+                    </BarChart>
+                </VBox>
+            </children>
+        </HBox>
+
+        <Button text="Fermer" onAction="#handleClose" styleClass="btn-secondary" maxWidth="Infinity" prefHeight="40"/>
+    </children>
+</VBox>
