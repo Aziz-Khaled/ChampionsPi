@@ -264,10 +264,7 @@ public class crud_wallet {
         switch (user.getRole()) {
             case CLIENT, COMMERCANT -> fxmlPath = "/MainDashboard.fxml";
             case INVESTISSEUR -> fxmlPath = "/invest/Marketplace.fxml";
-            case ADMIN -> {
-                // Optional: you can redirect admin to MainDashboard too
-                fxmlPath = "/MainDashboard.fxml";
-            }
+
             default -> {
                 // fallback
                 fxmlPath = "/MainDashboard.fxml";
