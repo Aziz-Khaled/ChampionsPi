@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="25.0" style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);"
+      VBox.vgrow="ALWAYS" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="tn.esprit.Champions.gui.AfficherProjetsController">
+
+    <padding><Insets bottom="30.0" left="40.0" right="40.0" top="30.0" /></padding>
+
+    <children>
+        <HBox fx:id="headerContainer" alignment="CENTER_LEFT">
+            <children>
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Gestion des Projets" textFill="WHITE" style="-fx-font-weight: 900; -fx-font-size: 34px;" />
+                        <Label text="Consultez et gérez les projets de financement participatif" textFill="#94a3b8" style="-fx-font-size: 14px;" />
+                    </children>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button onAction="#ouvrirAjout" prefHeight="45.0"
+                        style="-fx-background-color: #38bdf8; -fx-text-fill: #020617; -fx-background-radius: 12; -fx-font-weight: 900; -fx-cursor: hand;"
+                        text="+ NOUVEAU PROJET" />
+            </children>
+        </HBox>
+
+        <HBox fx:id="statsContainer" spacing="30.0">
+            <children>
+                <VBox prefWidth="320.0" style="-fx-background-color: #1e293b; -fx-background-radius: 20; -fx-padding: 25; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 5);">
+                    <children>
+                        <Label text="🚀 Projets Actifs" textFill="#94a3b8" style="-fx-font-weight: bold; -fx-font-size: 12px;" />
+                        <Label fx:id="statLabel" text="0 Projets" textFill="WHITE" style="-fx-font-size: 32px; -fx-font-weight: 900;">
+                            <VBox.margin><Insets top="8.0" /></VBox.margin>
+                        </Label>
+                    </children>
+                </VBox>
+                <VBox prefWidth="320.0" style="-fx-background-color: #1e293b; -fx-background-radius: 20; -fx-padding: 25; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 5);">
+                    <children>
+                        <Label text="💰 Financement Total" textFill="#94a3b8" style="-fx-font-weight: bold; -fx-font-size: 12px;" />
+                        <Label text="Champions" textFill="#10b981" style="-fx-font-size: 32px; -fx-font-weight: 900;">
+                            <VBox.margin><Insets top="8.0" /></VBox.margin>
+                        </Label>
+                    </children>
+                </VBox>
+            </children>
+        </HBox>
+
+        <HBox alignment="CENTER_LEFT" spacing="15.0">
+            <children>
+                <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0"
+                      style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 15; -fx-padding: 0 15; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 15;" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label text="🔍" textFill="#64748b" style="-fx-font-size: 16px;" />
+                        <TextField fx:id="searchField" promptText="Rechercher titre, description, montant..."
+                                   style="-fx-background-color: transparent; -fx-text-fill: white; -fx-prompt-text-fill: #64748b;" HBox.hgrow="ALWAYS" />
+                        <Separator orientation="VERTICAL" prefHeight="25.0" opacity="0.1" />
+                        <ComboBox fx:id="statusFilterCombo" prefWidth="180.0" promptText="Tous les Statuts"
+                                  style="-fx-background-color: transparent; -fx-text-fill: white; -fx-cursor: hand;" />
+                    </children>
+                </HBox>
+                <Button fx:id="btnEdit" disable="true" onAction="#handleEditSelection" prefHeight="50.0" prefWidth="120.0"
+                        style="-fx-background-color: rgba(241, 196, 15, 0.1); -fx-text-fill: #f1c40f; -fx-font-weight: bold; -fx-background-radius: 12; -fx-border-color: rgba(241, 196, 15, 0.2); -fx-border-radius: 12; -fx-cursor: hand;" text="✎ Modifier" />
+                <Button fx:id="btnDelete" disable="true" onAction="#handleDeleteSelection" prefHeight="50.0" prefWidth="120.0"
+                        style="-fx-background-color: rgba(231, 76, 60, 0.1); -fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-background-radius: 12; -fx-border-color: rgba(231, 76, 60, 0.2); -fx-border-radius: 12; -fx-cursor: hand;" text="✕ Supprimer" />
+            </children>
+        </HBox>
+
+        <VBox style="-fx-background-color: #1e293b; -fx-background-radius: 20; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 5);" VBox.vgrow="ALWAYS">
+            <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+            <children>
+                <TableView fx:id="tableProjets" styleClass="dark-table" stylesheets="@css/style.css" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colTitre" prefWidth="150.0" text="TITRE" />
+                        <TableColumn fx:id="colDescription" prefWidth="200.0" text="DESCRIPTION" />
+                        <TableColumn fx:id="colMontant" prefWidth="100.0" text="OBJECTIF" />
+                        <TableColumn fx:id="colStatus" prefWidth="120.0" text="STATUT" />
+                        <TableColumn fx:id="colDateDebut" prefWidth="130.0" text="DATE DÉBUT" />
+                        <TableColumn fx:id="colDateFin" prefWidth="130.0" text="DATE FIN" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+            </children>
+        </VBox>
+    </children>
+</VBox>

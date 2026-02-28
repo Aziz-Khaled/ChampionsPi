@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+
+<HBox fx:id="negocRoot" prefHeight="750.0" prefWidth="1100.0" style="-fx-background-color: #0f172a;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.invest.NegociationController">
+    <children>
+        <VBox maxWidth="320.0" minWidth="320.0" style="-fx-background-color: #020617; -fx-padding: 30;">
+            <children>
+                <Button onAction="#retourDetails" style="-fx-background-color: rgba(255,255,255,0.05); -fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-background-radius: 10;" text="← Retour au Marketplace" />
+
+                <VBox spacing="5" style="-fx-padding: 40 0 20 0;">
+                    <Label text="VOTRE PROFIT ESTIMÉ" textFill="#94a3b8" style="-fx-font-size: 11; -fx-font-weight: bold;" />
+                    <Label fx:id="lblGainEstime" text="0.00 TND" textFill="#38bdf8" style="-fx-font-weight: bold; -fx-font-size: 32;" />
+                    <Label text="Intérêts perçus sur la durée" textFill="#475569" style="-fx-font-size: 10;" />
+                </VBox>
+
+                <Separator opacity="0.1"><VBox.margin><Insets bottom="30.0" top="10.0" /></VBox.margin></Separator>
+
+                <VBox spacing="10">
+                    <Label text="STATUT DE L'OFFRE" textFill="#64748b" style="-fx-font-size: 10; -fx-font-weight: bold;" />
+                    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: rgba(56, 189, 248, 0.1); -fx-padding: 15; -fx-background-radius: 12;">
+                        <Circle radius="5" fill="#38bdf8" />
+                        <Label fx:id="lblStatutNegoc" text="EN ATTENTE" textFill="WHITE" style="-fx-font-weight: bold; -fx-font-size: 13;" />
+                    </HBox>
+                </VBox>
+            </children>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" spacing="40" style="-fx-padding: 80;">
+            <children>
+                <VBox spacing="10">
+                    <Label text="CONTRAT DE FINANCEMENT" textFill="#38bdf8" style="-fx-font-weight: bold; -fx-letter-spacing: 2;" />
+                    <Label text="Ajustez les modalités pour soumettre une offre au porteur de projet." textFill="#94a3b8" style="-fx-font-size: 18;" />
+                </VBox>
+
+                <HBox spacing="25">
+                    <VBox prefWidth="250" style="-fx-background-color: #1e293b; -fx-padding: 30; -fx-background-radius: 20; -fx-border-color: rgba(255,255,255,0.05);">
+                        <Label text="MONTANT TOTAL" textFill="#64748b" style="-fx-font-size: 11; -fx-font-weight: bold;" />
+                        <Label fx:id="lblMontantOrigine" text="0.00 TND" textFill="WHITE" style="-fx-font-size: 22; -fx-font-weight: bold;">
+                            <VBox.margin><Insets top="10.0" /></VBox.margin>
+                        </Label>
+                    </VBox>
+
+                    <VBox prefWidth="250" style="-fx-background-color: #1e293b; -fx-padding: 30; -fx-background-radius: 20; -fx-border-color: rgba(255,255,255,0.05);">
+                        <Label text="TAUX D'INTÉRÊT" textFill="#64748b" style="-fx-font-size: 11; -fx-font-weight: bold;" />
+                        <Label fx:id="lblTauxOrigine" text="0.0 %" textFill="#10b981" style="-fx-font-size: 22; -fx-font-weight: bold;">
+                            <VBox.margin><Insets top="10.0" /></VBox.margin>
+                        </Label>
+                    </VBox>
+
+                    <VBox prefWidth="250" style="-fx-background-color: #1e293b; -fx-padding: 30; -fx-background-radius: 20; -fx-border-color: rgba(255,255,255,0.05);">
+                        <Label text="DURÉE DU CRÉDIT" textFill="#64748b" style="-fx-font-size: 11; -fx-font-weight: bold;" />
+                        <Label fx:id="lblDureeOrigine" text="0 Mois" textFill="WHITE" style="-fx-font-size: 22; -fx-font-weight: bold;">
+                            <VBox.margin><Insets top="10.0" /></VBox.margin>
+                        </Label>
+                    </VBox>
+                </HBox>
+
+                <VBox alignment="CENTER" spacing="30" VBox.vgrow="ALWAYS">
+                    <Button onAction="#proposerOffre" prefHeight="65.0" prefWidth="350.0"
+                            style="-fx-background-color: #38bdf8; -fx-text-fill: #020617; -fx-font-weight: bold; -fx-font-size: 18; -fx-background-radius: 15; -fx-cursor: hand; -fx-effect: dropshadow(three-pass-box, rgba(56,189,248,0.4), 15, 0, 0, 0);"
+                            text="ÉMETTRE UNE NOUVELLE OFFRE" />
+                    <Label text="L'emprunteur sera notifié pour accepter ou refuser votre proposition." textFill="#475569" style="-fx-font-size: 12;" />
+                </VBox>
+            </children>
+        </VBox>
+    </children>
+</HBox>
