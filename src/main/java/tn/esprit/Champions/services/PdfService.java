@@ -71,3 +71,4 @@ public class PdfService {
         return pngOutputStream.toByteArray();
     }
 }
+

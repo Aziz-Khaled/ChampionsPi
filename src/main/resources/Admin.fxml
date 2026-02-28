@@ -35,7 +35,7 @@
                         <Button fx:id="btnAssetManagement" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Asset management" />
                         <Region prefHeight="20" />
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="CONTENT" />
-                        <Button fx:id="btnCourses" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="Fintech Courses" />
+                        <Button fx:id="btnCourses" prefHeight="50.0"  prefWidth="Infinity" styleClass="nav-button" text="Fintech Courses" />
                     </children>
                 </VBox>
 

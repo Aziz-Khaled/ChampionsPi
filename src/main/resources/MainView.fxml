@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane fx:id="mainContainer" prefHeight="800" prefWidth="1300" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.MainController">
+
+    <left>
+        <VBox spacing="15" prefWidth="250" style="-fx-background-color: #1a2a3a;">
+            <padding><Insets top="40" left="20" right="20"/></padding>
+
+            <Label text="Champions" style="-fx-text-fill: #00d4ff; -fx-font-size: 26; -fx-font-weight: bold;">
+                <VBox.margin><Insets bottom="20"/></VBox.margin>
+            </Label>
+
+            <Button fx:id="btnFormations" onAction="#showFormations" text="📚  Formations"
+                    style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;"/>
+
+            <Button fx:id="btnParticipations" onAction="#showParticipations" text="👥  Participations"
+                    style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;"/>
+
+            <Button fx:id="btnCertificats" onAction="#showCertificats" text="🏆  Certificats"
+                    style="-fx-text-fill: white; -fx-background-color: transparent; -fx-font-size: 16; -fx-cursor: hand; -fx-alignment: CENTER_LEFT; -fx-pref-width: 210;"/>
+
+            <Region VBox.vgrow="ALWAYS" />
+            <Separator opacity="0.1" />
+            <Label text="v1.2.0" style="-fx-text-fill: #576574; -fx-font-size: 10;" />
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="contentArea" style="-fx-background-color: #f8f9fa;">
+            <children>
+                <Label text="Sélectionnez un module dans le menu" style="-fx-text-fill: #7f8c8d; -fx-font-size: 18;"/>
+            </children>
+        </StackPane>
+    </center>
+</BorderPane>

@@ -12,86 +12,62 @@ public class certificats {
     private MentionCertificat mention;
     private String urlFichier;
 
+    // --- AJOUT : Champs pour l'affichage PDF (non persistés en DB) ---
+    private String nomEtudiant;
+    private String nomFormation;
+
     public certificats(){}
 
-    public certificats(int idCertificat, Long idParticipation, LocalDate dateEmission, String codeVerification, String mention, String urlFichier) {
+    public certificats(int idCertificat, Long idParticipation, LocalDate dateEmission, String codeVerification, MentionCertificat mention, String urlFichier) {
         this.idCertificat = idCertificat;
         this.idParticipation = idParticipation;
         this.dateEmission = dateEmission;
         this.codeVerification = codeVerification;
-        this.mention =  MentionCertificat.valueOf(mention);
-        this.urlFichier = urlFichier;
-    }
-
-    public int getIdCertificat() {
-        return idCertificat;
-    }
-
-    public void setIdCertificat(int idCertificat) {
-        this.idCertificat = idCertificat;
-    }
-
-    public Long getIdParticipation() {
-        return idParticipation;
-    }
-
-    public void setIdParticipation(Long idParticipation) {
-        this.idParticipation = idParticipation;
-    }
-
-    public LocalDate getDateEmission() {
-        return dateEmission;
-    }
-
-    public void setDateEmission(LocalDate dateEmission) {
-        this.dateEmission = dateEmission;
-    }
-
-    public String getCodeVerification() {
-        return codeVerification;
-    }
-
-    public void setCodeVerification(String codeVerification) {
-        this.codeVerification = codeVerification;
-    }
-
-    public MentionCertificat getMention() {
-        return mention;
-    }
-
-    public void setMention(MentionCertificat mention) {
         this.mention = mention;
-    }
-
-    public String getUrlFichier() {
-        return urlFichier;
-    }
-
-    public void setUrlFichier(String urlFichier) {
         this.urlFichier = urlFichier;
     }
+
+    // Getters et Setters existants...
+    public int getIdCertificat() { return idCertificat; }
+    public void setIdCertificat(int idCertificat) { this.idCertificat = idCertificat; }
+    public Long getIdParticipation() { return idParticipation; }
+    public void setIdParticipation(Long idParticipation) { this.idParticipation = idParticipation; }
+    public LocalDate getDateEmission() { return dateEmission; }
+    public void setDateEmission(LocalDate dateEmission) { this.dateEmission = dateEmission; }
+    public String getCodeVerification() { return codeVerification; }
+    public void setCodeVerification(String codeVerification) { this.codeVerification = codeVerification; }
+    public MentionCertificat getMention() { return mention; }
+    public void setMention(MentionCertificat mention) { this.mention = mention; }
+    public String getUrlFichier() { return urlFichier; }
+    public void setUrlFichier(String urlFichier) { this.urlFichier = urlFichier; }
+
+    // --- AJOUT : Getters et Setters pour les données PDF ---
+    public String getNomEtudiant() { return nomEtudiant; }
+    public void setNomEtudiant(String nomEtudiant) { this.nomEtudiant = nomEtudiant; }
+    public String getNomFormation() { return nomFormation; }
+    public void setNomFormation(String nomFormation) { this.nomFormation = nomFormation; }
 
     @Override
     public String toString() {
         return "certificats{" +
                 "idCertificat=" + idCertificat +
-                ", idParticipation=" + idParticipation +
-                ", dateEmission=" + dateEmission +
-                ", codeVerification='" + codeVerification + '\'' +
-                ", mention='" + mention + '\'' +
-                ", urlFichier='" + urlFichier + '\'' +
+                ", nomEtudiant='" + nomEtudiant + '\'' +
+                ", formation='" + nomFormation + '\'' +
+                ", mention=" + mention +
                 '}';
     }
 
+    // Equals et HashCode restent identiques (basés sur les IDs et le code)
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         certificats that = (certificats) o;
-        return Objects.equals(idCertificat, that.idCertificat) && Objects.equals(idParticipation, that.idParticipation) && Objects.equals(dateEmission, that.dateEmission) && Objects.equals(codeVerification, that.codeVerification) && mention == that.mention && Objects.equals(urlFichier, that.urlFichier);
+        return idCertificat == that.idCertificat && Objects.equals(idParticipation, that.idParticipation) && Objects.equals(codeVerification, that.codeVerification);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idCertificat, idParticipation, dateEmission, codeVerification, mention, urlFichier);
+        return Objects.hash(idCertificat, idParticipation, codeVerification);
     }
 }
