@@ -49,8 +49,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import tn.esprit.Champions.models.Conversion;
 import tn.esprit.Champions.services.ConversionService;
-
-
+import tn.esprit.Champions.utils.UserSession;
 
 
 public class crud_wallet {
@@ -115,7 +114,12 @@ public class crud_wallet {
     @FXML
     private TextField convResultField;
 
-
+    @FXML
+    private Button btnMarketplace;
+    @FXML
+    private Button btnFormation;
+    @FXML
+    private Button btnCredit;
 
     private VBox selectedCard = null;
 
@@ -1943,6 +1947,81 @@ public class crud_wallet {
 
         walletSourceBox.setValue(null);
         walletDestBox.setValue(null);
+    }
+    @FXML
+    private void handleFormationNavigation(ActionEvent event) {
+        try {
+            // Adjust the path to your student_dashboard.fxml file location
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/student_dashboard.fxml"));
+            Parent root = loader.load();
+
+            // Get the current stage from the button that was clicked
+            Stage stage = (Stage) btnFormation.getScene().getWindow();
+
+            // Set the new scene
+            stage.setScene(new Scene(root));
+            stage.setTitle("Student Dashboard - Formations");
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Error loading student_dashboard.fxml: " + e.getMessage());
+            e.printStackTrace();
+            // Optional: Show an alert to the user
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Impossible de charger le tableau de bord de formation.");
+            alert.show();
+        }
+    }
+
+    @FXML
+    private void openMarketplace(ActionEvent event) {
+        Utilisateur user = UserSession.getLoggedInUser();
+
+
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainLayout.fxml"));
+            Parent root = loader.load();
+
+
+            MainLayoutController controller = loader.getController();
+            controller.setUser(user);
+
+            Stage stage = (Stage) btnMarketplace.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleCreditClick(ActionEvent event) {
+        Utilisateur user = UserSession.getLoggedInUser();
+        if (user == null) return; // safety check
+
+        String fxmlPath;
+
+        switch (user.getRole()) {
+            case CLIENT, COMMERCANT -> fxmlPath = "/MainDashboard.fxml";
+            case INVESTISSEUR -> fxmlPath = "/invest/Marketplace.fxml";
+
+            default -> {
+                // fallback
+                fxmlPath = "/MainDashboard.fxml";
+            }
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

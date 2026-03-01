@@ -13,7 +13,7 @@ public class formations {
     private double prix;
     private int capaciteMax;
     private StatutFormation statut;
-
+    private double rating ;
     public formations(){}
 
     public formations(String titre, int idFormation, String description, String domaine, LocalDate dateDebut, LocalDate dateFin, double prix, int capaciteMax, String statut) {
@@ -125,5 +125,13 @@ public class formations {
     @Override
     public int hashCode() {
         return Objects.hash(idFormation, titre, description, domaine, dateDebut, dateFin, prix, capaciteMax, statut);
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
     }
 }

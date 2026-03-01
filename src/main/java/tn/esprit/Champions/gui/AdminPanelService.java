@@ -6,7 +6,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -14,6 +17,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import tn.esprit.Champions.models.AccountStatus;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
@@ -35,7 +39,7 @@ import java.util.Map;
 public class AdminPanelService {
 
     // Navigation and Layout
-    @FXML private Button btnOverview, btnGestionUsers, btnListeUsers, btnLogs, btnCourses, btnLogout, rv_now;
+    @FXML private Button btnOverview, btnGestionUsers, btnListeUsers, btnLogs, btnCourses, btnLogout, rv_now , btnAssetManagement;
     @FXML private VBox mainContent, recentActivityList;
     @FXML private Label lblTitle, lblTotalUsers, lblPendingUsers, lblDisabledUsers;
     @FXML private StackPane chartContainer, pieChartContainer;
@@ -66,11 +70,31 @@ public class AdminPanelService {
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
         btnLogs.setOnAction(e -> showLogs());
+        btnCourses.setOnAction(event -> {
+            try {
+                // Load the MainView.fxml
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/MainView.fxml"));
+                Parent root = loader.load();
 
+                // Get the current stage from the button
+                Stage stage = (Stage) btnCourses.getScene().getWindow();
+
+                // Set the new scene
+                Scene scene = new Scene(root);
+                stage.setScene(scene);
+                stage.show();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Optionally show an error alert to the user here
+            }
+        });
         if (btnLogout != null) {
             btnLogout.setOnAction(e -> handleLogout());
         }
         refreshStatistics();
+
+
     }
 
     private void showDashboard() {

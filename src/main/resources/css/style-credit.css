@@ -1,0 +1,68 @@
+/* --- Style TableView Champions --- */
+.dark-table {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+
+.dark-table .column-header-background {
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dark-table .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 45px;
+    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-border-width: 0 0 1 0;
+}
+
+.dark-table .column-header .label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.dark-table .table-row-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(255, 255, 255, 0.02);
+    -fx-border-width: 0 0 1 0;
+    -fx-cell-size: 55px;
+}
+
+.dark-table .table-cell {
+    -fx-text-fill: white;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.dark-table .table-row-cell:hover {
+    -fx-background-color: rgba(56, 189, 248, 0.05);
+}
+
+.dark-table .table-row-cell:selected {
+    -fx-background-color: rgba(56, 189, 248, 0.15);
+}
+
+.dark-table .table-row-cell:selected .table-cell {
+    -fx-text-fill: #38bdf8;
+}
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 0 25;
+    -fx-cursor: hand;
+    -fx-background-radius: 0 25 25 0;
+}
+
+.nav-button:hover {
+    -fx-background-color: rgba(56, 189, 248, 0.05);
+    -fx-text-fill: #38bdf8;
+}
+
+.nav-button:selected, .nav-button:focused {
+    -fx-background-color: rgba(56, 189, 248, 0.1);
+    -fx-text-fill: #38bdf8;
+    -fx-border-color: #38bdf8;
+    -fx-border-width: 0 0 0 4;
+}

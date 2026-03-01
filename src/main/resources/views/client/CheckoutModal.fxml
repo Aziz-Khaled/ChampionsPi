@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.image.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.CheckoutController" 
+      spacing="25" alignment="TOP_CENTER" styleClass="premium-modal" 
+      prefWidth="500" stylesheets="@/styles/app.css">
+    
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+
+    <children>
+        <VBox spacing="5" alignment="CENTER">
+            <Label text="Finaliser votre Commande" styleClass="modal-title"/>
+            <Label text="Fintech BTC Marketplace" styleClass="modal-subtitle"/>
+        </VBox>
+
+        <!-- Summary Card -->
+        <VBox styleClass="card, checkout-summary" spacing="10">
+            <HBox alignment="CENTER_LEFT">
+                <Label text="Total de votre panier" styleClass="card-brand"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="totalAmountLabel" text="0.00 BTC" styleClass="card-price"/>
+            </HBox>
+        </VBox>
+
+        <!-- Form fields -->
+        <VBox spacing="15" styleClass="card">
+            <Label text="Coordonnées de Livraison" styleClass="section-title"/>
+            
+            <VBox spacing="8">
+                <Label text="Adresse de livraison" styleClass="form-label"/>
+                <HBox spacing="10">
+                    <TextField fx:id="addressField" promptText="ex: 123 Rue de la Paix, Paris" HBox.hgrow="ALWAYS"/>
+                    <Button text="Localiser" onAction="#handleOpenMaps" styleClass="btn-secondary">
+                        <tooltip>
+                            <Tooltip text="Ouvrir Google Maps pour trouver votre adresse"/>
+                        </tooltip>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="8">
+                <Label text="Numéro de téléphone" styleClass="form-label"/>
+                <TextField fx:id="phoneField" promptText="ex: +216 12 345 678"/>
+            </VBox>
+        </VBox>
+
+        <VBox spacing="10" alignment="CENTER">
+            <Button text="Confirmer le Paiement BTC" onAction="#handleConfirm" 
+                    maxWidth="Infinity" prefHeight="50" styleClass="btn-primary"/>
+            <Button text="Annuler" onAction="#handleCancel" 
+                    maxWidth="Infinity" styleClass="btn-secondary"/>
+        </VBox>
+    </children>
+</VBox>

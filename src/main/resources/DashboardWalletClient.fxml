@@ -48,9 +48,26 @@
                             onAction="#openTradingDashboard"
                             style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;"
                             text="📈 Trades"
-                            textAlignment="LEFT" />                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="🎓Formation" textAlignment="LEFT" />
-                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="🛒Marketplace" textAlignment="LEFT" />
-                    <Button maxWidth="Infinity" mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="💳Crédit" textAlignment="LEFT" />
+                            textAlignment="LEFT" />
+
+                            <Button fx:id="btnFormation"
+                            onAction="#handleFormationNavigation"
+                            maxWidth="Infinity"
+                            mnemonicParsing="false"
+                            style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;"
+                            text="🎓Formation"
+                            textAlignment="LEFT" />
+
+                            <Button
+                            fx:id="btnMarketplace"
+                            maxWidth="Infinity"
+                            mnemonicParsing="false"
+                            onAction="#openMarketplace"
+                            style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;"
+                            text="🛒Marketplace"
+                            textAlignment="LEFT" />
+
+                    <Button maxWidth="Infinity" fx:id="btnCredit" onAction="#handleCreditClick"  mnemonicParsing="false" style="-fx-text-fill: white; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #2c3e50; -fx-padding: 12 20; -fx-cursor: hand;" text="💳Crédit" textAlignment="LEFT" />
                 </VBox>
 
                 <VBox alignment="BOTTOM_CENTER" prefHeight="80.0" prefWidth="214.0" spacing="10.0" style="-fx-padding: 15;">

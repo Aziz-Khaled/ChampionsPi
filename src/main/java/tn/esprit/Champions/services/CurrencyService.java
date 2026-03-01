@@ -1,5 +1,6 @@
 package tn.esprit.Champions.services;
 
+
 import tn.esprit.Champions.models.currency;
 import tn.esprit.Champions.models.typeCurrency;
 import tn.esprit.Champions.models.typeWallet;
@@ -13,6 +14,12 @@ import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import org.json.JSONObject;
+
 public class CurrencyService implements CRUD<currency>
 {
     private Connection cnx;
@@ -22,6 +29,27 @@ public class CurrencyService implements CRUD<currency>
     }
 
 
+    private static final String API_URL = "https://open.er-api.com/v6/latest/TND";
+
+    public static double convertTndToEur(double amountInTnd) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(API_URL))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            JSONObject json = new JSONObject(response.body());
+            double rate = json.getJSONObject("rates").getDouble("EUR");
+
+            return amountInTnd * rate;
+        } catch (Exception e) {
+            System.err.println("Erreur API Conversion : " + e.getMessage());
+            return amountInTnd * 0.30; // Valeur de secours si l'API échoue (1 TND ≈ 0.30 EUR)
+        }
+    }
 
     @Override
     public void insertOne(currency currency) throws SQLException {
@@ -144,3 +172,4 @@ public class CurrencyService implements CRUD<currency>
         return "";
     }
 }
+

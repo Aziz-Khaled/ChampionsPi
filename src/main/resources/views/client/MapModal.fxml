@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.MapController" 
+      spacing="15" prefWidth="700" prefHeight="600" styleClass="premium-modal" 
+      stylesheets="@/styles/app.css">
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <children>
+        <HBox alignment="CENTER_LEFT" spacing="10">
+            <VBox HBox.hgrow="ALWAYS">
+                <Label text="Localisez votre Adresse" styleClass="modal-title"/>
+                <Label text="Cliquez sur la carte pour définir le point de livraison" styleClass="modal-subtitle"/>
+            </VBox>
+            <Button text="Annuler" onAction="#handleCancel" styleClass="btn-secondary"/>
+        </HBox>
+
+        <StackPane VBox.vgrow="ALWAYS" styleClass="card" style="-fx-padding: 2;">
+            <WebView fx:id="mapWebView"/>
+        </StackPane>
+
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Label fx:id="selectedAddressLabel" text="Aucune adresse sélectionnée" 
+                   styleClass="card-brand" wrapText="true" HBox.hgrow="ALWAYS" maxWidth="400"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="confirmButton" text="Confirmer l'emplacement" onAction="#handleConfirm" 
+                    styleClass="btn-primary" disable="true"/>
+        </HBox>
+    </children>
+</VBox>

@@ -15,6 +15,9 @@ public class Utilisateur {
         this.email = email;
     }
 
+    public Utilisateur() {
+    }
+
     public Utilisateur(int id_user, String nom, String prenom,
                        String email, String mot_de_passe,
                        String telephone, String piece_identite,
