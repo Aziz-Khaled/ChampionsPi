@@ -1,12 +1,13 @@
 tokens/
 src/main/resources/credentials.json
 target/
-<<<<<<< HEAD
+
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
 .env
+src/main/resources/tessdata
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -41,11 +42,11 @@ build/
 
 ### Mac OS ###
 .DS_Store
-=======
-tokens/
-src/main/resources/credentials.json
-target/
-tokens/
-src/main/resources/credentials.json
+
+
+
+
+
+
 .idea/
->>>>>>> origin/module-formations
+

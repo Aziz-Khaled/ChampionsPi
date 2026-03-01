@@ -21,7 +21,7 @@ import java.sql.SQLException;
 import java.util.Base64;
 
 public class LoginService {
-
+        // dependencies injected via FXML
     @FXML private Button btn_GoogleLogin;
     @FXML private Button btn_Login;
     @FXML private TextField txt_Email;
