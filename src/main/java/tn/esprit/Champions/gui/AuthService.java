@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 
 import tn.esprit.Champions.models.AccountStatus;
+import tn.esprit.Champions.services.AMLService;
 import tn.esprit.Champions.utils.JwtUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -40,8 +41,6 @@ import java.sql.SQLException;
 
 
 public class AuthService {
-
-
     @FXML private VBox step1Container, step2Container;
     @FXML private Region prog1, prog2;
     @FXML private Label stepDescription;
@@ -49,47 +48,23 @@ public class AuthService {
     @FXML private TextField TF_OTP;
     @FXML private Label lblOtpStatus;
     @FXML private Button btnSendOTP;
+    @FXML private Button Login_Button;
+    @FXML private TextField TF_Email;
+    @FXML private Button signUpButton;
+    @FXML private Button Identity_Button;
+    @FXML private TextField TF_Nom;
+    @FXML private PasswordField TF_Password;
+    @FXML private TextField TF_Prenom;
+    @FXML private TextField TF_Telephone;
+    @FXML private Button personalImage_button;
+    @FXML private ComboBox<Role> combobox_role;
 
     private String generatedCode;
     private boolean isEmailVerified = false;
-
-    @FXML
-    private Button Login_Button;
-
-
-    @FXML
-    private TextField TF_Email;
-
-    @FXML
-    private Button signUpButton;
-
-    @FXML
-    private Button Identity_Button;
-
-    @FXML
-    private TextField TF_Nom;
-
-    @FXML
-    private PasswordField TF_Password;
-
-    @FXML
-    private TextField TF_Prenom;
-
-
-
-    @FXML
-    private TextField TF_Telephone;
-
-    @FXML
-    private Button personalImage_button;
-
-    @FXML
-    private ComboBox<Role> combobox_role;
-
-
     private File identityFile;
     private File personalImageFile;
-    private boolean isCaptchaSolved = false;
+
+    private final AMLService amlService = new AMLService();
 
 
     @FXML
@@ -111,8 +86,6 @@ public class AuthService {
                         .toList()
         );
     }
-
-
     @FXML
     private void handleLiveSelfie() {
         Webcam webcam = Webcam.getDefault();
@@ -297,6 +270,20 @@ public class AuthService {
         if (identityFile == null || personalImageFile == null) {
             showAlert(Alert.AlertType.ERROR, "Fichiers manquants", "Veuillez sélectionner une pièce d'identité et une photo personnelle.");
             return;
+        }
+
+        // 2. TRIGGER API 3: AML/Sanction Check
+        // We do this before saving to set the initial status
+        String fullName = nom + " " + prenom;
+        String amlResult = amlService.checkSanctions(fullName);
+
+        AccountStatus initialStatus = AccountStatus.PENDING;
+
+        // If the API flags them, we could automatically set them to a "SUSPICIOUS" or "REJECTED" state
+        // For your validation, it's better to keep it PENDING but log the AML result in the DB
+        if (amlResult.equals("FLAGGED")) {
+            System.out.println("⚠️ ALERT: User " + fullName + " is on a Sanction List!");
+            // You might want to save this 'amlResult' into a new column in your DB
         }
 
 

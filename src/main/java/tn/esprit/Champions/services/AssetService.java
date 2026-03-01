@@ -5,6 +5,7 @@ import tn.esprit.Champions.models.AssetType;
 import tn.esprit.Champions.models.Market;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.utils.DbConnection;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ public class AssetService implements CRUD <Asset>  {
 
     @Override
     public void insertOne(Asset asset) throws SQLException {
+
+        int userId = UserSession.getLoggedInUser().getId_user();
         String req = "INSERT INTO `asset`(`symbol`, `name`, `type`, `market`, `current_price`, `status`, `created_at`, `updated_at`, `user_id`)" +
                 " VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -34,7 +37,7 @@ public class AssetService implements CRUD <Asset>  {
         ps.setString(6, asset.getStatus().name());
         ps.setTimestamp(7, Timestamp.valueOf(asset.getCreatedAt()));
         ps.setTimestamp(8, Timestamp.valueOf(asset.getUpdatedAt()));
-        ps.setInt(9, asset.getUserId());
+        ps.setInt(9, userId);
 
         ps.executeUpdate();
 

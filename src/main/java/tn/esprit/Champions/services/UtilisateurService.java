@@ -258,6 +258,14 @@ public class UtilisateurService implements CRUD<Utilisateur>{
      */
     public java.util.Map<String, Integer> getUserAcquisitionStats() throws SQLException {
         java.util.Map<String, Integer> stats = new java.util.LinkedHashMap<>();
+
+        // 1. Pre-fill the map with the last 7 days and 0 counts
+        java.time.LocalDate today = java.time.LocalDate.now();
+        for (int i = 6; i >= 0; i--) {
+            stats.put(today.minusDays(i).toString(), 0);
+        }
+
+        // 2. Fetch data from DB
         String query = """
             SELECT DATE(date_de_creation) as join_date, COUNT(*) as count 
             FROM utilisateur 
@@ -269,6 +277,7 @@ public class UtilisateurService implements CRUD<Utilisateur>{
         try (PreparedStatement ps = DbConnection.getInstance().getCnx().prepareStatement(query)) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+                // This replaces the 0 with the actual count if a record exists
                 stats.put(rs.getString("join_date"), rs.getInt("count"));
             }
         }
