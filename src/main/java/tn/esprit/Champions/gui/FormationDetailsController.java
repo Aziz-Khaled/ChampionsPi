@@ -55,7 +55,7 @@ public class FormationDetailsController {
     // NOUVEAU : On utilise l'instance du nouveau service Gemini
     private final AiFormationService AiFormationService = new AiFormationService();
 
-    private final String STRIPE_API_KEY = "sk_test_51T4UQ8..."; // Garde ta clé actuelle
+    private final String STRIPE_API_KEY = "..."; // Garde ta clé actuelle
 
     @FXML
     public void initialize() {
