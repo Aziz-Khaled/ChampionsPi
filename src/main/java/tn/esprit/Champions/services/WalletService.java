@@ -8,6 +8,7 @@ import tn.esprit.Champions.models.statutWallet;
 import tn.esprit.Champions.models.typeWallet;
 import tn.esprit.Champions.models.wallet;
 import tn.esprit.Champions.utils.DbConnection;
+import tn.esprit.Champions.utils.UserSession;
 
 public class WalletService implements CRUD<wallet> {
     private Connection cnx;
@@ -126,6 +127,7 @@ public class WalletService implements CRUD<wallet> {
     @Override
     public void insertOne(wallet wallet) throws SQLException {
         String rib = generateUniqueRIB();
+        int userId = UserSession.getLoggedInUser().getId_user();
         wallet.setRib(rib); // on met le RIB dans l'objet
 
         String query = "INSERT INTO wallet (type_wallet, statut, id_user, rib, date_creation, date_derniere_modification) " +
@@ -133,7 +135,7 @@ public class WalletService implements CRUD<wallet> {
         PreparedStatement pst = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         pst.setString(1, wallet.getTypeWallet().name());
         pst.setString(2, wallet.getStatut().name());
-        pst.setInt(3, wallet.getIdUser());
+        pst.setInt(3, userId);
         pst.setString(4, wallet.getRib());
         pst.executeUpdate();
 
