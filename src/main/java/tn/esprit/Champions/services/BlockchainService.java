@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.*;
 import java.util.Base64;
+import java.util.Locale;
 
 public class BlockchainService {
     private Connection cnx;
@@ -21,7 +22,7 @@ public class BlockchainService {
         notificationService = new NotificationAdminService();
     }
 
-    // --- SÉCURITÉ AES (BACKUP INVIOLABLE) ---
+    // --- SÉCURITÉ AES ---
     private String encrypt(String data) {
         try {
             SecretKeySpec secretKey = new SecretKeySpec(AES_KEY.getBytes(StandardCharsets.UTF_8), "AES");
@@ -42,20 +43,18 @@ public class BlockchainService {
         } catch (Exception e) { return "ERREUR_DE_DECHIFFREMENT"; }
     }
 
-    // --- LOGIQUE CORE : AJOUT ET VÉRIFICATION ---
-
+    // --- AJOUT DE BLOC ---
     public void addBlock(transaction t) throws SQLException {
-        // 1. Audit complet avant d'autoriser une nouvelle transaction
-        verifyBlockchain();
-
-        // 2. Blocage si une anomalie est détectée
         if (isBlockchainCorrupted()) {
             throw new RuntimeException("CRITICAL: Blockchain integrity compromised. Operation blocked.");
         }
 
-        // 3. Récupération des données du dernier bloc pour le lien
+        String previousHashOnly = "0000";
+        String encryptedBackupOfPrevious = "";
+        int newIndex = 1;
+
         String queryLast = """
-            SELECT b.current_hash, b.id_transaction, b.montant, b.type, 
+            SELECT b.current_hash, b.block_index, b.id_transaction, b.montant, b.type, 
                    ws.rib as rib_s, wd.rib as rib_d, c.last_4_digits as last4
             FROM blockchain b
             LEFT JOIN wallet ws ON b.wallet_source = ws.id_wallet
@@ -64,33 +63,22 @@ public class BlockchainService {
             ORDER BY b.block_index DESC LIMIT 1
         """;
 
-        String previousHashOnly = "0000";
-        String encryptedBackupOfPrevious = "";
-        int newIndex = 1;
-
-        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(queryLast)) {
+        try (PreparedStatement st = cnx.prepareStatement(queryLast); ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
                 previousHashOnly = rs.getString("current_hash");
-                newIndex = getLatestIndex() + 1;
-                String typePrev = rs.getString("type");
+                newIndex = rs.getInt("block_index") + 1;
 
-                // Source (Masquage si Carte)
-                String source = "RECHARGE".equals(typePrev) ?
-                        "************" + (rs.getString("last4") != null ? rs.getString("last4") : "0000") :
-                        (rs.getString("rib_s") != null ? rs.getString("rib_s") : "N/A");
-
-                String dest = (rs.getString("rib_d") != null) ? rs.getString("rib_d") : "EXTERNE";
-
-                // Création du backup chiffré
-                String dataToBackup = String.format("ID:%d|MT:%.2f|TYP:%s|SRC:%s|DST:%s",
-                        rs.getInt("id_transaction"), rs.getDouble("montant"), typePrev, source, dest);
-
+                String dataToBackup = String.format(Locale.US, "ID:%d|MT:%.2f|TYP:%s|SRC:%s|DST:%s",
+                        rs.getInt("id_transaction"), rs.getDouble("montant"),
+                        rs.getString("type"),
+                        (rs.getString("rib_s") != null ? rs.getString("rib_s") : "N/A"),
+                        (rs.getString("rib_d") != null ? rs.getString("rib_d") : "EXTERNE"));
                 encryptedBackupOfPrevious = encrypt(dataToBackup);
             }
         }
 
-        // 4. Calcul du nouveau hash et insertion
-        String newHash = generateHash(t.getIdTransaction() + "|" + previousHashOnly + "|" + t.getMontant());
+        String formattedAmount = String.format(Locale.US, "%.2f", t.getMontant());
+        String newHash = generateHash(t.getIdTransaction() + "|" + previousHashOnly + "|" + formattedAmount);
         String storageValue = previousHashOnly + ";" + encryptedBackupOfPrevious;
 
         String sql = "INSERT INTO blockchain (id_transaction, block_index, previous_hash, current_hash, wallet_source, wallet_destination, montant, type, id_card) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -100,12 +88,36 @@ public class BlockchainService {
             pst.setString(3, storageValue);
             pst.setString(4, newHash);
             if (t.getIdWalletSource() <= 0) pst.setNull(5, Types.INTEGER); else pst.setInt(5, t.getIdWalletSource());
-            pst.setInt(6, t.getIdWalletDestination());
+            if (t.getIdWalletDestination() <= 0) pst.setNull(6, Types.INTEGER); else pst.setInt(6, t.getIdWalletDestination());
             pst.setDouble(7, t.getMontant());
             pst.setString(8, t.getType().name());
             if (t.getId_card() <= 0) pst.setNull(9, Types.INTEGER); else pst.setInt(9, t.getId_card());
             pst.executeUpdate();
         }
+    }
+
+    // --- AUDIT ET VÉRIFICATION ---
+    public boolean isBlockchainCorrupted() throws SQLException {
+        String query = "SELECT id_transaction, montant, previous_hash, current_hash, block_index FROM blockchain ORDER BY block_index ASC";
+        String lastHash = "0000";
+        int expectedIdx = 1;
+
+        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(query)) {
+            while (rs.next()) {
+                String storedCurrentHash = rs.getString("current_hash");
+                String storedPrevHash = rs.getString("previous_hash").split(";")[0];
+                String formattedAmount = String.format(Locale.US, "%.2f", rs.getDouble("montant"));
+
+                String recalculatedHash = generateHash(rs.getInt("id_transaction") + "|" + storedPrevHash + "|" + formattedAmount);
+
+                if (!recalculatedHash.equals(storedCurrentHash) || rs.getInt("block_index") != expectedIdx || !storedPrevHash.equals(lastHash)) {
+                    return true;
+                }
+                lastHash = storedCurrentHash;
+                expectedIdx++;
+            }
+        }
+        return false;
     }
 
     public void verifyBlockchain() throws SQLException {
@@ -119,13 +131,11 @@ public class BlockchainService {
                 String[] parts = rs.getString("previous_hash").split(";");
                 String storedPrevHash = parts[0];
 
-                // A. DÉTECTION DELETE
                 if (currentIndex > expectedIndex) {
                     handleDeleteDetected(expectedIndex, parts);
                     expectedIndex = currentIndex;
                 }
 
-                // B. DÉTECTION UPDATE (Audit SQL vs AES)
                 if (parts.length > 1) {
                     String decrypted = decrypt(parts[1]);
                     try {
@@ -135,12 +145,10 @@ public class BlockchainService {
                     } catch (Exception e) {}
                 }
 
-                // C. DÉTECTION RUPTURE DE LIEN
                 if (!storedPrevHash.equals(lastKnownHash)) {
                     notificationService.createNotification(rs.getInt("id_transaction"),
                             NotificationType.BLOCKCHAIN_CORRUPTED, "🚨 RUPTURE : Lien brisé au bloc #" + currentIndex);
                 }
-
                 lastKnownHash = rs.getString("current_hash");
                 expectedIndex++;
             }
@@ -203,55 +211,12 @@ public class BlockchainService {
             ResultSet rs = pst.executeQuery();
             if (rs.next()) prevHash = rs.getString("previous_hash").split(";")[0];
         }
-        // Recalcul d'un hash basé sur la fraude pour briser la chaîne
-        String corruptedHash = generateHash(transactionId + "|" + prevHash + "|" + newAmount);
+        String corruptedHash = generateHash(transactionId + "|" + prevHash + "|" + String.format(Locale.US, "%.2f", newAmount));
         String sqlUpdate = "UPDATE blockchain SET current_hash = ? WHERE id_transaction = ?";
         try (PreparedStatement pst = cnx.prepareStatement(sqlUpdate)) {
             pst.setString(1, corruptedHash);
             pst.setInt(2, transactionId);
             pst.executeUpdate();
-        }
-    }
-
-    public boolean isBlockchainCorrupted() throws SQLException {
-        // RECALCUL DYNAMIQUE : On compare le hash calculé "en direct" avec celui stocké
-        String query = """
-            SELECT b.block_index, b.previous_hash, b.current_hash, b.id_transaction, t.montant 
-            FROM blockchain b 
-            JOIN transaction t ON b.id_transaction = t.id_transaction 
-            ORDER BY b.block_index ASC
-        """;
-
-        String lastHash = "0000";
-        int expectedIdx = 1;
-
-        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(query)) {
-            while (rs.next()) {
-                int idTrans = rs.getInt("id_transaction");
-                double montantSql = rs.getDouble("montant");
-                String storedCurrentHash = rs.getString("current_hash");
-                String storedPrevHash = rs.getString("previous_hash").split(";")[0];
-
-                // 1. Validation du contenu (Update Detection via Recalcul)
-                String liveHash = generateHash(idTrans + "|" + storedPrevHash + "|" + montantSql);
-                if (!liveHash.equals(storedCurrentHash)) return true;
-
-                // 2. Validation de la continuité (Delete Detection)
-                if (rs.getInt("block_index") != expectedIdx) return true;
-
-                // 3. Validation du lien (Hash Chain)
-                if (!storedPrevHash.equals(lastHash)) return true;
-
-                lastHash = storedCurrentHash;
-                expectedIdx++;
-            }
-        }
-        return false;
-    }
-
-    private int getLatestIndex() throws SQLException {
-        try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery("SELECT MAX(block_index) FROM blockchain")) {
-            return rs.next() ? rs.getInt(1) : 0;
         }
     }
 

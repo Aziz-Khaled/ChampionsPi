@@ -16,19 +16,16 @@ public class ConversionService {
         this.cnx = DbConnection.getInstance().getCnx();
     }
 
-    /**
-     * Récupère le taux de change en temps réel (Supporte FIAT et CRYPTO)
-     * Utilise l'API CryptoCompare (Gratuit et sans clé pour des tests modérés)
-     */
+
     public double getExchangeRate(String fromCurrencyCode, String toCurrencyCode) throws Exception {
-        // Nettoyage des codes (Majuscules requises pour CryptoCompare)
+
         String from = fromCurrencyCode.trim().toUpperCase();
         String to = toCurrencyCode.trim().toUpperCase();
 
-        // Si les devises sont identiques
+
         if (from.equals(to)) return 1.0;
 
-        // URL CryptoCompare : gère BTC, ETH, USD, EUR, TND, etc.
+
         String apiUrl = "https://min-api.cryptocompare.com/data/price?fsym=" + from + "&tsyms=" + to;
 
         URL url = new URL(apiUrl);
@@ -51,7 +48,7 @@ public class ConversionService {
 
         JSONObject json = new JSONObject(response.toString());
 
-        // CryptoCompare renvoie un format simple : {"EUR": 0.92}
+
         if (json.has(to)) {
             return json.getDouble(to);
         } else if (json.has("Response") && json.getString("Response").equals("Error")) {
@@ -85,9 +82,7 @@ public class ConversionService {
         return -1;
     }
 
-    /**
-     * Récupère les détails d'une conversion par son ID
-     */
+
     public Conversion getById(int id) throws SQLException {
         String sql = "SELECT * FROM conversion WHERE id_conversion = ?";
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {

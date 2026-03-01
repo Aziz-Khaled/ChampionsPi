@@ -26,7 +26,8 @@ public class Test extends Application {
 
         DbConnection.getInstance() ;
 
-
+        System.setProperty("prism.order", "sw");
+        System.setProperty("prism.vsync", "false");
         launch(args);
     }
 }

@@ -23,66 +23,61 @@ public class BotController {
     // Services
     private final TradeService tradeService = new TradeService();
     private final MarketApiService marketApi = new MarketApiService();
-    private final TransactionService transService = new TransactionService();
-    private final wallet_currencyService wcService = new wallet_currencyService();
+    private final TransactionService transactionService = new TransactionService();
     private final AssetService assetService = new AssetService();
     private final WalletService walletService = new WalletService();
     private final CurrencyService currencyService = new CurrencyService();
+    private final BlockchainService blockchainService = new BlockchainService(); // ✅ AJOUTÉ
 
     private Timeline botTimeline;
 
-    // Paramètres dynamiques (Identiques à la logique du Dashboard)
-    private final int CURRENT_USER_ID = 1;
-    private int dynamicUsdtId = -1;
-    private int marketWalletId = 4; // Gardé pour la contrepartie technique
-
     @FXML
     public void initialize() {
-        try {
-            // Récupération dynamique de l'ID de l'USDT au démarrage
-            currency c = currencyService.getByName("USDT");
-            if (c != null) {
-                this.dynamicUsdtId = c.getId_currency();
-            }
-        } catch (SQLException e) {
-            updateLogs("❌ Erreur init Currency: " + e.getMessage());
-        }
-
-        updateLogs("🤖 Moteur d'automation prêt.");
-        startAutomationEngine();
+        updateLogs("🤖 Automation engine ready.");        startAutomationEngine();
     }
 
     private void startAutomationEngine() {
         botTimeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
             try {
+                // 1. Recharger les actifs et les trades directement de la DB
                 List<Asset> allAssets = assetService.SelectAll();
+                List<Trade> allTrades = tradeService.SelectAll();
 
-                // On récupère uniquement les ordres LIMIT en attente (PENDING)
-                List<Trade> pendingTrades = tradeService.SelectAll().stream()
-                        .filter(t -> t.getStatus() == Status.PENDING && t.getOrderMode() == OrderMode.LIMIT)
+                // 2. Filtrage robuste (on compare les noms en majuscules pour éviter les erreurs d'Enum)
+                List<Trade> pendingTrades = allTrades.stream()
+                        .filter(t -> t.getStatus() != null &&
+                                t.getStatus().name().equalsIgnoreCase("PENDING"))
+                        .filter(t -> t.getOrderMode() != null &&
+                                t.getOrderMode().name().equalsIgnoreCase("LIMIT"))
                         .toList();
 
+                // 3. Mise à jour de l'UI
                 if (pendingTrades.isEmpty()) {
-                    lblBotStatus.setText("Statut : En veille (0 ordres)");
-                    return;
+                    Platform.runLater(() -> lblBotStatus.setText("Status: Idle (0 PENDING orders)"));                    return;
                 }
 
-                lblBotStatus.setText("Statut : Surveillance de " + pendingTrades.size() + " ordres...");
-
+                Platform.runLater(() -> lblBotStatus.setText("Status: Monitoring " + pendingTrades.size() + " orders..."));
+                // 4. Boucle de vérification
                 for (Trade trade : pendingTrades) {
+                    // Trouver l'asset correspondant par ID
                     Asset asset = allAssets.stream()
                             .filter(a -> a.getId() == trade.getAsset_id())
-                            .findFirst().orElse(null);
+                            .findFirst()
+                            .orElse(null);
 
                     if (asset != null) {
+                        // Récupérer le prix réel actuel via l'API
                         double currentPrice = marketApi.fetchPrice(asset.getSymbol());
+
                         if (currentPrice > 0) {
                             checkConditions(trade, currentPrice, asset.getSymbol());
                         }
-                    }
+                    } else {
+                        System.out.println("⚠️ Asset ID " + trade.getAsset_id() + " not found for trade " + trade.getId());                    }
                 }
-            } catch (SQLException e) {
-                updateLogs("❌ Erreur SQL : " + e.getMessage());
+            } catch (Exception e) {
+                // Utilise Exception pour attraper aussi les NullPointer potentiels
+                updateLogs("❌ Engine error: " + e.getMessage());                e.printStackTrace();
             }
         }));
         botTimeline.setCycleCount(Animation.INDEFINITE);
@@ -91,89 +86,74 @@ public class BotController {
 
     private void checkConditions(Trade trade, double marketPrice, String symbol) throws SQLException {
         boolean trigger = false;
-        if (trade.getTradeType() == TradeType.BUY && marketPrice <= trade.getPrice()) {
-            trigger = true;
-        }
-        else if (trade.getTradeType() == TradeType.SELL && marketPrice >= trade.getPrice()) {
-            trigger = true;
-        }
+        if (trade.getTradeType() == TradeType.BUY && marketPrice <= trade.getPrice()) trigger = true;
+        else if (trade.getTradeType() == TradeType.SELL && marketPrice >= trade.getPrice()) trigger = true;
 
-        if (trigger) {
-            executeBotOrder(trade, marketPrice, symbol);
-        }
+        if (trigger) executeBotOrder(trade, marketPrice, symbol);
     }
 
     private void executeBotOrder(Trade trade, double executionPrice, String symbol) {
         try {
-            // --- LOGIQUE DYNAMIQUE DU WALLET ---
-            // On récupère le wallet de trading de l'utilisateur qui a passé l'ordre
+            // 1. Récupération du Wallet Trading
             wallet userWallet = walletService.SelectAll().stream()
-                    .filter(w -> w.getIdUser() == trade.getId_user()) // Dynamique selon l'user du trade
+                    .filter(w -> w.getIdUser() == trade.getId_user())
                     .filter(w -> w.getTypeWallet() == typeWallet.trading)
                     .findFirst()
                     .orElse(null);
 
-            if (userWallet == null || dynamicUsdtId == -1) {
-                updateLogs("⚠️ Échec : Configuration Wallet/Currency dynamique introuvable.");
+            if (userWallet == null) return;
+
+            // 2. Préparation des devises (Important: Nettoyage du symbole)
+            String cleanSymbol = symbol.toUpperCase().replace("USDT", "").trim();
+            currency usdt = currencyService.getByName("USDT");
+            currency assetCurr = currencyService.getByName(cleanSymbol);
+
+            if (usdt == null || assetCurr == null) {
+                updateLogs("❌ Erreur : Devise " + cleanSymbol + " introuvable.");
                 return;
             }
 
-            int walletId = userWallet.getIdWallet();
-            double totalAmountInUSDT = trade.getQuantity() * executionPrice;
+            // 3. Logique de transaction (Conversion)
+            double totalUSDT = trade.getQuantity() * executionPrice;
+            Conversion conv = new Conversion();
+            conv.setExchangeRate(executionPrice);
 
-            // Récupération de l'objet WalletCurrency (USDT) dynamique
-            wallet_currency currentWc = wcService.getWalletCurrencyByWalletAndId(walletId, dynamicUsdtId);
-
-            if (currentWc == null) {
-                updateLogs("⚠️ Échec : Portefeuille USDT introuvable pour le wallet " + walletId);
-                return;
-            }
-
-            double oldBalance = currentWc.getSolde();
-            double newBalance;
+            transaction t = new transaction();
+            t.setIdWalletSource(userWallet.getIdWallet());
+            t.setIdWalletDestination(userWallet.getIdWallet());
+            t.setStatut(StatutTransaction.Completed);
+            t.setDateTransaction(LocalDateTime.now());
 
             if (trade.getTradeType() == TradeType.BUY) {
-                if (oldBalance < totalAmountInUSDT) {
-                    updateLogs(String.format("❌ SOLDE INSUFFISANT pour %s (Besoin: %.2f | Dispo: %.2f)",
-                            symbol, totalAmountInUSDT, oldBalance));
-                    return;
-                }
-                newBalance = oldBalance - totalAmountInUSDT;
+                conv.setAmountFrom(totalUSDT); conv.setCurrencyFrom(usdt.getId_currency());
+                conv.setAmountTo(trade.getQuantity()); conv.setCurrencyTo(assetCurr.getId_currency());
+                t.setType(typeTransaction.ACHAT);
+                t.setMontant(totalUSDT);
+                t.setCurrencyId(usdt.getId_currency());
             } else {
-                newBalance = oldBalance + totalAmountInUSDT;
+                conv.setAmountFrom(trade.getQuantity()); conv.setCurrencyFrom(assetCurr.getId_currency());
+                conv.setAmountTo(totalUSDT); conv.setCurrencyTo(usdt.getId_currency());
+                t.setType(typeTransaction.VENTE);
+                t.setMontant(trade.getQuantity());
+                t.setCurrencyId(assetCurr.getId_currency());
             }
 
-            // Mise à jour du solde
-            currentWc.setSolde(newBalance);
-            wcService.updateOne(currentWc);
+            // --- EXÉCUTION RÉELLE (Mise à jour base + Blockchain) ---
+            // Cette ligne appelle ta méthode insertExchange qui gère les soldes et la blockchain
+            transactionService.insertExchange(t, conv);
 
-            // Mise à jour de l'ordre
-            trade.setPrice(executionPrice);
+            // 4. Mise à jour du statut du Trade
             trade.setStatus(Status.COMPLETED);
+            trade.setPrice(executionPrice);
             trade.setExecutedAt(LocalDateTime.now());
-            tradeService.updateOne(trade);
+            tradeService.updateOne(trade); // ✅ Change PENDING en COMPLETED en base
 
-            // Sauvegarde transaction avec Wallet ID dynamique
-            saveTransaction(trade, totalAmountInUSDT, walletId);
-
-            updateLogs(String.format("✅ EXÉCUTÉ : %s %s | Cible: %.2f -> Réel: %.2f",
-                    trade.getTradeType(), symbol, trade.getPrice(), executionPrice));
+            updateLogs(String.format("✅ BOT EXÉCUTÉ : %s %s à %.2f", trade.getTradeType(), cleanSymbol, executionPrice));
 
         } catch (Exception e) {
-            updateLogs("⚠️ Échec technique (" + symbol + ") : " + e.getMessage());
+            updateLogs("❌ Erreur : " + e.getMessage());
+            e.printStackTrace();
         }
-    }
-
-    private void saveTransaction(Trade trade, double amount, int walletId) throws SQLException {
-        transaction t = new transaction();
-        t.setIdWalletSource(trade.getTradeType() == TradeType.BUY ? walletId : marketWalletId);
-        t.setIdWalletDestination(trade.getTradeType() == TradeType.BUY ? marketWalletId : walletId);
-        t.setMontant(amount);
-        t.setType(trade.getTradeType() == TradeType.BUY ? typeTransaction.ACHAT : typeTransaction.VENTE);
-        t.setCurrencyId(dynamicUsdtId); // Dynamique
-        t.setStatut(StatutTransaction.Completed);
-        t.setDateTransaction(LocalDateTime.now());
-        transService.insertOne(t);
     }
 
     private void updateLogs(String message) {
@@ -183,12 +163,11 @@ public class BotController {
         });
     }
 
-    @FXML
-    private void handleStop() {
+    @FXML private void handleStop() {
         if (botTimeline != null) {
             botTimeline.stop();
             lblBotStatus.setText("Statut : Arrêté");
-            updateLogs("🛑 Bot arrêté par l'utilisateur.");
+            updateLogs("🛑 Bot arrêté.");
         }
     }
 }

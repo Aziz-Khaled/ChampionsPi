@@ -17,6 +17,7 @@ public class TransactionService implements CRUD<transaction> {
 
     private wallet_currencyService walletCurrencyService;
     private BlockchainService blockchainService;
+    private ConversionService conversionService = new ConversionService();
 
     public TransactionService() {
         cnx = DbConnection.getInstance().getCnx();
@@ -85,14 +86,13 @@ public class TransactionService implements CRUD<transaction> {
             amountToCredit = convDetails.getAmountTo();
             currencyToCredit = convDetails.getCurrencyTo();
         }
-        // Pour les trades (achat/vente), currencyToDebit est déjà correct (dynamique)
 
         // --- EXECUTION TRANSACTIONNELLE ---
         boolean previousAutoCommit = cnx.getAutoCommit();
         try {
             cnx.setAutoCommit(false);
 
-            // 1. Débit avec verrouillage pessimiste pour la concurrence
+            // 1. Débit avec verrouillage pessimiste
             wallet_currency sourceCurrency = walletCurrencyService.getWalletCurrencyForUpdate(sourceWallet.getIdWallet(), currencyToDebit);
 
             if (sourceCurrency == null || BigDecimal.valueOf(sourceCurrency.getSolde()).compareTo(BigDecimal.valueOf(amountToDebit)) < 0) {
@@ -114,7 +114,6 @@ public class TransactionService implements CRUD<transaction> {
                 destCurrency.setNom_currency(currencyService.getCurrencyNameById(currencyToCredit));
                 destCurrency.setSolde(0);
                 walletCurrencyService.insertOne(destCurrency);
-                // Re-fetch to lock it after insertion
                 destCurrency = walletCurrencyService.getWalletCurrencyForUpdate(destWallet.getIdWallet(), currencyToCredit);
             }
 
@@ -150,12 +149,17 @@ public class TransactionService implements CRUD<transaction> {
                 pst.executeUpdate();
             }
 
+            // 🔹 5. SÉCURITÉ BLOCKCHAIN (AVANT LE COMMIT)
+            // Ajout du bloc : si la blockchain est corrompue, addBlock lance une exception
+            blockchainService.addBlock(t);
+
+            // 🔹 6. VALIDATION FINALE
             cnx.commit();
-            System.out.println("Transaction " + t.getType() + " réussie.");
+            System.out.println("Transaction " + t.getType() + " et Bloc validés avec succès.");
 
         } catch (Exception ex) {
-            if (cnx != null) cnx.rollback();
-            throw new SQLException("Transaction annulée : " + ex.getMessage());
+            if (cnx != null) cnx.rollback(); // 🚨 Annule tout (Solde + SQL + Blockchain)
+            throw new SQLException("Transaction annulée par sécurité : " + ex.getMessage());
         } finally {
             cnx.setAutoCommit(previousAutoCommit);
         }
@@ -489,5 +493,69 @@ public class TransactionService implements CRUD<transaction> {
             }
         }
         return transactions;
+    }
+    public int insertExchange(transaction t, Conversion conv) throws SQLException {
+        boolean previousAutoCommit = cnx.getAutoCommit();
+        ConversionService convServ = new ConversionService();
+        int transId = -1;
+
+        try {
+            cnx.setAutoCommit(false); // DEBUT TRANSACTION SQL
+
+            // 1. Insertion de la conversion
+            convServ.insertConversion(conv);
+
+            // 2. MISE À JOUR DES DEUX DEVISES (Solde)
+            updateWalletCurrency(t.getIdWalletSource(), conv.getCurrencyFrom(), -conv.getAmountFrom());
+            updateWalletCurrency(t.getIdWalletSource(), conv.getCurrencyTo(), conv.getAmountTo());
+
+            // 3. Sauvegarde de la transaction et récupération de l'ID
+            transId = saveTransactionToDb(t);
+            t.setIdTransaction(transId);
+
+            // 4. SCELLAGE BLOCKCHAIN
+            blockchainService.addBlock(t);
+
+            cnx.commit(); // VALIDATION FINALE
+            System.out.println("✅ Échange scellé dans la Blockchain avec ID: " + transId);
+
+            return transId; // On retourne l'ID pour que le Bot puisse l'utiliser
+
+        } catch (Exception e) {
+            if (cnx != null) cnx.rollback();
+            throw new SQLException("Erreur Exchange : " + e.getMessage());
+        } finally {
+            cnx.setAutoCommit(previousAutoCommit);
+        }
+    }
+
+// --- MÉTHODES DE SUPPORT (Obligatoires pour que le code ci-dessus fonctionne) ---
+
+    private int saveTransactionToDb(transaction t) throws SQLException {
+        String sql = "INSERT INTO transaction (id_wallet_source, id_wallet_destination, montant, type, statut, date_transaction, id_currency) VALUES (?, ?, ?, ?, ?, NOW(), ?)";
+        try (PreparedStatement pst = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pst.setInt(1, t.getIdWalletSource());
+            pst.setInt(2, t.getIdWalletDestination());
+            pst.setDouble(3, t.getMontant());
+            pst.setString(4, t.getType().name());
+            pst.setString(5, t.getStatut().name());
+            pst.setInt(6, t.getCurrencyId());
+            pst.executeUpdate();
+
+            try (ResultSet rs = pst.getGeneratedKeys()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        }
+        return -1;
+    }
+
+    private void updateWalletCurrency(int walletId, int currencyId, double change) throws SQLException {
+        String sql = "UPDATE wallet_currency SET solde = solde + ? WHERE id_wallet = ? AND id_currency = ?";
+        try (PreparedStatement pst = cnx.prepareStatement(sql)) {
+            pst.setDouble(1, change);
+            pst.setInt(2, walletId);
+            pst.setInt(3, currencyId);
+            pst.executeUpdate();
+        }
     }
 }

@@ -81,6 +81,7 @@ public class TradingDashboard {
         setupOrderInputs();
         setupTickerLoop();
         setupWalletSelector();
+        setupAutoRefresh();
 
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
@@ -101,6 +102,7 @@ public class TradingDashboard {
         startGlobalPriceUpdates();
         updateAllNews();
     }
+
 
     private void setupWalletSelector() {
         try {
@@ -137,6 +139,19 @@ public class TradingDashboard {
             lblBalance.setText("Erreur chargement");
         }
     }
+    private void setupAutoRefresh() {
+        Timeline autoRefresh = new Timeline(new KeyFrame(Duration.seconds(3), event -> {
+            if (comboWalletSelection.getValue() != null) {
+                updateSpecificWalletBalance(comboWalletSelection.getValue().getIdWallet());
+            }
+
+            if (paneHistory.isVisible()) {
+                loadTradeHistory();
+            }
+        }));
+        autoRefresh.setCycleCount(Animation.INDEFINITE);
+        autoRefresh.play();
+    }
 
     private void updateSpecificWalletBalance(int walletId) {
         try {
@@ -161,80 +176,78 @@ public class TradingDashboard {
             e.printStackTrace();
         }
     }
-
     private void processTrade(TradeType type) {
-        if (selectedAsset == null || comboWalletSelection.getValue() == null) {
-            showAlert("Erreur", "Sélectionnez un actif et un wallet.");
+        if (selectedAsset == null || txtQty.getText().isEmpty() || comboWalletSelection.getValue() == null) {
+            showAlert("Erreur", "Champs manquants.");
             return;
         }
 
         try {
-            BigDecimal qty = new BigDecimal(txtQty.getText().replace(",", "."));
-            BigDecimal price = (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.LIMIT)
-                    ? new BigDecimal(txtTargetPrice.getText().replace(",", "."))
-                    : BigDecimal.valueOf(selectedAsset.getCurrentPrice());
+            double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
+            OrderMode mode = OrderMode.valueOf(comboOrderMode.getValue());
+            double price = (mode == OrderMode.MARKET) ?
+                    selectedAsset.getCurrentPrice() :
+                    Double.parseDouble(txtTargetPrice.getText().replace(",", "."));
 
-            BigDecimal totalAmountUSDT = qty.multiply(price);
-            int walletId = comboWalletSelection.getValue().getIdWallet();
+            int userWalletId = comboWalletSelection.getValue().getIdWallet();
 
-            // --- RÉCUPÉRATION SÉCURISÉE DES IDS ---
-            currency usdtObj = currencyService.getByName("USDT");
-            if (usdtObj == null) {
-                showAlert("Erreur", "La devise USDT n'existe pas en base de données.");
-                return;
-            }
-            int usdtId = usdtObj.getId_currency();
-            int assetCurrencyId = selectedAsset.getId();
+            Trade trade = new Trade(
+                    0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty,
+                    (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
+                    LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null)
+            );
 
-            // 1. Enregistrement du Trade dans la table 'trade'
-            Trade trade = new Trade(0, CURRENT_USER_ID, assetCurrencyId, type,
-                    OrderMode.valueOf(comboOrderMode.getValue()), price.doubleValue(), qty.doubleValue(),
-                    (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
-                    LocalDateTime.now(), (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.MARKET ? LocalDateTime.now() : null));
             tradeService.insertOne(trade);
 
-            // 2. Mise à jour des soldes (MARKET uniquement)
-            if (OrderMode.valueOf(comboOrderMode.getValue()) == OrderMode.MARKET) {
-                if (type == TradeType.BUY) {
-                    // ACHAT : On utilise le même walletId pour source et destination car
-                    // ton insertOne gère déjà le passage du USDT vers la Crypto à l'intérieur du wallet.
-
-                    // Transaction : Débiter USDT, Créditer Crypto
-                    // IMPORTANT: On passe l'ID de la devise qu'on DÉBITE (USDT)
-                    transaction t = new transaction();
-                    t.setIdWalletSource(walletId);
-                    t.setIdWalletDestination(walletId);
-                    t.setMontant(totalAmountUSDT.doubleValue());
-                    t.setCurrencyId(usdtId); // On définit la devise source
-                    t.setType(typeTransaction.ACHAT);
-                    t.setStatut(StatutTransaction.Completed);
-
-                    // Pour que ton insertOne sache quelle crypto créditer,
-                    // assure-toi que ton service transaction utilise selectedAsset.getId()
-                    transactionService.insertOne(t);
-
-                } else {
-                    // VENTE : Débiter Crypto, Créditer USDT
-                    transaction t = new transaction();
-                    t.setIdWalletSource(walletId);
-                    t.setIdWalletDestination(walletId);
-                    t.setMontant(qty.doubleValue());
-                    t.setCurrencyId(assetCurrencyId); // On débite la Crypto
-                    t.setType(typeTransaction.VENTE);
-                    t.setStatut(StatutTransaction.Completed);
-                    transactionService.insertOne(t);
-                }
+            if (mode == OrderMode.MARKET) {
+                executeImmediateTransaction(userWalletId, type, qty, price);
+                showAlert("Success", "Market order executed successfully!");
+            } else {
+                showAlert("Order Placed", "LIMIT order is pending and monitored by the bot.");
             }
 
-            showAlert("Succès", "Ordre " + type + " effectué avec succès !");
-            updateSpecificWalletBalance(walletId);
-            txtQty.clear();
+            updateSpecificWalletBalance(userWalletId);
+            loadTradeHistory();
 
         } catch (Exception e) {
-            e.printStackTrace();
-            showAlert("Erreur Transaction", e.getMessage());
+            showAlert("Erreur", e.getMessage());
         }
     }
+
+
+    /**
+     * Méthode pour exécuter la partie financière pour les ordres MARKET uniquement
+     */
+    private void executeImmediateTransaction(int walletId, TradeType type, double qty, double price) throws Exception {
+        currency usdt = currencyService.getByName("USDT");
+        currency asset = currencyService.getByName(selectedAsset.getSymbol().toUpperCase());
+
+        double totalUSDT = qty * price;
+
+        Conversion conv = new Conversion();
+        conv.setExchangeRate(price);
+
+        if (type == TradeType.BUY) {
+            conv.setAmountFrom(totalUSDT); conv.setCurrencyFrom(usdt.getId_currency());
+            conv.setAmountTo(qty); conv.setCurrencyTo(asset.getId_currency());
+        } else {
+            conv.setAmountFrom(qty); conv.setCurrencyFrom(asset.getId_currency());
+            conv.setAmountTo(totalUSDT); conv.setCurrencyTo(usdt.getId_currency());
+        }
+
+        transaction t = new transaction();
+        t.setIdWalletSource(walletId);
+        t.setIdWalletDestination(walletId);
+        t.setMontant(conv.getAmountFrom());
+        t.setCurrencyId(conv.getCurrencyFrom());
+        t.setType(type == TradeType.BUY ? typeTransaction.ACHAT : typeTransaction.VENTE);
+        t.setStatut(StatutTransaction.Completed);
+        t.setDateTransaction(LocalDateTime.now());
+
+        transactionService.insertExchange(t, conv);
+    }
+
+
 
     private void showAlert(String title, String content) {
         Alert a = new Alert(Alert.AlertType.INFORMATION);
@@ -262,7 +275,7 @@ public class TradingDashboard {
 
             double bal = (usdtWC != null) ? usdtWC.getSolde() : 0;
             if (bal <= 0) {
-                showAlert("Info", "Solde USDT insuffisant !");
+                showAlert("Info", "Insufficient USDT balance!");
                 return;
             }
 
@@ -272,7 +285,6 @@ public class TradingDashboard {
 
         } catch (Exception e) { e.printStackTrace(); }
     }
-
     // --- Fonctions utilitaires ---
     private void updateAllNews() {
         new Thread(() -> {
@@ -380,16 +392,44 @@ public class TradingDashboard {
     private void calculateTotal() {
         if (selectedAsset == null) return;
         try {
-            double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
-            double price = "LIMIT".equals(comboOrderMode.getValue()) ? Double.parseDouble(txtTargetPrice.getText()) : selectedAsset.getCurrentPrice();
-            lblTotal.setText(String.format("%.2f USDT", qty * price));
-        } catch (Exception e) { lblTotal.setText("0.00 USDT"); }
+            String qtyStr = txtQty.getText().replace(",", ".");
+            if (qtyStr.isEmpty()) {
+                lblTotal.setText("0.00 USDT");
+                return;
+            }
+
+            double qty = Double.parseDouble(qtyStr);
+            double price;
+
+            // Si on est en mode LIMIT, on prend le prix saisi par l'utilisateur
+            if ("LIMIT".equals(comboOrderMode.getValue())) {
+                String targetPriceStr = txtTargetPrice.getText().replace(",", ".");
+                price = targetPriceStr.isEmpty() ? 0 : Double.parseDouble(targetPriceStr);
+            } else {
+                // Sinon (MARKET), on prend le prix actuel de l'asset
+                price = (selectedAsset.getCurrentPrice() != null) ? selectedAsset.getCurrentPrice() : 0;
+            }
+
+            double total = qty * price;
+            Platform.runLater(() -> lblTotal.setText(String.format("%.2f USDT", total)));
+
+        } catch (NumberFormatException e) {
+            lblTotal.setText("Err");
+        }
     }
     private void loadInitialAssets() { try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) {} }
     private void loadAssetCache() { try { assetNamesCache = assetService.SelectAll().stream().collect(Collectors.toMap(Asset::getId, Asset::getSymbol)); } catch (Exception e) {} }
     private void setupOrderInputs() { comboOrderMode.getItems().setAll("MARKET", "LIMIT"); comboOrderMode.setValue("MARKET"); txtTargetPrice.disableProperty().bind(comboOrderMode.valueProperty().isEqualTo("MARKET")); }
-    private void updateTradingView(String symbol) { Platform.runLater(() -> chartWebView.getEngine().load("https://s.tradingview.com/widgetembed/?symbol=BINANCE:" + symbol.toUpperCase() + "USDT&theme=dark")); }
-    private void updateAISignal(String symbol) { new Thread(() -> { double rsi = marketApi.calculateRSI(symbol); Platform.runLater(() -> lblAdvice.setText("AI SIGNAL: " + (rsi < 35 ? "BUY" : rsi > 65 ? "SELL" : "NEUTRAL") + " (RSI: " + String.format("%.2f", rsi) + ")")); }).start(); }
+    private void updateTradingView(String symbol) {
+        // On s'assure que l'exécution se fait après le rendu initial
+        Platform.runLater(() -> {
+            if (chartWebView != null && chartWebView.getEngine() != null) {
+                String url = "https://s.tradingview.com/widgetembed/?symbol=BINANCE:"
+                        + symbol.toUpperCase() + "USDT&theme=dark";
+                chartWebView.getEngine().load(url);
+            }
+        });
+    }    private void updateAISignal(String symbol) { new Thread(() -> { double rsi = marketApi.calculateRSI(symbol); Platform.runLater(() -> lblAdvice.setText("AI SIGNAL: " + (rsi < 35 ? "BUY" : rsi > 65 ? "SELL" : "NEUTRAL") + " (RSI: " + String.format("%.2f", rsi) + ")")); }).start(); }
     private void setupTickerLoop() { Timeline timeline = new Timeline(new KeyFrame(Duration.millis(50), e -> { if (tickerContainer != null) { tickerContainer.setLayoutX(tickerContainer.getLayoutX() - 1); if (tickerContainer.getLayoutX() < -500) tickerContainer.setLayoutX(800); } })); timeline.setCycleCount(Animation.INDEFINITE); timeline.play(); }
     private void updatePnL(double currentPrice) { if (initialEntryPrice <= 0) return; double pnl = (currentPrice - initialEntryPrice) / initialEntryPrice * 100; lblPnL.setText(String.format("%+.2f%%", pnl)); lblPnL.setStyle("-fx-text-fill: " + (pnl >= 0 ? "#0ecb81" : "#f6465d") + ";"); }
     private void loadTradeHistory() { try { tableHistory.getItems().setAll(tradeService.SelectAll()); } catch (Exception e) {} }

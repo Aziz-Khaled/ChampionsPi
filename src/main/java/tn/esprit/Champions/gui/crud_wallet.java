@@ -1861,9 +1861,9 @@ public class crud_wallet {
     @FXML
     private void handleQuickTransaction(ActionEvent event) {
         try {
-            // Validation des sélections
+            // Validation
             if (walletSourceBox.getValue() == null || walletDestBox.getValue() == null) {
-                showAlert(Alert.AlertType.ERROR, "Erreur", "Veuillez sélectionner les wallets source et destination.");
+                showAlert(Alert.AlertType.ERROR, "Selection Error", "Please select source and destination wallets.");
                 return;
             }
 
@@ -1879,7 +1879,7 @@ public class crud_wallet {
             Conversion conversion = new Conversion();
             conversion.setAmountFrom(Double.parseDouble(convAmountField.getText()));
             conversion.setCurrencyFrom(fromCurr.getId_currency());
-            conversion.setAmountTo(Double.parseDouble(convResultField.getText().replace(",", "."))); // Sécurité virgule
+            conversion.setAmountTo(Double.parseDouble(convResultField.getText().replace(",", ".")));
             conversion.setCurrencyTo(toCurr.getId_currency());
 
             double rate = convService.getExchangeRate(fromCurr.getCode(), toCurr.getCode());
@@ -1887,7 +1887,7 @@ public class crud_wallet {
 
             int generatedConversionId = convService.insertConversion(conversion);
 
-            // Préparer Transaction
+
             transaction t = new transaction();
             t.setIdWalletSource(sourceW.getIdWallet());
             t.setIdWalletDestination(destW.getIdWallet());
@@ -1900,15 +1900,33 @@ public class crud_wallet {
             TransactionService transService = new TransactionService();
             transService.insertOne(t);
 
-            showAlert(Alert.AlertType.INFORMATION, "Succès", "Conversion et transaction enregistrées !");
+            showAlert(Alert.AlertType.INFORMATION, "Success", "Transaction completed successfully!");
 
+            // --- 🔄 FORCER LE RECHARGEMENT DES DONNÉES ---
             resetConversionFields();
-            updateGlobalCurrencyChart();
-            loadCard();
-            loadCurrencies();
+
+            Platform.runLater(() -> {
+                loadCard();
+                loadWallets();
+
+
+                updateGlobalCurrencyChart();
+
+                try {
+
+                    List<wallet_currency> updatedCurrencies = wallet_currencyService.getCurrenciesByWallet(sourceW.getIdWallet());
+
+
+
+                    System.out.println("Balances updated for wallet: " + sourceW.getIdWallet());
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
+
         } catch (Exception e) {
             e.printStackTrace();
-            showAlert(Alert.AlertType.ERROR, "Erreur Transaction", e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Transaction Error", e.getMessage());
         }
     }
 
@@ -1926,4 +1944,5 @@ public class crud_wallet {
         walletSourceBox.setValue(null);
         walletDestBox.setValue(null);
     }
+
 }
