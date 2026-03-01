@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 .side_ankerpane{
 -fx-background-color:#6b6e50;
 -fx-border-color:#6b6e50;
@@ -85,7 +85,7 @@
     -fx-background-color: rgba(255,255,255,0.2);
 }
 
-Button btnTransactions = new Button("💸");
+
 btnTransactions.setStyle(
         "-fx-font-size: 18px;" +
         "-fx-background-color: #ffffff;" +
@@ -93,7 +93,7 @@ btnTransactions.setStyle(
         "-fx-background-radius: 10;" +
         "-fx-cursor: hand;"
 );
-=======
+
 /* ==========================================================================
    1. CONFIGURATION GLOBALE ET RACINE
    ========================================================================== */
@@ -438,4 +438,4 @@ btnTransactions.setStyle(
     -fx-font-weight: bold;
 }
 .button-add:hover { -fx-background-color: #4f46e5; }
->>>>>>> origin/module-formations
+

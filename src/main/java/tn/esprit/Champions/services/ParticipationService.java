@@ -3,6 +3,8 @@ package tn.esprit.Champions.services;
 import tn.esprit.Champions.models.participations;
 import tn.esprit.Champions.models.StatutParticipation;
 import tn.esprit.Champions.utils.DbConnection;
+import tn.esprit.Champions.utils.UserSession;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,10 +85,11 @@ public class ParticipationService {
      * Insère une nouvelle participation.
      */
     public void insertOne(participations p) throws SQLException {
+        int userId = UserSession.getLoggedInUser().getId_user();
         String sql = "INSERT INTO participations (idFormation, idUtilisateur, dateInscription, statut, presence, note) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setInt(1, p.getIdFormation());
-            ps.setInt(2, p.getIdUtilisateur());
+            ps.setInt(2, userId);
             ps.setTimestamp(3, Timestamp.valueOf(p.getDateInscription()));
             ps.setString(4, p.getStatut().name());
             ps.setBoolean(5, p.isPresence());

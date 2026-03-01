@@ -117,7 +117,8 @@ public class crud_wallet {
 
     @FXML
     private Button btnMarketplace;
-
+    @FXML
+    private Button btnFormation;
 
     private VBox selectedCard = null;
 
@@ -231,6 +232,31 @@ public class crud_wallet {
 
     }
 
+
+    @FXML
+    private void handleFormationNavigation(ActionEvent event) {
+        try {
+            // Adjust the path to your student_dashboard.fxml file location
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/student_dashboard.fxml"));
+            Parent root = loader.load();
+
+            // Get the current stage from the button that was clicked
+            Stage stage = (Stage) btnFormation.getScene().getWindow();
+
+            // Set the new scene
+            stage.setScene(new Scene(root));
+            stage.setTitle("Student Dashboard - Formations");
+            stage.show();
+
+        } catch (IOException e) {
+            System.err.println("Error loading student_dashboard.fxml: " + e.getMessage());
+            e.printStackTrace();
+            // Optional: Show an alert to the user
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Impossible de charger le tableau de bord de formation.");
+            alert.show();
+        }
+    }
+
     @FXML
     private void openMarketplace(ActionEvent event) {
         Utilisateur user = UserSession.getLoggedInUser();
@@ -241,7 +267,7 @@ public class crud_wallet {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/MainLayout.fxml"));
             Parent root = loader.load();
 
-            // ✅ Get controller and pass the current user
+
             MainLayoutController controller = loader.getController();
             controller.setUser(user);
 

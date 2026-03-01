@@ -30,17 +30,14 @@ public class GoogleCalendarService {
     public static void addFormationEvent(String titre, String desc, LocalDateTime start) {
         try {
             final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-
             // 1. Charger les credentials depuis resources
             InputStream in = GoogleCalendarService.class.getResourceAsStream("/credentials.json");
             if (in == null) {
                 System.err.println("ERREUR : Fichier credentials.json introuvable dans src/main/resources/");
                 return;
             }
-
             GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
                     GsonFactory.getDefaultInstance(), new InputStreamReader(in));
-
             // 2. Configurer OAuth2
             GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                     HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), clientSecrets,
@@ -48,7 +45,6 @@ public class GoogleCalendarService {
                     .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
                     .setAccessType("offline")
                     .build();
-
             // 3. Demander l'autorisation (Ouvre le navigateur)
             Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
 
@@ -56,23 +52,18 @@ public class GoogleCalendarService {
             Calendar service = new Calendar.Builder(HTTP_TRANSPORT, GsonFactory.getDefaultInstance(), credential)
                     .setApplicationName(APPLICATION_NAME)
                     .build();
-
             // 5. Configurer l'événement
             Event event = new Event()
                     .setSummary("🎓 " + titre)
                     .setDescription(desc);
-
             // Conversion de la date
             DateTime startDT = new DateTime(start.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
             event.setStart(new EventDateTime().setDateTime(startDT));
-
             // Fin de l'événement (+1 heure)
             event.setEnd(new EventDateTime().setDateTime(new DateTime(startDT.getValue() + 3600000)));
-
             // 6. Envoyer à Google
             service.events().insert("primary", event).execute();
             System.out.println("LOG : Événement Google Calendar créé avec succès !");
-
         } catch (Exception e) {
             System.err.println("Erreur Google Calendar : " + e.getMessage());
             e.printStackTrace();

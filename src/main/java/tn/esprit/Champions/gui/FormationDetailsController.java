@@ -17,6 +17,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import tn.esprit.Champions.models.Reclamation;
 import tn.esprit.Champions.models.formations;
 import tn.esprit.Champions.models.participations;
 import tn.esprit.Champions.models.StatutParticipation;
@@ -38,14 +39,23 @@ public class FormationDetailsController {
     @FXML private Text txtDescription;
     @FXML private VBox rootContainer;
     @FXML private Button btnParticiper;
-
+    @FXML
+    private void handleRate1() { submitRating(1); }
+    @FXML
+    private void handleRate2() { submitRating(2); }
+    @FXML
+    private void handleRate3() { submitRating(3); }
+    @FXML
+    private void handleRate4() { submitRating(4); }
+    @FXML
+    private void handleRate5() { submitRating(5); }
     private formations selectedFormation;
     private final ParticipationService ps = new ParticipationService();
 
     // NOUVEAU : On utilise l'instance du nouveau service Gemini
     private final AiFormationService AiFormationService = new AiFormationService();
 
-    private final String STRIPE_API_KEY = "sk_test_51T4UQ8PIG41aAcfYIq..."; // Garde ta clé actuelle
+    private final String STRIPE_API_KEY = "sk_test_51T4UQ8PIG41aAcfYIq7Mqfq3NlhlBC28heX0yQv6S65W8rnAsw7u72XsAmYB3FtLIYnQE7j4Jz2s3asQCflO4mvE00OqsGLHCC"; // Garde ta clé actuelle
 
     @FXML
     public void initialize() {
@@ -129,7 +139,9 @@ public class FormationDetailsController {
 
     @FXML
     private void handleParticipation(ActionEvent event) {
-        // ... (Ton code Stripe reste tel quel)
+        if (selectedFormation == null) return;
+
+        // Animation bouton
         ScaleTransition st = new ScaleTransition(Duration.millis(100), btnParticiper);
         st.setFromX(1.0); st.setFromY(1.0); st.setToX(0.95); st.setToY(0.95);
         st.setAutoReverse(true); st.setCycleCount(2);
@@ -139,7 +151,19 @@ public class FormationDetailsController {
             @Override
             protected String call() throws Exception {
                 Stripe.apiKey = STRIPE_API_KEY;
-                double prixEnEur = CurrencyService.convertTndToEur(selectedFormation.getPrix());
+
+                double prixTND = selectedFormation.getPrix();
+                double prixEnEur;
+
+                try {
+                    // On essaie la conversion
+                    prixEnEur = CurrencyService.convertTndToEur(prixTND);
+                } catch (Exception e) {
+                    // SI L'API DE DEVISE ÉCHOUE : On utilise un taux de secours (0.3)
+                    System.err.println("API Devise indisponible, calcul manuel (0.3)...");
+                    prixEnEur = prixTND * 0.30;
+                }
+
                 SessionCreateParams params = SessionCreateParams.builder()
                         .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                         .setMode(SessionCreateParams.Mode.PAYMENT)
@@ -156,16 +180,21 @@ public class FormationDetailsController {
                                         .build())
                                 .build())
                         .build();
+
                 Session session = Session.create(params);
                 return session.getUrl();
             }
         };
+
         stripeTask.setOnSucceeded(e -> {
             try {
                 Desktop.getDesktop().browse(new URI(stripeTask.getValue()));
+
                 Alert alertWait = new Alert(Alert.AlertType.CONFIRMATION);
                 alertWait.setTitle("Paiement");
-                alertWait.setContentText("Après avoir payé, cliquez sur 'J'ai payé'.");
+                alertWait.setHeaderText("Validation du paiement");
+                alertWait.setContentText("Une fois le paiement effectué sur Stripe, cliquez sur 'J'ai payé'.");
+
                 ButtonType btnConfirm = new ButtonType("J'ai payé");
                 ButtonType btnCancel = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
                 alertWait.getButtonTypes().setAll(btnConfirm, btnCancel);
@@ -174,6 +203,12 @@ public class FormationDetailsController {
                 if (res.isPresent() && res.get() == btnConfirm) saveParticipation();
             } catch (Exception ex) { ex.printStackTrace(); }
         });
+
+        stripeTask.setOnFailed(e -> {
+            stripeTask.getException().printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Erreur Stripe", "Impossible de créer la session de paiement.");
+        });
+
         new Thread(stripeTask).start();
     }
 
@@ -198,6 +233,7 @@ public class FormationDetailsController {
             showStyledAlert(Alert.AlertType.INFORMATION, "Succès", "Inscription validée !");
             if (pdfFile.exists()) pdfFile.delete();
         } catch (Exception e) {
+            e.printStackTrace();
             showStyledAlert(Alert.AlertType.ERROR, "Erreur", "Problème lors de l'inscription.");
         }
     }
@@ -232,5 +268,61 @@ public class FormationDetailsController {
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+    // Dans FormationDetailsController.java
+
+
+
+    private void submitRating(int note) {
+        try {
+            // On met à jour l'objet local
+            selectedFormation.setRating((double) note);
+
+            // On appelle le service pour sauvegarder en base
+            // Tu dois ajouter cette méthode updateRating dans ton FormationService
+            FormationService fs = new FormationService();
+            fs.updateRating(selectedFormation.getIdFormation(), note);
+
+            showStyledAlert(Alert.AlertType.INFORMATION, "Évaluation enregistrée",
+                    "Merci d'avoir noté cette formation : " + note + "/5 ⭐");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            showStyledAlert(Alert.AlertType.ERROR, "Erreur", "Impossible d'enregistrer la note.");
+        }
+    }
+    @FXML
+    private void handleEnvoyerRec() {
+        try {
+            Reclamation r = new Reclamation();
+            r.setIdUtilisateur(1); // À remplacer par l'ID de l'utilisateur connecté
+            r.setIdFormation(selectedFormation.getIdFormation());
+            r.setSujet("Problème avec le cours");
+            r.setDescription("Je n'arrive pas à accéder aux ressources.");
+
+            ReclamationService rs = new ReclamationService();
+            rs.insertOne(r);
+
+            showStyledAlert(Alert.AlertType.INFORMATION, "Succès", "Réclamation envoyée !");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    @FXML
+    private void openReclamationForm() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/tn/esprit/Champions/gui/ReclamationForm.fxml"));
+            Parent root = loader.load();
+
+            ReclamationController controller = loader.getController();
+            controller.setFormation(selectedFormation); // On passe la formation !
+
+            Stage stage = new Stage();
+            stage.setTitle("Nouvelle Réclamation - " + selectedFormation.getTitre());
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
