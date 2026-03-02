@@ -5,10 +5,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -278,5 +280,27 @@ public class AfficherCreditsController implements Initializable {
         alert.getDialogPane().setStyle("-fx-background-color: #1e293b;");
         alert.setContentText(message);
         alert.showAndWait();
+    }
+    private void handleLogout(ActionEvent event) {
+        try {
+            // 1. Charger le nouveau fichier FXML
+            // Assurez-vous que le chemin commence par / et correspond à votre structure
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            Parent root = loader.load();
+
+            // 2. Récupérer la scène actuelle à partir du bouton cliqué
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            // 3. Remplacer le contenu de la fenêtre
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+
+            System.out.println("Redirection vers le Dashboard Wallet réussie.");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Impossible de charger le tableau de bord : " + e.getMessage()).show();
+        }
     }
 }

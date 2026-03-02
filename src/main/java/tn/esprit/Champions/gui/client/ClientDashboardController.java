@@ -1,7 +1,11 @@
 package tn.esprit.Champions.gui.client;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -10,11 +14,13 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import org.controlsfx.control.Notifications;
 import tn.esprit.Champions.models.Product;
 import tn.esprit.Champions.services.ProductService;
 import tn.esprit.Champions.utils.ShoppingCart;
 
+import java.io.IOException;
 import java.util.List;
 
 public class ClientDashboardController {
@@ -178,5 +184,15 @@ public class ClientDashboardController {
                 .title("Succès")
                 .text(product.getName() + " ajouté au panier !")
                 .showInformation();
+    }
+    @FXML
+    private void handleBackToWallet(ActionEvent event) {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/DashboardWalletClient.fxml"));
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.getScene().setRoot(root);
+        } catch (IOException e) {
+            System.err.println("Erreur lors du retour au dashboard : " + e.getMessage());
+        }
     }
 }

@@ -4,17 +4,16 @@ import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -85,7 +84,7 @@ public class MarketplaceController implements Initializable {
 
     private void verifierNotifications() {
         try {
-            int idInvestisseurConnecte = 2; // ID de test
+            int idInvestisseurConnecte = 57; // ID de test
             List<Negociation> toutesLesNegos = ns.SelectAll();
 
             List<Negociation> offresAcceptees = toutesLesNegos.stream()
@@ -258,6 +257,29 @@ public class MarketplaceController implements Initializable {
 
         } catch (IOException ex) {
             System.err.println("Erreur lors de l'ouverture des détails : " + ex.getMessage());
+        }
+    }
+    @FXML
+    private void handleLogout(ActionEvent event) {
+        try {
+            // 1. Charger le nouveau fichier FXML
+            // Assurez-vous que le chemin commence par / et correspond à votre structure
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            Parent root = loader.load();
+
+            // 2. Récupérer la scène actuelle à partir du bouton cliqué
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            // 3. Remplacer le contenu de la fenêtre
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+
+            System.out.println("Redirection vers le Dashboard Wallet réussie.");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Impossible de charger le tableau de bord : " + e.getMessage()).show();
         }
     }
 }

@@ -1,28 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.ClientDashboardController" spacing="20">
+<VBox prefHeight="700.0" prefWidth="1000.0" spacing="0.0" style="-fx-background-color: #0A0E1A;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.ClientDashboardController">
     <children>
-        <HBox spacing="20" alignment="CENTER_LEFT">
+        <HBox alignment="CENTER_LEFT" prefHeight="120.0" spacing="20.0" style="-fx-padding: 0 40; -fx-background-color: #111827; -fx-border-color: #1E2D45; -fx-border-width: 0 0 1 0;">
             <children>
-                <Label text="Notre Catalogue" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+                <VBox alignment="CENTER_LEFT" spacing="5.0">
+                    <children>
+                        <Button onAction="#handleBackToWallet"
+                                style="-fx-background-color: transparent; -fx-text-fill: #8B9AB5; -fx-padding: 0; -fx-cursor: hand; -fx-font-weight: bold;"
+                                text="⬅ Retour au Wallet" />
+
+                        <Label style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #F0F4FF;" text="Marketplace" />
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label style="-fx-text-fill: #00D4FF; -fx-font-weight: bold;" text="●" />
+                            <Label style="-fx-text-fill: #8B9AB5; -fx-font-size: 14;" text="Produits disponibles en temps réel" />
+                        </HBox>
+                    </children>
+                </VBox>
+
                 <Region HBox.hgrow="ALWAYS" />
-                <HBox spacing="10" alignment="CENTER_RIGHT">
-                    <TextField fx:id="searchField" promptText="Rechercher un produit..." prefWidth="250" styleClass="text-field"/>
-                    <ComboBox fx:id="categoryFilter" promptText="Toutes les catégories" prefWidth="180" styleClass="text-field"/>
+
+                <HBox alignment="CENTER" spacing="15.0" style="-fx-background-color: #1A2235; -fx-padding: 10 20; -fx-background-radius: 15; -fx-border-color: #1E2D45; -fx-border-radius: 15;">
+                    <children>
+                        <Label style="-fx-text-fill: #8B9AB5; -fx-font-size: 16;" text="🔍" />
+                        <TextField fx:id="searchField" prefWidth="250.0" promptText="Rechercher un actif ou produit..."
+                                   style="-fx-background-color: transparent; -fx-text-fill: white; -fx-prompt-text-fill: #4A5568;" />
+                        <Separator orientation="VERTICAL" prefHeight="20.0" style="-fx-opacity: 0.1;" />
+                        <ComboBox fx:id="categoryFilter" prefWidth="180.0" promptText="Catégories"
+                                  style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-text-fill: #00D4FF;" />
+                    </children>
                 </HBox>
             </children>
         </HBox>
-        <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
             <content>
-                <GridPane fx:id="productGrid" hgap="20" vgap="20">
+                <VBox alignment="TOP_CENTER" spacing="20.0" style="-fx-background-color: transparent;">
                     <padding>
-                        <Insets top="10" right="10" bottom="10" left="10"/>
+                        <Insets bottom="40.0" left="40.0" right="40.0" top="30.0" />
                     </padding>
-                </GridPane>
+                    <children>
+                        <GridPane fx:id="productGrid" alignment="TOP_CENTER" hgap="25.0" vgap="25.0">
+                        </GridPane>
+                    </children>
+                </VBox>
             </content>
         </ScrollPane>
     </children>

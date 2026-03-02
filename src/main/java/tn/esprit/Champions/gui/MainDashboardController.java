@@ -6,17 +6,21 @@ import javafx.animation.Interpolator;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,7 +40,7 @@ public class MainDashboardController {
     @FXML private VBox mainContent;
     @FXML private FlowPane newsContainer;
     @FXML private Label lblTicker, lblWelcome;
-    @FXML private Button btnDashboard, btnCredits, btnProjets, btnNegociations;
+    @FXML private Button btnDashboard, btnCredits, btnProjets;
 
     // Sauvegarde de la vue d'accueil pour permettre le retour en arrière
     private List<Node> initialDashboardNodes;
@@ -221,10 +225,33 @@ public class MainDashboardController {
     }
 
     private void mettreAJourStyleBouton(Button actif) {
-        List<Button> btns = List.of(btnDashboard, btnProjets, btnCredits, btnNegociations);
+        List<Button> btns = List.of(btnDashboard, btnProjets, btnCredits);
         btns.forEach(b -> b.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; -fx-font-weight: normal;"));
         if (actif != null) {
             actif.setStyle("-fx-background-color: rgba(56, 189, 248, 0.1); -fx-text-fill: #38bdf8; -fx-border-color: #38bdf8; -fx-border-width: 0 0 0 4; -fx-font-weight: bold;");
+        }
+    }
+    @FXML
+    private void handleLogout(ActionEvent event) {
+        try {
+            // 1. Charger le nouveau fichier FXML
+            // Assurez-vous que le chemin commence par / et correspond à votre structure
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            Parent root = loader.load();
+
+            // 2. Récupérer la scène actuelle à partir du bouton cliqué
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
+            // 3. Remplacer le contenu de la fenêtre
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+
+            System.out.println("Redirection vers le Dashboard Wallet réussie.");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Impossible de charger le tableau de bord : " + e.getMessage()).show();
         }
     }
 }

@@ -22,8 +22,10 @@ import tn.esprit.Champions.models.AccountStatus;
 import tn.esprit.Champions.models.Status;
 import tn.esprit.Champions.models.Utilisateur;
 import tn.esprit.Champions.models.LogEntry;
+import tn.esprit.Champions.services.IdentityAIService;
 import tn.esprit.Champions.services.UtilisateurService;
-import tn.esprit.Champions.services.LogEntryService; // Import the new service
+import tn.esprit.Champions.services.LogEntryService;
+import tn.esprit.Champions.services.AMLService; // Added
 import tn.esprit.Champions.utils.FaceMatchService;
 import tn.esprit.Champions.utils.UserSession;
 
@@ -46,11 +48,15 @@ public class AdminPanelService {
     @FXML private Label lblActiveUsers;
 
     private final UtilisateurService userService = new UtilisateurService();
-    private final LogEntryService logEntryService = new LogEntryService(); // New Service Instance
+    private final LogEntryService logEntryService = new LogEntryService();
     private final FaceMatchService faceMatchService = new FaceMatchService();
+    private final AMLService amlService = new AMLService();
+    private final IdentityAIService identityAIService = new IdentityAIService();
     private Node dashboardView;
 
+    private final Map<Integer, String> amlResults = new HashMap<>();
     private final Map<Integer, String> verificationScores = new HashMap<>();
+    private final Map<Integer, String> ocrResults = new HashMap<>();
 
     @FXML
     private void initialize() {
@@ -70,31 +76,200 @@ public class AdminPanelService {
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
         btnLogs.setOnAction(e -> showLogs());
+
+        btnAssetManagement.setOnAction(e -> navigateTo("/crudAsset.fxml"));
         btnCourses.setOnAction(event -> {
             try {
-                // Load the MainView.fxml
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/MainView.fxml"));
                 Parent root = loader.load();
-
-                // Get the current stage from the button
                 Stage stage = (Stage) btnCourses.getScene().getWindow();
-
-                // Set the new scene
                 Scene scene = new Scene(root);
                 stage.setScene(scene);
                 stage.show();
-
             } catch (IOException e) {
                 e.printStackTrace();
-                // Optionally show an error alert to the user here
             }
         });
         if (btnLogout != null) {
             btnLogout.setOnAction(e -> handleLogout());
         }
         refreshStatistics();
+    }
 
+    private void navigateTo(String fxml) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
+            Parent root = loader.load();
+            Stage stage = (Stage) btnOverview.getScene().getWindow();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            showAlert("Navigation Error", "Could not load " + fxml);
+        }
+    }
+    private void runAIVerification(Utilisateur user, TableView<Utilisateur> table) {
+        String assetPath = "src/main/resources/assets/";
+        File idFile = new File(assetPath + user.getPiece_identite());
+        File selfieFile = new File(assetPath + user.getUser_image());
 
+        if (!idFile.exists() || !selfieFile.exists()) {
+            showAlert("File Error", "Required images not found in: " + assetPath);
+            return;
+        }
+
+        // Set initial "loading" states in the UI maps
+        verificationScores.put(user.getId_user(), "Analyzing...");
+        amlResults.put(user.getId_user(), "Screening...");
+        ocrResults.put(user.getId_user(), "Reading ID...");
+        table.refresh();
+
+        // Run heavy AI tasks in a background thread to prevent UI freezing
+        new Thread(() -> {
+            try {
+                // 1. Face Comparison (Remote AI - Face++)
+                float score = faceMatchService.compareFaces(idFile, selfieFile);
+                String faceResultText = (score > 0) ? String.format("%.2f%%", score) : "No Match";
+
+                // 2. AML/Sanctions Check (Remote API - Dilisense/OFAC)
+                String amlStatus = amlService.checkSanctions(user.getNom() + " " + user.getPrenom());
+
+                // 3. Identity OCR Check (Local AI - Tesseract)
+                // Correctly using the 'identityAIService' instance here
+                String extractedText = identityAIService.extractTextFromID(idFile.getAbsolutePath());
+                boolean isNameValid = identityAIService.verifyNameMatch(extractedText, user.getNom());
+                String ocrStatus = isNameValid ? "MATCH" : "MISMATCH";
+
+                // Update the UI on the JavaFX Application Thread
+                Platform.runLater(() -> {
+                    verificationScores.put(user.getId_user(), faceResultText);
+                    amlResults.put(user.getId_user(), amlStatus);
+                    ocrResults.put(user.getId_user(), ocrStatus);
+
+                    table.refresh();
+
+                    logEntryService.saveLog("COMPLIANCE_CHECK",
+                            String.format("User: %s | Face: %s | AML: %s | OCR: %s",
+                                    user.getNom(), faceResultText, amlStatus, ocrStatus));
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    verificationScores.put(user.getId_user(), "Error");
+                    amlResults.put(user.getId_user(), "Failed");
+                    ocrResults.put(user.getId_user(), "Error");
+                    table.refresh();
+                });
+            }
+        }).start();
+    }
+
+    private void showGestionUsers() {
+        setActiveButton(btnGestionUsers);
+        lblTitle.setText("Pending Verification");
+        try {
+            ObservableList<Utilisateur> users = FXCollections.observableArrayList(userService.SelectAll());
+            TableView<Utilisateur> table = createBaseTable(users);
+
+            // 1. FULL NAME COLUMN (Added Back)
+            TableColumn<Utilisateur, String> colFullName = new TableColumn<>("User Full Name");
+            colFullName.setCellValueFactory(cell -> new SimpleStringProperty(
+                    cell.getValue().getNom() + " " + cell.getValue().getPrenom()
+            ));
+            colFullName.setMinWidth(150);
+
+            // 2. Identity File Link Column
+            TableColumn<Utilisateur, Void> colIdentity = new TableColumn<>("Identity File");
+            colIdentity.setCellFactory(param -> new TableCell<>() {
+                private final Hyperlink link = new Hyperlink();
+                { link.setOnAction(e -> openFile(getTableView().getItems().get(getIndex()).getPiece_identite())); }
+                @Override protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) setGraphic(null);
+                    else {
+                        link.setText(getTableView().getItems().get(getIndex()).getPiece_identite());
+                        setGraphic(link);
+                    }
+                }
+            });
+
+            // 3. Face Match Column
+            TableColumn<Utilisateur, String> colMatchResult = new TableColumn<>("Face Match");
+            colMatchResult.setCellValueFactory(data -> new SimpleStringProperty(
+                    verificationScores.getOrDefault(data.getValue().getId_user(), "--%")
+            ));
+
+            // 4. ID NAME CHECK COLUMN (The AI OCR Result)
+            TableColumn<Utilisateur, String> colOCR = new TableColumn<>("ID Name Check");
+            colOCR.setCellFactory(param -> new TableCell<>() {
+                @Override protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        String status = ocrResults.getOrDefault(getTableView().getItems().get(getIndex()).getId_user(), "WAITING");
+                        Label lbl = new Label(status);
+                        if (status.equals("MATCH")) {
+                            lbl.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 5; -fx-font-weight: bold;");
+                        } else if (status.equals("MISMATCH")) {
+                            lbl.setStyle("-fx-background-color: #f43f5e; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 5; -fx-font-weight: bold;");
+                        } else {
+                            lbl.setStyle("-fx-text-fill: #94a3b8;");
+                        }
+                        setGraphic(lbl);
+                    }
+                }
+            });
+
+            // 5. AML Security Column
+            TableColumn<Utilisateur, String> colAML = new TableColumn<>("AML Security");
+            colAML.setCellFactory(param -> new TableCell<>() {
+                @Override protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) setGraphic(null);
+                    else {
+                        String status = amlResults.getOrDefault(getTableView().getItems().get(getIndex()).getId_user(), "NOT_CHECKED");
+                        Label lblStatus = new Label(status);
+                        if (status.equals("CLEAN")) {
+                            lblStatus.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 5;");
+                        } else if (status.equals("FLAGGED")) {
+                            lblStatus.setStyle("-fx-background-color: #f43f5e; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 5;");
+                        }
+                        setGraphic(lblStatus);
+                    }
+                }
+            });
+
+            // 6. Action Buttons Column
+            TableColumn<Utilisateur, Void> colActions = new TableColumn<>("Actions");
+            colActions.setCellFactory(param -> new TableCell<>() {
+                private final Button btnAI = new Button("Verify All");
+                private final Button btnAccept = new Button("Accept");
+                private final Button btnReject = new Button("Reject");
+                private final HBox box = new HBox(8, btnAI, btnAccept, btnReject);
+                {
+                    btnAI.setStyle("-fx-background-color: #2E5BFF; -fx-text-fill: white; -fx-background-radius: 6;");
+                    btnAccept.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-background-radius: 6;");
+                    btnReject.setStyle("-fx-background-color: #f43f5e; -fx-text-fill: white; -fx-background-radius: 6;");
+                    btnAI.setOnAction(e -> runAIVerification(getTableView().getItems().get(getIndex()), table));
+                    btnAccept.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), AccountStatus.ACTIVE));
+                    btnReject.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), AccountStatus.DESACTIVE));
+                }
+                @Override protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setGraphic(empty ? null : box);
+                }
+            });
+
+            // Clear and rebuild columns in the correct order
+            table.getColumns().clear();
+            table.getColumns().addAll(colFullName, colIdentity, colMatchResult, colOCR, colAML, colActions);
+
+            renderTable(table);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void showDashboard() {
@@ -115,63 +290,20 @@ public class AdminPanelService {
         lblTitle.setText("Live System Governance Logs");
         mainContent.getChildren().clear();
         mainContent.setSpacing(15);
-
-        // Fetch logs from Service
         ObservableList<LogEntry> logData = FXCollections.observableArrayList(logEntryService.getAllLogs());
-
         TableView<LogEntry> logTable = new TableView<>(logData);
         logTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
         TableColumn<LogEntry, String> colTime = new TableColumn<>("Timestamp");
         colTime.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getTime()));
-
         TableColumn<LogEntry, String> colAction = new TableColumn<>("Action");
         colAction.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getAction()));
-
         TableColumn<LogEntry, String> colDetails = new TableColumn<>("Details");
         colDetails.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getDetails()));
-
         logTable.getColumns().addAll(colTime, colAction, colDetails);
-
         TextField searchField = new TextField();
         searchField.setPromptText("Filter logs...");
-        searchField.getStyleClass().add("text-field");
-
         mainContent.getChildren().addAll(searchField, logTable);
         VBox.setVgrow(logTable, Priority.ALWAYS);
-    }
-
-    private void runAIVerification(Utilisateur user, TableView<Utilisateur> table) {
-        String assetPath = "src/main/resources/assets/";
-        File idFile = new File(assetPath + user.getPiece_identite());
-        File selfieFile = new File(assetPath + user.getUser_image());
-
-        if (!idFile.exists() || !selfieFile.exists()) {
-            showAlert("File Error", "Required images not found.");
-            return;
-        }
-
-        verificationScores.put(user.getId_user(), "Analyzing...");
-        table.refresh();
-
-        new Thread(() -> {
-            try {
-                float score = faceMatchService.compareFaces(idFile, selfieFile);
-                Platform.runLater(() -> {
-                    String resultText = (score > 0) ? String.format("%.2f%%", score) : "No Match";
-                    verificationScores.put(user.getId_user(), resultText);
-                    table.refresh();
-
-                    // Log the activity through the service
-                    logEntryService.saveLog("AI_VERIFY", "Match for " + user.getNom() + ": " + resultText);
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    verificationScores.put(user.getId_user(), "Error");
-                    table.refresh();
-                });
-            }
-        }).start();
     }
 
     private void confirmAndUpdate(Utilisateur user, AccountStatus status) {
@@ -183,37 +315,44 @@ public class AdminPanelService {
                 try {
                     user.setStatut(status);
                     userService.updateOne(user);
-
-                    // Log the status change
                     logEntryService.saveLog("USER_STATUS_CHANGE", "Admin changed " + user.getNom() + " to " + status);
-
                     showGestionUsers();
                     refreshStatistics();
                 } catch (SQLException e) { e.printStackTrace(); }
             }
         });
     }
-
     private void setupLineChart() {
         if (chartContainer == null) return;
         chartContainer.getChildren().clear();
 
         CategoryAxis xAxis = new CategoryAxis();
-        xAxis.setLabel("Join Date");
+        // Hide the dates (Tick Labels) and the small tick marks
+        xAxis.setTickLabelsVisible(false);
+        xAxis.setTickMarkVisible(false);
+        xAxis.setOpacity(0); // Optional: makes the axis line itself invisible for a floating look
+
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("New Users");
 
         LineChart<String, Number> lineChart = new LineChart<>(xAxis, yAxis);
         lineChart.setTitle("7-Day User Growth");
         lineChart.setLegendVisible(false);
+        lineChart.setAnimated(false);
+        lineChart.setCreateSymbols(true); // Keeps the dots on the line for clarity
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
 
         try {
             java.util.Map<String, Integer> data = userService.getUserAcquisitionStats();
-            data.forEach((date, count) -> {
-                series.getData().add(new XYChart.Data<>(date, count));
-            });
+
+            // Sorting and adding data
+            data.entrySet().stream()
+                    .sorted(java.util.Map.Entry.comparingByKey())
+                    .forEach(entry -> {
+                        series.getData().add(new XYChart.Data<>(entry.getKey(), entry.getValue()));
+                    });
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -242,7 +381,6 @@ public class AdminPanelService {
             e.printStackTrace();
         }
     }
-
     private void setupActivityPulse() {
         if (recentActivityList == null) return;
         recentActivityList.getChildren().clear();
@@ -262,59 +400,6 @@ public class AdminPanelService {
         texts.getChildren().addAll(lblAction, new Label(type));
         row.getChildren().addAll(lblTime, texts);
         recentActivityList.getChildren().add(row);
-    }
-
-    private void showGestionUsers() {
-        setActiveButton(btnGestionUsers);
-        lblTitle.setText("Pending Verification");
-        try {
-            ObservableList<Utilisateur> users = FXCollections.observableArrayList(userService.SelectAll());
-            TableView<Utilisateur> table = createBaseTable(users);
-
-            TableColumn<Utilisateur, Void> colIdentity = new TableColumn<>("Identity File");
-            colIdentity.setCellFactory(param -> new TableCell<>() {
-                private final Hyperlink link = new Hyperlink();
-                { link.setOnAction(e -> openFile(getTableView().getItems().get(getIndex()).getPiece_identite())); }
-                @Override protected void updateItem(Void item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty) setGraphic(null);
-                    else {
-                        link.setText(getTableView().getItems().get(getIndex()).getPiece_identite());
-                        setGraphic(link);
-                    }
-                }
-            });
-
-            TableColumn<Utilisateur, String> colMatchResult = new TableColumn<>("AI Match");
-            colMatchResult.setCellValueFactory(data -> {
-                String score = verificationScores.getOrDefault(data.getValue().getId_user(), "--%");
-                return new SimpleStringProperty(score);
-            });
-
-            TableColumn<Utilisateur, Void> colActions = new TableColumn<>("Actions");
-            colActions.setCellFactory(param -> new TableCell<>() {
-                private final Button btnAI = new Button("Verify AI");
-                private final Button btnAccept = new Button("Accept");
-                private final Button btnReject = new Button("Reject");
-                private final HBox box = new HBox(8, btnAI, btnAccept, btnReject);
-                {
-                    btnAI.setStyle("-fx-background-color: #2E5BFF; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
-                    btnAccept.setStyle("-fx-background-color: #10b981; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
-                    btnReject.setStyle("-fx-background-color: #f43f5e; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;");
-
-                    btnAI.setOnAction(e -> runAIVerification(getTableView().getItems().get(getIndex()), table));
-                    btnAccept.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), AccountStatus.ACTIVE));
-                    btnReject.setOnAction(e -> confirmAndUpdate(getTableView().getItems().get(getIndex()), AccountStatus.DESACTIVE));
-                }
-                @Override protected void updateItem(Void item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setGraphic(empty ? null : box);
-                }
-            });
-
-            table.getColumns().addAll(colIdentity, colMatchResult, colActions);
-            renderTable(table);
-        } catch (SQLException e) { e.printStackTrace(); }
     }
 
     private void showAllUsers() {

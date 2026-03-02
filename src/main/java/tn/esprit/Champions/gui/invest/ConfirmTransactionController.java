@@ -12,6 +12,7 @@ import javafx.util.StringConverter;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.TransactionService;
 import tn.esprit.Champions.services.WalletService;
+import tn.esprit.Champions.services.projetService;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +30,8 @@ public class ConfirmTransactionController {
 
     private credit currentCredit;
     private final WalletService walletService = new WalletService();
-    private final int CURRENT_USER_ID = 56; // Ajuster selon l'utilisateur connecté
+    private final projetService ps = new projetService();
+    private final int CURRENT_USER_ID = 56;
     private boolean isSelectionMode = false;
 
     @FXML
@@ -40,9 +42,6 @@ public class ConfirmTransactionController {
         setupAutoRefresh();
     }
 
-    /**
-     * 1. RÉCUPÉRATION DE L'ID DE LA CURRENCY (Table: currency)
-     */
     private int getCurrencyIdByName(String name) {
         String query = "SELECT id_currency FROM currency WHERE nom = ?";
         try (PreparedStatement pst = walletService.getCnx().prepareStatement(query)) {
@@ -50,12 +49,9 @@ public class ConfirmTransactionController {
             ResultSet rs = pst.executeQuery();
             if (rs.next()) return rs.getInt("id_currency");
         } catch (SQLException e) { e.printStackTrace(); }
-        return 13; // Fallback sur l'ID 13 constaté dans tes logs
+        return 13; // ID TND par défaut
     }
 
-    /**
-     * 2. RÉCUPÉRATION DU SOLDE SPÉCIFIQUE (Table: wallet_currency)
-     */
     private double getSoldeFromWalletCurrency(int idWallet, int idCurrency) {
         String query = "SELECT solde FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
         try (PreparedStatement pst = walletService.getCnx().prepareStatement(query)) {
@@ -69,7 +65,6 @@ public class ConfirmTransactionController {
 
     private void setupWalletSelector() {
         try {
-            // On récupère le RIB et les infos de base (Table: wallet)
             List<wallet> userWallets = walletService.SelectAll().stream()
                     .filter(w -> w.getIdUser() == CURRENT_USER_ID)
                     .filter(w -> w.getTypeWallet() == typeWallet.fiat)
@@ -122,18 +117,32 @@ public class ConfirmTransactionController {
             try {
                 int idTND = getCurrencyIdByName("TND");
 
-                // 3. RÉCUPÉRATION DU WALLET DESTINATAIRE (Table: wallet via id_user du crédit)
-                int idEmprunteur = currentCredit.getId();
+                // 1. Trouver le projet associé
+                projet p = ps.SelectAll().stream()
+                        .filter(proj -> proj.getId_project() == currentCredit.getProject_id())
+                        .findFirst()
+                        .orElse(null);
+
+                if (p == null || p.getOwner_id() == null) {
+                    new Alert(Alert.AlertType.ERROR, "Impossible de trouver le propriétaire du projet.").show();
+                    return;
+                }
+
+                // 2. Extraire l'ID de l'objet Utilisateur (Vérifiez le nom de la méthode dans Utilisateur.java)
+                int idProprietaire = p.getOwner_id().getId_user();
+
+                // 3. Trouver le wallet FIAT du propriétaire
                 wallet destWallet = walletService.SelectAll().stream()
-                        .filter(w -> w.getIdUser() == idEmprunteur)
+                        .filter(w -> w.getIdUser() == idProprietaire)
                         .filter(w -> w.getTypeWallet() == typeWallet.fiat)
                         .findFirst().orElse(null);
 
                 if (destWallet == null) {
-                    new Alert(Alert.AlertType.ERROR, "Le destinataire n'a pas de compte compatible.").show();
+                    new Alert(Alert.AlertType.ERROR, "Le destinataire n'a pas de compte FIAT compatible.").show();
                     return;
                 }
 
+                // 4. Enregistrement de la transaction
                 transaction t = new transaction();
                 t.setIdWalletSource(sourceWallet.getIdWallet());
                 t.setIdWalletDestination(destWallet.getIdWallet());
@@ -145,11 +154,11 @@ public class ConfirmTransactionController {
 
                 new TransactionService().insertOne(t);
 
-                new Alert(Alert.AlertType.INFORMATION, "Transaction réussie !").show();
+                new Alert(Alert.AlertType.INFORMATION, "Investissement réussi pour le projet : " + p.getTitle()).show();
                 closeWindow();
 
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Erreur : " + e.getMessage()).show();
+                new Alert(Alert.AlertType.ERROR, "Erreur de base de données : " + e.getMessage()).show();
             }
         }
     }
@@ -165,8 +174,10 @@ public class ConfirmTransactionController {
 
     public void setTransactionData(credit c, wallet w) {
         this.currentCredit = c;
-        lblMontant.setText(String.format("%.2f TND", c.getMontant()));
-        lblDestinataire.setText("Projet #" + c.getProject_id());
+        if (c != null) {
+            lblMontant.setText(String.format("%.2f TND", c.getMontant()));
+            lblDestinataire.setText("ID Projet : " + c.getProject_id());
+        }
     }
 
     @FXML private void handleAnnuler() { closeWindow(); }

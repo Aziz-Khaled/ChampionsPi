@@ -29,9 +29,15 @@ public class projetService implements CRUD<projet> {
         return "Autre";
     }
 
+
     @Override
     public void insertOne(projet p) throws SQLException {
-        String secteurDetecte = detecterSecteur(p.getTitle(), p.getDescription());
+        // 1. On vérifie si un secteur est déjà présent (détecté par l'IA dans le contrôleur)
+        // S'il est nul ou vide, seulement là on utilise la détection manuelle locale.
+        String secteurFinal = (p.getSecteur() != null && !p.getSecteur().isEmpty())
+                ? p.getSecteur()
+                : detecterSecteur(p.getTitle(), p.getDescription());
+
         int userId = UserSession.getLoggedInUser().getId_user();
         String req = "INSERT INTO `projet` (`owner_id`, `title`, `description`, `status`, `target_amount`, `start_date`, `end_date`, `image_url`, `secteur`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -44,7 +50,7 @@ public class projetService implements CRUD<projet> {
             pst.setTimestamp(6, p.getStart_date());
             pst.setTimestamp(7, p.getEnd_date());
             pst.setString(8, p.getImageUrl());
-            pst.setString(9, secteurDetecte);
+            pst.setString(9, secteurFinal); // On utilise la valeur consolidée
 
             pst.executeUpdate();
         }

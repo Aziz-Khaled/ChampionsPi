@@ -7,7 +7,7 @@
 <VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.CartController" spacing="20">
     <children>
         <Label text="Votre Panier" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
-        
+
         <TableView fx:id="cartTable" VBox.vgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="colProduct" text="Produit" prefWidth="250"/>

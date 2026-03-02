@@ -13,7 +13,9 @@ public class formations {
     private double prix;
     private int capaciteMax;
     private StatutFormation statut;
-    private double rating ;
+    private double rating;
+    private String imagePath;
+
     public formations(){}
 
     public formations(String titre, int idFormation, String description, String domaine, LocalDate dateDebut, LocalDate dateFin, double prix, int capaciteMax, String statut) {
@@ -26,6 +28,9 @@ public class formations {
         this.prix = prix;
         this.capaciteMax = capaciteMax;
         this.statut = StatutFormation.valueOf(statut);
+        this.rating = rating;
+
+
     }
 
     public int getIdFormation() {
@@ -63,6 +68,13 @@ public class formations {
     public StatutFormation getStatut() {
         return statut;
     }
+
+    public double getRating() { return rating; }
+
+    public String getImagePath() { return imagePath; }
+    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
+
+    public void setRating(double rating) { this.rating = rating; }
 
     public void setIdFormation(int idFormation) {
         this.idFormation = idFormation;
@@ -125,13 +137,5 @@ public class formations {
     @Override
     public int hashCode() {
         return Objects.hash(idFormation, titre, description, domaine, dateDebut, dateFin, prix, capaciteMax, statut);
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public void setRating(double rating) {
-        this.rating = rating;
     }
 }

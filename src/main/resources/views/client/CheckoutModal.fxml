@@ -5,10 +5,10 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.*?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.CheckoutController" 
-      spacing="25" alignment="TOP_CENTER" styleClass="premium-modal" 
+<VBox xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.client.CheckoutController"
+      spacing="25" alignment="TOP_CENTER" styleClass="premium-modal"
       prefWidth="500" stylesheets="@/styles/app.css">
-    
+
     <padding>
         <Insets top="40" right="40" bottom="40" left="40"/>
     </padding>
@@ -31,7 +31,7 @@
         <!-- Form fields -->
         <VBox spacing="15" styleClass="card">
             <Label text="Coordonnées de Livraison" styleClass="section-title"/>
-            
+
             <VBox spacing="8">
                 <Label text="Adresse de livraison" styleClass="form-label"/>
                 <HBox spacing="10">
@@ -51,9 +51,9 @@
         </VBox>
 
         <VBox spacing="10" alignment="CENTER">
-            <Button text="Confirmer le Paiement BTC" onAction="#handleConfirm" 
+            <Button text="Confirmer le Paiement BTC" onAction="#handleConfirm"
                     maxWidth="Infinity" prefHeight="50" styleClass="btn-primary"/>
-            <Button text="Annuler" onAction="#handleCancel" 
+            <Button text="Annuler" onAction="#handleCancel"
                     maxWidth="Infinity" styleClass="btn-secondary"/>
         </VBox>
     </children>

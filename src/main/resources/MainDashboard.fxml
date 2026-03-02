@@ -22,14 +22,13 @@
                         <Button fx:id="btnDashboard" alignment="CENTER_LEFT" onAction="#showHome" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="🏠  Tableau de bord" />
                         <Button fx:id="btnProjets" alignment="CENTER_LEFT" onAction="#showProjets" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="🚀  Gestion Projets" />
                         <Button fx:id="btnCredits" alignment="CENTER_LEFT" onAction="#showCredits" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="💰  Demandes Crédits" />
-                        <Button fx:id="btnNegociations" alignment="CENTER_LEFT" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="🤝  Négociations" />
                     </children>
                 </VBox>
 
                 <Separator opacity="0.05" />
-                <Button prefHeight="50.0" prefWidth="260.0" style="-fx-background-color: transparent; -fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-cursor: hand;" text="🚪  Déconnexion">
-                    <VBox.margin><Insets bottom="20.0" /></VBox.margin>
-                </Button>
+                <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#handleLogout" prefHeight="50.0" prefWidth="220.0"
+                        style="-fx-background-color: transparent; -fx-text-fill: #f87171; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-cursor: hand;"
+                        text="🚪  Déconnexion" />
             </children>
         </VBox>
 

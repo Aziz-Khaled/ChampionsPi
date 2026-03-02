@@ -114,7 +114,7 @@ public class ProductService implements CRUD<Product> {
         // Sort by created_at DESC to show newest products first
         String query = "SELECT * FROM product ORDER BY created_at DESC";
         try (Statement stmt = cnx.createStatement();
-                ResultSet rs = stmt.executeQuery(query)) {
+             ResultSet rs = stmt.executeQuery(query)) {
             while (rs.next()) {
                 Product product = new Product(
                         rs.getLong("id"),

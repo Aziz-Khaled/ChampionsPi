@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="15.0" style="-fx-padding: 20; -fx-background-color: white; -fx-border-color: #dcdde1; -fx-border-radius: 10; -fx-background-radius: 10;"
+      xmlns="http://javafx.com/javafx/8"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="tn.esprit.Champions.gui.ReclamationController">
+    <children>
+        <Label text="Déposer une réclamation" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2f3640;" />
+        <Separator prefWidth="200.0" />
+
+        <VBox spacing="5.0">
+            <children>
+                <Label text="Sujet" style="-fx-font-weight: bold;" />
+                <TextField fx:id="txtSujet" promptText="Ex: Problème d'accès au contenu" style="-fx-padding: 8;" />
+            </children>
+        </VBox>
+
+        <VBox spacing="5.0">
+            <children>
+                <Label text="Description détaillée" style="-fx-font-weight: bold;" />
+                <TextArea fx:id="txtDescription" prefHeight="150.0" promptText="Décrivez votre problème ici..." wrapText="true" />
+            </children>
+        </VBox>
+
+        <HBox spacing="10.0" alignment="CENTER_RIGHT">
+            <children>
+                <Button fx:id="btnAnnuler" text="Annuler" onAction="#handleCancel" style="-fx-background-color: #f5f6fa; -fx-text-fill: #7f8c8d;" />
+                <Button fx:id="btnEnvoyer" text="Envoyer" onAction="#handleEnvoyer" style="-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold;" />
+            </children>
+        </HBox>
+    </children>
+</VBox>

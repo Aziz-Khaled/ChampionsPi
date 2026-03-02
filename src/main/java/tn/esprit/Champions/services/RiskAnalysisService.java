@@ -26,9 +26,9 @@ public class RiskAnalysisService {
 
             // 2. Préparation du prompt
             String promptText = String.format(
-                    "Analyse financière expert : Crédit de %.2f TND pour un solde de %.2f TND. " +
+                    "Analyse financière expert : Crédit de %.2f TND  " +
                             "Donne 3 points de risque et une NOTE finale sur 100.",
-                    c.getMontant(), w.getSolde()
+                    c.getMontant()
             );
 
             // 3. Construction du JSON

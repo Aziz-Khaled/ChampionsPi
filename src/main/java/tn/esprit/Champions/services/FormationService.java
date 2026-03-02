@@ -3,18 +3,17 @@ package tn.esprit.Champions.services;
 import tn.esprit.Champions.models.formations;
 import tn.esprit.Champions.models.StatutFormation;
 import tn.esprit.Champions.utils.DbConnection;
-import tn.esprit.Champions.utils.UserSession;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FormationService {
     private Connection cnx;
+
     public FormationService() {
         cnx = DbConnection.getInstance().getCnx();
     }
-    int userId = UserSession.getLoggedInUser().getId_user();
+
     // Sécurité : Vérifier si le titre existe déjà
     public boolean existsByTitre(String titre) throws SQLException {
         String sql = "SELECT count(*) FROM formations WHERE titre = ?";
@@ -26,8 +25,10 @@ public class FormationService {
         }
         return false;
     }
+
+    // Version finale avec image_path
     public void insertOne(formations f) throws SQLException {
-        String sql = "INSERT INTO formations (titre, description, domaine, dateDebut, dateFin, prix, capaciteMax, statut, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO formations (titre, description, domaine, dateDebut, dateFin, prix, capaciteMax, statut, user_id, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, f.getTitre());
             ps.setString(2, f.getDescription());
@@ -37,14 +38,15 @@ public class FormationService {
             ps.setDouble(6, f.getPrix());
             ps.setInt(7, f.getCapaciteMax());
             ps.setString(8, f.getStatut().name());
-            ps.setLong(9, userId); // ID de l'admin par défaut
+            ps.setLong(9, 1); // ID de l'admin par défaut
+            ps.setString(10, f.getImagePath()); // Gestion de l'image
             ps.executeUpdate();
         }
     }
 
-
+    // Mise à jour incluant potentiellement l'image
     public void updateOne(formations f) throws SQLException {
-        String sql = "UPDATE formations SET titre=?, description=?, domaine=?, dateDebut=?, prix=?, statut=? WHERE idFormation=?";
+        String sql = "UPDATE formations SET titre=?, description=?, domaine=?, dateDebut=?, prix=?, statut=?, image_path=? WHERE idFormation=?";
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, f.getTitre());
             ps.setString(2, f.getDescription());
@@ -52,7 +54,8 @@ public class FormationService {
             ps.setDate(4, Date.valueOf(f.getDateDebut()));
             ps.setDouble(5, f.getPrix());
             ps.setString(6, f.getStatut().name());
-            ps.setInt(7, f.getIdFormation());
+            ps.setString(7, f.getImagePath());
+            ps.setInt(8, f.getIdFormation());
             ps.executeUpdate();
         }
     }
@@ -65,6 +68,7 @@ public class FormationService {
         }
     }
 
+    // Sélection complète avec image_path
     public List<formations> SelectAll() throws SQLException {
         List<formations> list = new ArrayList<>();
         String sql = "SELECT * FROM formations";
@@ -78,6 +82,10 @@ public class FormationService {
                 f.setDateDebut(rs.getDate("dateDebut").toLocalDate());
                 f.setPrix(rs.getDouble("prix"));
                 f.setStatut(StatutFormation.valueOf(rs.getString("statut")));
+
+                // Récupération du chemin de l'image pour l'affichage (style GomyCode)
+                f.setImagePath(rs.getString("image_path"));
+
                 list.add(f);
             }
         }
