@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+
+<HBox prefHeight="800.0" prefWidth="1100.0" style="-fx-background-color: #0A0E1A; -fx-font-family: 'Segoe UI', sans-serif;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.LoginService">
+    <children>
+        <VBox alignment="CENTER_LEFT" prefWidth="420.0" spacing="35.0" style="-fx-background-color: #111827; -fx-border-color: #1E2D45; -fx-border-width: 0 1 0 0; -fx-padding: 40;" HBox.hgrow="NEVER">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="12.0">
+                    <children>
+                        <StackPane prefHeight="45" prefWidth="45" style="-fx-background-color: linear-gradient(to bottom right, #00D4FF, #7C3AED); -fx-background-radius: 12;">
+                            <children>
+                                <Label style="-fx-font-weight: 900; -fx-font-size: 22; -fx-text-fill: #0A0E1A;" text="C" />
+                            </children>
+                        </StackPane>
+                        <Label style="-fx-font-size: 20; -fx-font-weight: bold; -fx-text-fill: #F0F4FF; -fx-letter-spacing: 2;" text="CHAMPIONS." />
+                    </children>
+                </HBox>
+
+                <VBox spacing="15.0">
+                    <children>
+                        <Label style="-fx-font-size: 32; -fx-font-weight: bold; -fx-text-fill: white; -fx-line-spacing: 5;" text="The future of crypto is here." wrapText="true" />
+                        <Label style="-fx-font-size: 14; -fx-text-fill: #8B9AB5; -fx-line-spacing: 3;" text="Log in to manage your digital assets with the next generation of fintech tools." wrapText="true" />
+                    </children>
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS" />
+
+                <VBox spacing="8">
+                    <children>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <children>
+                                <Circle fill="#00FFA3" radius="4" style="-fx-effect: dropshadow(gaussian, #00FFA3, 10, 0, 0, 0);" />
+                                <Label style="-fx-font-size: 12; -fx-text-fill: #4A5568;" text="Secured by 256-bit Encryption" />
+                            </children>
+                        </HBox>
+                        <Label style="-fx-font-size: 11; -fx-text-fill: #4A5568; -fx-opacity: 0.6;" text="© 2026 Champions Platform" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+
+        <VBox alignment="CENTER" style="-fx-background-color: #0A0E1A;" HBox.hgrow="ALWAYS">
+            <children>
+                <VBox maxWidth="420.0" spacing="35.0" style="-fx-background-color: #111827; -fx-background-radius: 24; -fx-border-radius: 24; -fx-border-color: #1E2D45; -fx-border-width: 1; -fx-padding: 40; -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.1), 50, 0, 0, 0);">
+                    <children>
+                        <VBox alignment="CENTER" spacing="10.0">
+                            <children>
+                                <Label style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #F0F4FF;" text="Login" />
+                                <Label style="-fx-font-size: 14; -fx-text-fill: #8B9AB5;" text="Enter your credentials to access your vault." />
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="25.0">
+                            <children>
+                                <VBox spacing="8.0">
+                                    <children>
+                                        <Label style="-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #00D4FF; -fx-text-transform: uppercase;" text="Email Address" />
+                                        <TextField fx:id="txt_Email" promptText="name@company.com" style="-fx-background-color: #1A2235; -fx-text-fill: white; -fx-prompt-text-fill: #4A5568; -fx-border-color: #1E2D45; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;" />
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="8.0">
+                                    <children>
+                                        <Label style="-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #00D4FF; -fx-text-transform: uppercase;" text="Password" />
+                                        <PasswordField fx:id="txt_Password" promptText="••••••••" style="-fx-background-color: #1A2235; -fx-text-fill: white; -fx-prompt-text-fill: #4A5568; -fx-border-color: #1E2D45; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;" />
+                                    </children>
+                                </VBox>
+
+                                <VBox alignment="CENTER" spacing="20.0">
+                                    <children>
+                                        <Button fx:id="btn_Login" maxWidth="Infinity" style="-fx-background-color: linear-gradient(to right, #00D4FF, #00A3FF); -fx-text-fill: #0A0E1A; -fx-font-weight: bold; -fx-font-size: 14; -fx-padding: 12; -fx-background-radius: 8; -fx-cursor: hand;" text="Sign In to Platform" />
+
+                                        <HBox alignment="CENTER" spacing="10">
+                                            <children>
+                                                <Separator opacity="0.1" HBox.hgrow="ALWAYS" />
+                                                <Label style="-fx-font-size: 11; -fx-text-fill: #4A5568;" text="OR CONTINUE WITH" />
+                                                <Separator opacity="0.1" HBox.hgrow="ALWAYS" />
+                                            </children>
+                                        </HBox>
+
+                                        <Button fx:id="btn_GoogleLogin" maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-border-color: #1E2D45; -fx-border-radius: 8; -fx-padding: 10; -fx-cursor: hand;" text="Sign in with Google">
+                                            <graphic>
+                                                <Circle fill="#00D4FF" radius="5" />
+                                            </graphic>
+                                        </Button>
+
+                                        <HBox alignment="CENTER" spacing="8" style="-fx-padding: 10 0 0 0;">
+                                            <children>
+                                                <Label style="-fx-font-size: 13; -fx-text-fill: #8B9AB5;" text="New to Champions?" />
+                                                <Button onAction="#openSignUpPage" style="-fx-background-color: rgba(124, 58, 237, 0.1); -fx-text-fill: #7C3AED; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 5 12;" text="Create Account" />
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </children>
+</HBox>

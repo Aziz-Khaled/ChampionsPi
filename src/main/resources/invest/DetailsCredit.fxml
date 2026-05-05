@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Rectangle?>
+
+<VBox fx:id="detailsRoot" prefHeight="850.0" prefWidth="1200.0"
+      style="-fx-background-color: #0f172a;"
+      xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="tn.esprit.Champions.gui.invest.DetailsCreditController">
+
+    <children>
+        <HBox alignment="CENTER_LEFT" prefHeight="90.0" spacing="25.0"
+              style="-fx-background-color: #1e293b; -fx-padding: 0 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 5);">
+            <children>
+                <Button onAction="#handleRetourMarketplace"
+                        style="-fx-background-radius: 12; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.05); -fx-text-fill: white; -fx-border-color: rgba(255,255,255,0.2); -fx-border-radius: 12;"
+                        text="← Retour"/>
+
+                <VBox alignment="CENTER_LEFT">
+                    <Label fx:id="lblTitle"
+                           style="-fx-font-weight: bold; -fx-font-size: 26px; -fx-text-fill: #ffffff;"
+                           text="Nom du Projet"/>
+
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label fx:id="lblSecteurBadge"
+                               style="-fx-text-fill: #38bdf8; -fx-font-weight: bold; -fx-font-size: 12;"
+                               text="SECTEUR"/>
+                        <Label text="•" textFill="#475569"/>
+                        <Label fx:id="lblWalletSolde"
+                               style="-fx-text-fill: #94a3b8; -fx-font-size: 13;"
+                               text="Solde: 0.00 TND"/>
+                    </HBox>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblProjetStatut"
+                       style="-fx-background-color: rgba(16, 185, 129, 0.1); -fx-padding: 6 15; -fx-background-radius: 20; -fx-text-fill: #10b981; -fx-font-weight: bold; -fx-border-color: rgba(16,185,129,0.3); -fx-border-radius: 20;"
+                       text="OUVERT"/>
+            </children>
+        </HBox>
+
+        <ScrollPane fitToWidth="true"
+                    style="-fx-background-color: transparent; -fx-background: transparent;">
+            <content>
+                <HBox spacing="30.0" style="-fx-padding: 35;">
+                    <children>
+
+                        <VBox spacing="25.0" HBox.hgrow="ALWAYS">
+                            <children>
+                                <StackPane>
+                                    <ImageView fx:id="imgLarge" fitHeight="420.0" fitWidth="760.0"
+                                               pickOnBounds="true" preserveRatio="false">
+                                        <clip>
+                                            <Rectangle arcHeight="30.0" arcWidth="30.0"
+                                                       height="420.0" width="760.0"/>
+                                        </clip>
+                                    </ImageView>
+                                    <Region style="-fx-background-color: linear-gradient(to bottom, transparent, rgba(15,23,42,0.4)); -fx-background-radius: 15;"/>
+                                </StackPane>
+
+                                <VBox fx:id="boxAnalyseIA" spacing="15.0"
+                                      style="-fx-background-color: #1e293b; -fx-background-radius: 20; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 15, 0, 0, 10); -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 20;">
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <Label style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #38bdf8;" text="🔬"/>
+                                        <Label style="-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #ffffff;" text="Analyse de l'Expert IA"/>
+                                    </HBox>
+                                    <Separator style="-fx-opacity: 0.1;"/>
+                                    <Label fx:id="lblDescription"
+                                           style="-fx-font-size: 15px; -fx-text-fill: #94a3b8; -fx-line-spacing: 6;"
+                                           text="Analyse en cours..." wrapText="true"/>
+                                </VBox>
+                            </children>
+                        </VBox>
+
+                        <VBox maxWidth="400.0" minWidth="400.0" spacing="25.0">
+                            <children>
+
+                                <VBox fx:id="boxConditions" spacing="20.0"
+                                      style="-fx-background-color: #1e293b; -fx-background-radius: 20; -fx-padding: 25; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 20;">
+                                    <Label style="-fx-font-weight: bold; -fx-text-fill: #38bdf8; -fx-font-size: 14;"
+                                           text="💰 CONDITIONS DU CRÉDIT"/>
+
+                                    <VBox spacing="15">
+                                        <HBox alignment="CENTER_LEFT">
+                                            <Label text="Montant Total" textFill="#94a3b8"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Label fx:id="lblMontant"
+                                                   style="-fx-font-weight: bold; -fx-text-fill: #ffffff; -fx-font-size: 16;"
+                                                   text="0.00 TND"/>
+                                        </HBox>
+
+                                        <HBox alignment="CENTER_LEFT">
+                                            <Label text="Taux Annuel" textFill="#94a3b8"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Label fx:id="lblTaux"
+                                                   style="-fx-font-weight: bold; -fx-text-fill: #10b981; -fx-font-size: 16;"
+                                                   text="0%"/>
+                                        </HBox>
+
+                                        <HBox alignment="CENTER_LEFT">
+                                            <Label text="Durée" textFill="#94a3b8"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Label fx:id="lblDuree"
+                                                   style="-fx-font-weight: bold; -fx-text-fill: #ffffff;"
+                                                   text="0 mois"/>
+                                        </HBox>
+
+                                        <Separator style="-fx-opacity: 0.1;"/>
+
+                                        <HBox alignment="CENTER_LEFT">
+                                            <Label text="Profit estimé"
+                                                   style="-fx-text-fill: #38bdf8; -fx-font-weight: bold;"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <Label fx:id="lblProfit"
+                                                   style="-fx-font-weight: bold; -fx-text-fill: #38bdf8; -fx-font-size: 18;"
+                                                   text="0.00 TND"/>
+                                        </HBox>
+                                    </VBox>
+                                </VBox>
+
+                                <VBox fx:id="boxProjet" spacing="15.0"
+                                      style="-fx-background-color: #1e293b; -fx-background-radius: 20; -fx-padding: 25; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 20;">
+                                    <Label style="-fx-font-weight: bold; -fx-text-fill: #ffffff; -fx-font-size: 14;"
+                                           text="📝 À PROPOS DU PROJET"/>
+                                    <VBox spacing="12">
+                                        <Label fx:id="lblProjetDescription"
+                                               style="-fx-text-fill: #94a3b8; -fx-font-size: 14px; -fx-line-spacing: 4;"
+                                               text="Détails du projet..." wrapText="true"/>
+                                    </VBox>
+                                </VBox>
+
+                                <VBox spacing="12">
+                                    <children>
+                                        <Button onAction="#investirCredit" prefHeight="55.0" prefWidth="400.0"
+                                                style="-fx-background-color: #ffffff; -fx-text-fill: #0f172a; -fx-font-weight: bold; -fx-font-size: 16; -fx-background-radius: 15; -fx-cursor: hand;"
+                                                text="💸 Investir Maintenant"/>
+                                        <Button onAction="#negocierCredit" prefHeight="50.0" prefWidth="400.0"
+                                                style="-fx-background-color: transparent; -fx-text-fill: #94a3b8; -fx-font-weight: bold; -fx-background-radius: 15; -fx-border-color: #475569; -fx-border-radius: 15; -fx-cursor: hand;"
+                                                text="🤝 Négocier les conditions"/>
+                                    </children>
+                                </VBox>
+
+                            </children>
+                        </VBox>
+
+                    </children>
+                </HBox>
+            </content>
+        </ScrollPane>
+
+    </children>
+</VBox>

@@ -1,0 +1,181 @@
+/* Main App Theme for FinTech Marketplace */
+
+.root {
+    -fx-primary-dark: #0F172A;
+    -fx-primary-emerald: #10B981;
+    -fx-bg-light: #F8FAFC;
+    -fx-accent-orange: #F59E0B;
+    -fx-text-main: #1E293B;
+    -fx-text-light: #64748B;
+    -fx-font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.main-container {
+    -fx-background-color: -fx-bg-light;
+}
+
+/* Navbar */
+.navbar {
+    -fx-background-color: -fx-primary-dark;
+    -fx-padding: 10 20;
+    -fx-spacing: 20;
+    -fx-alignment: center-left;
+}
+
+.logo-text {
+    -fx-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.nav-link {
+    -fx-text-fill: #E2E8F0;
+    -fx-cursor: hand;
+    -fx-font-weight: 500;
+}
+
+.nav-link:hover {
+    -fx-text-fill: -fx-primary-emerald;
+}
+
+/* Cards */
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 15;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 10, 0, 0, 5);
+    -fx-padding: 15;
+}
+
+.card:hover {
+    -fx-effect: dropshadow(three-pass-box, rgba(16, 185, 129, 0.1), 15, 0, 0, 8);
+}
+
+.card-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-dark;
+}
+
+.card-price {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-emerald;
+}
+
+/* Buttons */
+.btn-primary {
+    -fx-background-color: -fx-primary-emerald;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+.btn-primary:hover {
+    -fx-background-color: #059669;
+}
+
+.btn-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-primary-dark;
+    -fx-border-color: -fx-primary-dark;
+    -fx-border-radius: 8;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+/* Forms */
+.form-label {
+    -fx-text-fill: -fx-text-main;
+    -fx-font-weight: bold;
+}
+
+.text-field,
+.text-area {
+    -fx-background-color: white;
+    -fx-border-color: #E2E8F0;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+}
+
+.text-field:focused,
+.text-area:focused {
+    -fx-border-color: -fx-primary-emerald;
+}
+
+.field-error {
+    -fx-border-color: #EF4444;
+}
+
+.error-label {
+    -fx-text-fill: #EF4444;
+    -fx-font-size: 11px;
+}
+
+/* TableView */
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #F1F5F9;
+}
+
+.table-view .column-header {
+    -fx-background-color: #F8FAFC;
+    -fx-text-fill: -fx-text-light;
+}
+
+/* Extra elements */
+.price-old {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 13px;
+    -fx-strikethrough: true;
+}
+
+.card-brand {
+    -fx-text-fill: -fx-text-light;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+}
+
+.card-rating {
+    -fx-text-fill: -fx-accent-orange;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+/* Premium Modal Styles */
+.premium-modal {
+    -fx-background-color: -fx-bg-light;
+    -fx-border-color: #E2E8F0;
+    -fx-border-width: 1;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+}
+
+.modal-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-dark;
+}
+
+.modal-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: -fx-primary-emerald;
+    -fx-font-weight: 500;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -fx-primary-dark;
+    -fx-padding: 0 0 5 0;
+}
+
+.checkout-summary {
+    -fx-background-color: white;
+    -fx-border-color: -fx-primary-emerald;
+    -fx-border-width: 1.5;
+}

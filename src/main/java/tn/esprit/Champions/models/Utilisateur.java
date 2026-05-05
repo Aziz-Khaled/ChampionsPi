@@ -1,21 +1,46 @@
 package tn.esprit.Champions.models;
 
 public class Utilisateur {
-    private int id_user ;
-    private String nom,prenom , mot_de_passe, telephone ;
-    private String piece_identite , user_image ;
-    private Role role ;
+    private int id_user;
+    private String nom, prenom, email, mot_de_passe, telephone;
+    private String piece_identite, user_image;
+    private Role role;
+    private AccountStatus statut;
 
+    public String getEmail() {
+        return email;
+    }
 
-    public Utilisateur(int id_user, String nom, String prenom, String mot_de_passe, String telephone, String piece_identite, String user_image, Role role) {
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Utilisateur() {
+    }
+
+    public Utilisateur(int id_user, String nom, String prenom,
+                       String email, String mot_de_passe,
+                       String telephone, String piece_identite,
+                       String user_image, AccountStatus statut, Role role) {
+
         this.id_user = id_user;
         this.nom = nom;
         this.prenom = prenom;
+        this.email = email;
         this.mot_de_passe = mot_de_passe;
         this.telephone = telephone;
         this.piece_identite = piece_identite;
         this.user_image = user_image;
+        this.statut = statut;
         this.role = role;
+    }
+
+    public AccountStatus getStatut() {
+        return statut;
+    }
+
+    public void setStatut(AccountStatus statut) {
+        this.statut = statut;
     }
 
     public int getId_user() {
@@ -82,3 +107,6 @@ public class Utilisateur {
         this.role = role;
     }
 }
+
+
+

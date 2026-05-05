@@ -5,6 +5,7 @@ public enum typeTransaction {
     RECHARGE,
     RETRAIT,
     ACHAT,
-    VENTE
+    VENTE,
+    CONVERSION
 
 }

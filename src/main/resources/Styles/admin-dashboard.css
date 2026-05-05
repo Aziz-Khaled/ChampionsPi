@@ -1,0 +1,163 @@
+.root {
+    /* Increased base font size from 12px to 14px */
+        -fx-font-family: 'Inter', 'Segoe UI', sans-serif;
+        -fx-font-size: 14px;
+        -fx-background-color: #f8fafc;
+}
+
+.sidebar {
+    -fx-background-color: #0f172a;
+}
+
+.nav-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #94a3b8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 16;
+    -fx-font-weight: 500;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: white;
+}
+
+.nav-button-active {
+    -fx-background-color: #3b82f6;
+    -fx-text-fill: white;
+}
+
+/* Modern TableView Styling */
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 12px;
+    -fx-padding: 10;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 12 12 0 0;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-size: 40;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #64748b;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.table-row-cell {
+    -fx-cell-size: 50;
+    -fx-border-color: transparent transparent #f1f5f9 transparent;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #eff6ff;
+}
+
+/* Base style for the Logout button */
+.logout-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ef4444; /* A soft red color */
+    -fx-border-color: #fee2e2;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s ease-in-out;
+}
+
+/* Hover effect: Fills the button with red */
+.logout-button:hover {
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+    -fx-border-color: #ef4444;
+}
+
+/* Pressed effect: darkens slightly */
+.logout-button:pressed {
+    -fx-background-color: #b91c1c;
+}
+
+/* Optional: Add an icon style if you want to add a logout icon later */
+.logout-button .text {
+    -fx-padding: 0 0 0 10;
+}
+
+
+/* Styling for the Search Field */
+.search-field {
+    -fx-background-color: white;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8 12;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1e293b;
+}
+
+.search-field:focused {
+    -fx-border-color: #3b82f6;
+    -fx-background-color: white;
+}
+
+/* Styling for the Filter ComboBox */
+.filter-combo {
+    -fx-background-color: white;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 5 8;
+    -fx-cursor: hand;
+}
+
+.filter-combo:hover {
+    -fx-border-color: #cbd5e1;
+}
+
+.filter-combo:focused {
+    -fx-border-color: #3b82f6;
+}
+
+/* Styling the arrow inside the ComboBox */
+.filter-combo .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.filter-combo .arrow {
+    -fx-background-color: #64748b;
+}
+
+/* Styling the popup list items */
+.filter-combo .list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 4);
+}
+
+.filter-combo .list-cell {
+    -fx-padding: 8 12;
+    -fx-text-fill: #475569;
+}
+
+.filter-combo .list-cell:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #1e293b;
+}
+
+.filter-combo .list-cell:selected {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #3b82f6;
+    -fx-font-weight: bold;
+}

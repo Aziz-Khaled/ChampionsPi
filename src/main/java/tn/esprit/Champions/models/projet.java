@@ -4,17 +4,22 @@ import java.sql.Timestamp;
 
 public class projet {
     private int id_project;
-    private int owner_id;
+    private Utilisateur owner_id; // On conserve exactement ce nom
     private String title;
     private String description;
     private projetStatus status;
     private double target_amount;
     private Timestamp start_date;
     private Timestamp end_date;
+    private String imageUrl; // Ajout pour l'IA
+    private String secteur;
 
     public projet() {}
 
-    public projet(int id_project, int owner_id, String title, String description, projetStatus status, float target_amount, Timestamp start_date, Timestamp end_date) {
+    // Constructeur complet avec Image
+    public projet(int id_project, Utilisateur owner_id, String title, String description,
+                  projetStatus status, double target_amount, Timestamp start_date,
+                  Timestamp end_date, String imageUrl) {
         this.id_project = id_project;
         this.owner_id = owner_id;
         this.title = title;
@@ -23,7 +28,12 @@ public class projet {
         this.target_amount = target_amount;
         this.start_date = start_date;
         this.end_date = end_date;
+        this.imageUrl = imageUrl;
+        this.secteur = secteur;
+
     }
+
+    // --- GETTERS ET SETTERS ---
 
     public int getId_project() {
         return id_project;
@@ -33,11 +43,11 @@ public class projet {
         this.id_project = id_project;
     }
 
-    public int getOwner_id() {
+    public Utilisateur getOwner_id() {
         return owner_id;
     }
 
-    public void setOwner_id(int owner_id) {
+    public void setOwner_id(Utilisateur owner_id) {
         this.owner_id = owner_id;
     }
 
@@ -69,7 +79,7 @@ public class projet {
         return target_amount;
     }
 
-    public void setTarget_amount(float target_amount) {
+    public void setTarget_amount(double target_amount) { // Changé float en double pour cohérence
         this.target_amount = target_amount;
     }
 
@@ -89,18 +99,26 @@ public class projet {
         this.end_date = end_date;
     }
 
+    // NOUVEAU : Accesseurs pour l'image
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    public String getSecteur() { return secteur; }
+    public void setSecteur(String secteur) { this.secteur = secteur; }
+
     @Override
     public String toString() {
         return "projet{" +
-                "description='" + description + '\'' +
-                ", id_project=" + id_project +
-                ", owner_id=" + owner_id +
+                "id_project=" + id_project +
+                ", owner_id=" + (owner_id != null ? owner_id.getNom() : "null") +
                 ", title='" + title + '\'' +
-                ", status='" + status + '\'' +
+                ", secteur='" + secteur + '\'' +
                 ", target_amount=" + target_amount +
-                ", start_date=" + start_date +
-                ", end_date=" + end_date +
+                ", imageUrl='" + imageUrl + '\'' +
                 '}';
     }
-
 }

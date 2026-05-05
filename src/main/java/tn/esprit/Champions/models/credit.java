@@ -1,12 +1,13 @@
 package tn.esprit.Champions.models;
+import tn.esprit.Champions.models.Utilisateur;
 
 import java.sql.Timestamp;
 
 public class credit {
     private int id;
     private int project_id;
-    private int borrower_id;
-    private int investisseur_id;
+    private Utilisateur borrower_id;
+    private Utilisateur investisseur_id;
     private double montant;
     private String devise;
     private double taux;
@@ -39,7 +40,7 @@ public class credit {
     }
 
 
-    public credit(int borrower_id, String contrat_id, Timestamp date_contrat, Timestamp date_demande, String description, String devise, int duree, int id, int investisseur_id, double montant, int project_id, CreditStatus status, double taux) {
+    public credit(Utilisateur borrower_id, String contrat_id, Timestamp date_contrat, Timestamp date_demande, String description, String devise, int duree, int id, Utilisateur investisseur_id, double montant, int project_id, CreditStatus status, double taux) {
         this.borrower_id = borrower_id;
         this.contrat_id = contrat_id;
         this.date_contrat = date_contrat;
@@ -55,7 +56,7 @@ public class credit {
         this.taux = taux;
     }
 
-    public int getBorrower_id() {
+    public Utilisateur getBorrower_id() {
         return borrower_id;
     }
 
@@ -87,7 +88,7 @@ public class credit {
         return id;
     }
 
-    public int getInvestisseur_id() {
+    public Utilisateur getInvestisseur_id() {
         return investisseur_id;
     }
 
@@ -107,7 +108,7 @@ public class credit {
         return taux;
     }
 
-    public void setBorrower_id(int borrower_id) {
+    public void setBorrower_id(Utilisateur borrower_id) {
         this.borrower_id = borrower_id;
     }
 
@@ -139,7 +140,7 @@ public class credit {
         this.id = id;
     }
 
-    public void setInvestisseur_id(int investisseur_id) {
+    public void setInvestisseur_id(Utilisateur investisseur_id) {
         this.investisseur_id = investisseur_id;
     }
 

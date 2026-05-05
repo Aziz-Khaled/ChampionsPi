@@ -8,20 +8,25 @@ public class transaction {
 
     private int idTransaction;
     private int idWalletSource;
+    private int id_card;
     private int idWalletDestination;
     private double montant;
     private typeTransaction type;
-    private Status statut;
+    private StatutTransaction statut;
     private LocalDateTime dateTransaction;
+    private int CurrencyId;
+    private int id_conversion;
+    private int id_trade;
+
 
 
     public transaction() {
     }
 
 
-    public transaction(int idTransaction, int idWalletSource, int idWalletDestination,
-                       double montant, typeTransaction type, Status statut,
-                       LocalDateTime dateTransaction) {
+    public transaction(int idTransaction, int idWalletSource, int idWalletDestination,int id_card,
+                       double montant, typeTransaction type, StatutTransaction statut,
+                       LocalDateTime dateTransaction ) {
         this.idTransaction = idTransaction;
         this.idWalletSource = idWalletSource;
         this.idWalletDestination = idWalletDestination;
@@ -29,6 +34,23 @@ public class transaction {
         this.type = type;
         this.statut = statut;
         this.dateTransaction = dateTransaction;
+        this.id_card = id_card;
+
+
+    }
+    // Constructeur spécifique au Trading (sans carte bancaire)
+    public transaction(int idTransaction, int idWalletSource, int idWalletDestination,
+                       double montant, typeTransaction type, StatutTransaction statut,
+                       LocalDateTime dateTransaction, int id_conversion) {
+        this.idTransaction = idTransaction;
+        this.idWalletSource = idWalletSource;
+        this.idWalletDestination = idWalletDestination;
+        this.montant = montant;
+        this.type = type;
+        this.statut = statut;
+        this.dateTransaction = dateTransaction;
+        this.id_card = 0; // Valeur par défaut car pas de carte en trading
+        this.id_conversion = id_conversion;
     }
 
 
@@ -72,11 +94,11 @@ public class transaction {
         this.type = type;
     }
 
-    public Status getStatut() {
+    public StatutTransaction getStatut() {
         return statut;
     }
 
-    public void setStatut(Status statut) {
+    public void setStatut(StatutTransaction statut) {
         this.statut = statut;
     }
 
@@ -88,15 +110,47 @@ public class transaction {
         this.dateTransaction = dateTransaction;
     }
 
+    public int getCurrencyId() {
+        return CurrencyId;
+    }
+
+    public void setCurrencyId(int currencyId) {
+        CurrencyId = currencyId;
+    }
+
+    public int getId_card() {
+        return id_card;
+    }
+
+    public void setId_card(int id_card) {
+        this.id_card = id_card;
+    }
+
+    public int getId_conversion() {
+        return id_conversion;
+    }
+
+    public void setId_conversion(int id_conversion) {
+        this.id_conversion = id_conversion;
+    }
+
+    public int getId_trade() {
+        return id_trade;
+    }
+
+    public void setId_trade(int id_trade) {
+        this.id_trade = id_trade;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         transaction that = (transaction) o;
-        return idTransaction == that.idTransaction && idWalletSource == that.idWalletSource && idWalletDestination == that.idWalletDestination && Objects.equals(montant, that.montant) && Objects.equals(type, that.type) && Objects.equals(statut, that.statut) && Objects.equals(dateTransaction, that.dateTransaction);
+        return idTransaction == that.idTransaction && idWalletSource == that.idWalletSource && id_card == that.id_card && idWalletDestination == that.idWalletDestination && Double.compare(montant, that.montant) == 0 && CurrencyId == that.CurrencyId && id_conversion == that.id_conversion && id_trade == that.id_trade && type == that.type && statut == that.statut && Objects.equals(dateTransaction, that.dateTransaction);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idTransaction, idWalletSource, idWalletDestination, montant, type, statut, dateTransaction);
+        return Objects.hash(idTransaction, idWalletSource, id_card, idWalletDestination, montant, type, statut, dateTransaction, CurrencyId, id_conversion, id_trade);
     }
 }

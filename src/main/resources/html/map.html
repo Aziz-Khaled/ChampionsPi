@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sélecteur d'Adresse Premium</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #1e293b;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">Cliquez sur la carte pour placer un repère</div>
+    <div id="map"></div>
+
+    <script>
+        var map = L.map('map').setView([36.8065, 10.1815], 13); // Default view (Tunis)
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var marker;
+
+        map.on('click', function(e) {
+            var lat = e.latlng.lat;
+            var lng = e.latlng.lng;
+
+            if (marker) {
+                marker.setLatLng(e.latlng);
+            } else {
+                marker = L.marker(e.latlng).addTo(map);
+            }
+
+            // Reverse Geocoding via Nominatim (Free)
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+                .then(response => response.json())
+                .then(data => {
+                    var address = data.display_name;
+                    // Send to JavaFX
+                    if (window.javaConnector) {
+                        window.javaConnector.onAddressSelected(address);
+                    }
+                })
+                .catch(err => {
+                    console.error('Erreur de géocodage:', err);
+                    // Fallback to coordinates
+                    if (window.javaConnector) {
+                        window.javaConnector.onAddressSelected("Lat: " + lat.toFixed(5) + ", Lng: " + lng.toFixed(5));
+                    }
+                });
+        });
+
+        function setView(lat, lng) {
+            map.setView([lat, lng], 15);
+        }
+    </script>
+</body>
+</html>

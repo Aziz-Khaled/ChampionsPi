@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<HBox prefHeight="800.0" prefWidth="1300.0" style="-fx-background-color: #0f172a;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="tn.esprit.Champions.gui.MainDashboardController">
+    <children>
+        <VBox prefWidth="260.0" spacing="10.0" style="-fx-background-color: #1e293b; -fx-border-color: rgba(255,255,255,0.05); -fx-border-width: 0 1 0 0;">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="15.0">
+                    <VBox.margin><Insets bottom="40.0" left="25.0" top="30.0" /></VBox.margin>
+                    <children>
+                        <Circle fill="#38bdf8" radius="12.0" />
+                        <Label text="CHAMPIONS" textFill="WHITE" style="-fx-font-weight: 900; -fx-font-size: 20px; -fx-letter-spacing: 2;" />
+                    </children>
+                </HBox>
+                <VBox spacing="5.0" VBox.vgrow="ALWAYS">
+                    <children>
+                        <Button fx:id="btnDashboard" alignment="CENTER_LEFT" onAction="#showHome" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="🏠  Tableau de bord" />
+                        <Button fx:id="btnProjets" alignment="CENTER_LEFT" onAction="#showProjets" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="🚀  Gestion Projets" />
+                        <Button fx:id="btnCredits" alignment="CENTER_LEFT" onAction="#showCredits" prefHeight="50.0" prefWidth="260.0" styleClass="nav-button" stylesheets="@css/style.css" text="💰  Demandes Crédits" />
+                    </children>
+                </VBox>
+
+                <Separator opacity="0.05" />
+                <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#handleLogout" prefHeight="50.0" prefWidth="220.0"
+                        style="-fx-background-color: transparent; -fx-text-fill: #f87171; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-cursor: hand;"
+                        text="🚪  Déconnexion" />
+            </children>
+        </VBox>
+
+        <VBox HBox.hgrow="ALWAYS">
+            <children>
+                <HBox alignment="CENTER_LEFT" prefHeight="80.0" style="-fx-background-color: #0f172a; -fx-border-color: rgba(255,255,255,0.05); -fx-border-width: 0 0 1 0;">
+                    <padding><Insets left="30.0" right="30.0" /></padding>
+                    <children>
+                        <VBox alignment="CENTER_LEFT">
+                            <children>
+                                <Label fx:id="lblWelcome" text="Champions Marketplace" textFill="WHITE" style="-fx-font-weight: 900; -fx-font-size: 22px;" />
+                                <Label fx:id="lblRole" text="Rôle : Investisseur Premium" textFill="#38bdf8" style="-fx-font-size: 12px;" />
+                            </children>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: rgba(255,255,255,0.05); -fx-background-radius: 12; -fx-padding: 0 15; -fx-pref-height: 40;">
+                            <children>
+                                <Label text="🔍" textFill="#64748b" />
+                                <TextField promptText="Recherche globale..." style="-fx-background-color: transparent; -fx-text-fill: white; -fx-prompt-text-fill: #64748b; -fx-pref-width: 250;" />
+                            </children>
+                        </HBox>
+                    </children>
+                </HBox>
+
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;" VBox.vgrow="ALWAYS">
+                    <content>
+                        <VBox fx:id="mainContent" spacing="30.0">
+                            <padding><Insets bottom="30.0" left="30.0" right="30.0" top="30.0" /></padding>
+                            <children>
+                                <Label text="Actualités Fintech &amp; Crowdfunding" textFill="WHITE" style="-fx-font-weight: 900; -fx-font-size: 24px;" />
+
+                                <FlowPane fx:id="newsContainer" hgap="20.0" vgap="20.0" prefWrapLength="1000.0" />
+                            </children>
+                        </VBox>
+                    </content>
+                </ScrollPane>
+
+                <HBox alignment="CENTER_LEFT" prefHeight="40.0" style="-fx-background-color: #1e293b; -fx-border-color: rgba(255,255,255,0.05); -fx-border-width: 1 0 0 0;">
+                    <children>
+                        <Label style="-fx-background-color: #38bdf8; -fx-text-fill: #0f172a; -fx-padding: 0 15; -fx-font-weight: bold;" text="EN DIRECT" prefHeight="40.0" />
+                        <Label fx:id="lblTicker" text="Chargement des indices boursiers... BTC: $64,231 (+2.4%) | TND/USD: 3.12 | Financement participatif en hausse de 15% ce trimestre..." textFill="#94a3b8" style="-fx-font-size: 13px;">
+                            <padding><Insets left="20.0" /></padding>
+                        </Label>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</HBox>
