@@ -209,7 +209,6 @@ public class crud_wallet {
                 });
             }
         });
-
     }
     private boolean isWalletForm(Node node) {
         while (node != null) {

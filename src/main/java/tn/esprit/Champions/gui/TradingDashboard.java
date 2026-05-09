@@ -24,6 +24,7 @@ import javafx.util.Duration;
 import javafx.util.StringConverter;
 import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.*;
+import tn.esprit.Champions.utils.UserSession;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -68,8 +69,7 @@ public class TradingDashboard {
     private final WalletService walletService = new WalletService();
     private final CurrencyService currencyService = new CurrencyService(); // ✅ CORRECTION: AJOUTÉ
 
-    // ID Utilisateur fixé pour cet exemple
-    private final int CURRENT_USER_ID = 1;
+
 
     private final Map<String, Image> logoCache = new HashMap<>();
     private Map<Integer, String> assetNamesCache;
@@ -78,12 +78,20 @@ public class TradingDashboard {
 
     @FXML
     public void initialize() {
+        if (UserSession.getLoggedInUser() == null) {
+            System.err.println("ERROR: No user logged in! Redirecting...");
+            // Optionally redirect to login page
+            return;
+        }
+
         loadAssetCache();
         setupTables();
         setupOrderInputs();
         setupTickerLoop();
         setupWalletSelector();
         setupAutoRefresh();
+
+
 
         tableAssets.getSelectionModel().selectedItemProperty().addListener((obs, old, newVal) -> {
             if (newVal != null) {
@@ -106,10 +114,25 @@ public class TradingDashboard {
     }
 
 
+
+    private int getCurrentUserId() {
+        Utilisateur user = UserSession.getLoggedInUser();
+        if (user == null) {
+            System.err.println("ERROR: No user logged in!");
+            return -1;
+        }
+        return user.getId_user();
+    }
     private void setupWalletSelector() {
         try {
+            int userId = getCurrentUserId();
+            if (userId <= 0) {
+                lblBalance.setText("User not logged in");
+                return;
+            }
+
             List<wallet> tradingWallets = walletService.SelectAll().stream()
-                    .filter(w -> w.getIdUser() == CURRENT_USER_ID)
+                    .filter(w -> w.getIdUser() == userId)  // ✅ Changed from CURRENT_USER_ID
                     .filter(w -> w.getTypeWallet() == typeWallet.trading)
                     .collect(Collectors.toList());
 
@@ -185,6 +208,12 @@ public class TradingDashboard {
         }
 
         try {
+            int userId = getCurrentUserId();  // ✅ Get current user
+            if (userId <= 0) {
+                showAlert("Erreur", "Utilisateur non connecté!");
+                return;
+            }
+
             double qty = Double.parseDouble(txtQty.getText().replace(",", "."));
             OrderMode mode = OrderMode.valueOf(comboOrderMode.getValue());
             double price = (mode == OrderMode.MARKET) ?
@@ -194,7 +223,7 @@ public class TradingDashboard {
             int userWalletId = comboWalletSelection.getValue().getIdWallet();
 
             Trade trade = new Trade(
-                    0, CURRENT_USER_ID, selectedAsset.getId(), type, mode, price, qty,
+                    0, userId, selectedAsset.getId(), type, mode, price, qty,  // ✅ Changed from CURRENT_USER_ID
                     (mode == OrderMode.MARKET ? Status.COMPLETED : Status.PENDING),
                     LocalDateTime.now(), (mode == OrderMode.MARKET ? LocalDateTime.now() : null)
             );
@@ -213,6 +242,7 @@ public class TradingDashboard {
 
         } catch (Exception e) {
             showAlert("Erreur", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -370,7 +400,14 @@ public class TradingDashboard {
         });
         colPrice.setCellValueFactory(new PropertyValueFactory<>("currentPrice"));
         colSymbol.setCellValueFactory(new PropertyValueFactory<>("symbol"));
-        colHistSymbol.setCellValueFactory(d -> new SimpleStringProperty(assetNamesCache.getOrDefault(d.getValue().getAsset_id(), "Unknown")));
+        colHistSymbol.setCellValueFactory(d -> {
+            int assetId = d.getValue().getAsset_id();
+            if (assetNamesCache == null || assetNamesCache.isEmpty()) {
+                return new SimpleStringProperty("Cache empty (ID:" + assetId + ")");
+            }
+            String name = assetNamesCache.get(assetId);
+            return new SimpleStringProperty(name != null ? name : "Unknown (ID:" + assetId + ")");
+        });
         colHistQty.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         colHistPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
         colHistType.setCellValueFactory(new PropertyValueFactory<>("tradeType"));
@@ -420,7 +457,27 @@ public class TradingDashboard {
         }
     }
     private void loadInitialAssets() { try { tableAssets.getItems().setAll(assetService.SelectAll()); } catch (Exception e) {} }
-    private void loadAssetCache() { try { assetNamesCache = assetService.SelectAll().stream().collect(Collectors.toMap(Asset::getId, Asset::getSymbol)); } catch (Exception e) {} }
+    private void loadAssetCache() {
+        try {
+            List<Asset> assets = assetService.SelectAll();
+            if (assets != null && !assets.isEmpty()) {
+                assetNamesCache = assets.stream()
+                        .collect(Collectors.toMap(Asset::getId, Asset::getSymbol));
+                System.out.println("✅ Asset cache loaded: " + assetNamesCache.size() + " assets");
+                assetNamesCache.forEach((id, symbol) ->
+                        System.out.println("  Asset ID: " + id + " -> Symbol: " + symbol));
+
+                // ✅ Refresh history table now that cache is ready
+                Platform.runLater(() -> tableHistory.refresh());
+            } else {
+                assetNamesCache = new HashMap<>();
+                System.err.println("⚠️ No assets found in database");
+            }
+        } catch (Exception e) {
+            assetNamesCache = new HashMap<>();
+            System.err.println("❌ Error loading asset cache: " + e.getMessage());
+        }
+    }
     private void setupOrderInputs() { comboOrderMode.getItems().setAll("MARKET", "LIMIT"); comboOrderMode.setValue("MARKET"); txtTargetPrice.disableProperty().bind(comboOrderMode.valueProperty().isEqualTo("MARKET")); }
     private void updateTradingView(String symbol) {
         // On s'assure que l'exécution se fait après le rendu initial
@@ -447,6 +504,29 @@ public class TradingDashboard {
     private void updateAISignal(String symbol) { new Thread(() -> { double rsi = marketApi.calculateRSI(symbol); Platform.runLater(() -> lblAdvice.setText("AI SIGNAL: " + (rsi < 35 ? "BUY" : rsi > 65 ? "SELL" : "NEUTRAL") + " (RSI: " + String.format("%.2f", rsi) + ")")); }).start(); }
     private void setupTickerLoop() { Timeline timeline = new Timeline(new KeyFrame(Duration.millis(50), e -> { if (tickerContainer != null) { tickerContainer.setLayoutX(tickerContainer.getLayoutX() - 1); if (tickerContainer.getLayoutX() < -500) tickerContainer.setLayoutX(800); } })); timeline.setCycleCount(Animation.INDEFINITE); timeline.play(); }
     private void updatePnL(double currentPrice) { if (initialEntryPrice <= 0) return; double pnl = (currentPrice - initialEntryPrice) / initialEntryPrice * 100; lblPnL.setText(String.format("%+.2f%%", pnl)); lblPnL.setStyle("-fx-text-fill: " + (pnl >= 0 ? "#0ecb81" : "#f6465d") + ";"); }
-    private void loadTradeHistory() { try { tableHistory.getItems().setAll(tradeService.SelectAll()); } catch (Exception e) {} }
+    private void loadTradeHistory() {
+        try {
+            int userId = getCurrentUserId();
+            if (userId <= 0) {
+                System.err.println("Cannot load trade history: No user logged in!");
+                tableHistory.getItems().clear();
+                return;
+            }
+
+            List<Trade> userTrades = tradeService.getTradesByUserId(userId);
+
+            // ✅ DEBUG: Print trade asset IDs
+            System.out.println("📊 Loaded " + userTrades.size() + " trades:");
+            userTrades.forEach(trade ->
+                    System.out.println("  Trade ID: " + trade.getId() +
+                            " -> Asset ID: " + trade.getAsset_id())
+            );
+
+            tableHistory.getItems().setAll(userTrades);
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Erreur", "Impossible de charger l'historique: " + e.getMessage());
+        }
+    }
     @FXML private void openBotWindow() { try { Parent root = FXMLLoader.load(getClass().getResource("/BotView.fxml")); Stage s = new Stage(); s.setScene(new Scene(root)); s.show(); } catch (IOException e) {} }
 }

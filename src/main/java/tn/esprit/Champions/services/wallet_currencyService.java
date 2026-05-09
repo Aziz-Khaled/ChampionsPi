@@ -49,7 +49,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         // --- LA RÈGLE DE RESTRICTION TRADING A ÉTÉ SUPPRIMÉE ICI ---
 
         // 4. Vérifier si la currency existe déjà dans ce wallet
-        String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        String checkQuery = "SELECT COUNT(*) FROM wallet_currency WHERE id_wallet_id = ? AND id_currency_id = ?";
         try (PreparedStatement checkStmt = cnx.prepareStatement(checkQuery)) {
             checkStmt.setInt(1, walletCurrency.getId_wallet());
             checkStmt.setInt(2, walletCurrency.getId_currency());
@@ -61,7 +61,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
         }
 
         // 5. INSERT wallet_currency
-        String insertQuery = "INSERT INTO wallet_currency (id_wallet, id_currency, nom_currency, solde) VALUES (?,?,?,?)";
+        String insertQuery = "INSERT INTO wallet_currency (id_wallet_id, id_currency_id, nom_currency, solde) VALUES (?,?,?,?)";
         try (PreparedStatement pst = cnx.prepareStatement(insertQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
@@ -76,7 +76,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
     }
 
     public wallet_currency getWalletCurrencyForUpdate(int walletId, int currencyId) throws SQLException {
-        String query = "SELECT * FROM wallet_currency WHERE id_wallet = ? AND id_currency = ? FOR UPDATE";
+        String query = "SELECT * FROM wallet_currency WHERE id_wallet_id = ? AND id_currency_id = ? FOR UPDATE";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setInt(1, walletId);
             pst.setInt(2, currencyId);
@@ -84,8 +84,8 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
                 if (rs.next()) {
                     wallet_currency wc = new wallet_currency();
                     wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
-                    wc.setId_wallet(rs.getInt("id_wallet"));
-                    wc.setId_currency(rs.getInt("id_currency"));
+                    wc.setId_wallet(rs.getInt("id_wallet_id"));
+                    wc.setId_currency(rs.getInt("id_currency_id"));
                     wc.setSolde(rs.getDouble("solde"));
                     wc.setNom_currency(rs.getString("nom_currency"));
                     return wc;
@@ -97,7 +97,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
 
     @Override
     public void updateOne(wallet_currency wc) throws SQLException {
-        String query = "UPDATE wallet_currency SET solde = ? WHERE id_wallet = ? AND id_currency = ?";
+        String query = "UPDATE wallet_currency SET solde = ? WHERE id_wallet_id = ? AND id_currency_id = ?";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setDouble(1, wc.getSolde());
             pst.setInt(2, wc.getId_wallet());
@@ -109,7 +109,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
 
     @Override
     public void deleteOne(wallet_currency walletCurrency) throws SQLException {
-        String selectQuery = "SELECT solde FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        String selectQuery = "SELECT solde FROM wallet_currency WHERE id_wallet_id = ? AND id_currency_id = ?";
         try (PreparedStatement pst = cnx.prepareStatement(selectQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
@@ -125,7 +125,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             }
         }
 
-        String deleteQuery = "DELETE FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        String deleteQuery = "DELETE FROM wallet_currency WHERE id_wallet_id = ? AND id_currency_id = ?";
         try (PreparedStatement pst = cnx.prepareStatement(deleteQuery)) {
             pst.setInt(1, walletCurrency.getId_wallet());
             pst.setInt(2, walletCurrency.getId_currency());
@@ -144,8 +144,8 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
             while (rs.next()) {
                 wallet_currency wc = new wallet_currency();
                 wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
-                wc.setId_wallet(rs.getInt("id_wallet"));
-                wc.setId_currency(rs.getInt("id_currency"));
+                wc.setId_wallet(rs.getInt("id_wallet_id"));
+                wc.setId_currency(rs.getInt("id_currency_id"));
                 wc.setNom_currency(rs.getString("nom_currency"));
                 wc.setSolde(rs.getDouble("solde"));
                 list.add(wc);
@@ -156,15 +156,15 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
 
     public static List<wallet_currency> getCurrenciesByWallet(int idWallet) throws SQLException {
         List<wallet_currency> list = new ArrayList<>();
-        String query = "SELECT * FROM wallet_currency WHERE id_wallet = ?";
+        String query = "SELECT * FROM wallet_currency WHERE id_wallet_id = ?";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setInt(1, idWallet);
             try (ResultSet rs = pst.executeQuery()) {
                 while (rs.next()) {
                     wallet_currency wc = new wallet_currency();
                     wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
-                    wc.setId_wallet(rs.getInt("id_wallet"));
-                    wc.setId_currency(rs.getInt("id_currency"));
+                    wc.setId_wallet(rs.getInt("id_wallet_id"));
+                    wc.setId_currency(rs.getInt("id_currency_id"));
                     wc.setNom_currency(rs.getString("nom_currency"));
                     wc.setSolde(rs.getDouble("solde"));
                     list.add(wc);
@@ -175,7 +175,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
     }
 
     public wallet_currency getWalletCurrencyByWalletAndId(int idWallet, int idCurrency) throws SQLException {
-        String query = "SELECT * FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        String query = "SELECT * FROM wallet_currency WHERE id_wallet_id = ? AND id_currency_id = ?";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setInt(1, idWallet);
             pst.setInt(2, idCurrency);
@@ -183,8 +183,8 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
                 if (rs.next()) {
                     wallet_currency wc = new wallet_currency();
                     wc.setId_wallet_currency(rs.getInt("id_wallet_currency"));
-                    wc.setId_wallet(rs.getInt("id_wallet"));
-                    wc.setId_currency(rs.getInt("id_currency"));
+                    wc.setId_wallet(rs.getInt("id_wallet_id"));
+                    wc.setId_currency(rs.getInt("id_currency_id"));
                     wc.setNom_currency(rs.getString("nom_currency"));
                     wc.setSolde(rs.getDouble("solde"));
                     return wc;
@@ -195,7 +195,7 @@ public class wallet_currencyService implements CRUD<wallet_currency> {
     }
 
     public double getBalance(int walletId, int currencyId) throws SQLException {
-        String query = "SELECT solde FROM wallet_currency WHERE id_wallet = ? AND id_currency = ?";
+        String query = "SELECT solde FROM wallet_currency WHERE id_wallet_id = ? AND id_currency_id = ?";
         try (PreparedStatement pst = cnx.prepareStatement(query)) {
             pst.setInt(1, walletId);
             pst.setInt(2, currencyId);

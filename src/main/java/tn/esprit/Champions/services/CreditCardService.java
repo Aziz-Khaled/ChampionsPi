@@ -15,14 +15,14 @@ public class CreditCardService {
 
 
     public CreditCard getActiveCardByUserId(int userId) {
-        String sql = "SELECT * FROM credit_card WHERE id_user = ? AND statut = 'ACTIVE'";
+        String sql = "SELECT * FROM credit_card WHERE user_id = ? AND statut = 'ACTIVE'";
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 CreditCard card = new CreditCard();
                 card.setIdCard(rs.getInt("id_card"));
-                card.setIdUser(rs.getInt("id_user"));
+                card.setIdUser(rs.getInt("user_id"));
                 card.setCardHolderName(rs.getString("card_holder_name"));
                 card.setLast4Digits(rs.getString("last_4_digits"));
                 card.setExpiryMonth(rs.getInt("expiry_month"));

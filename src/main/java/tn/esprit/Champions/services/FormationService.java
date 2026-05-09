@@ -28,7 +28,8 @@ public class FormationService {
 
     // Version finale avec image_path
     public void insertOne(formations f) throws SQLException {
-        String sql = "INSERT INTO formations (titre, description, domaine, dateDebut, dateFin, prix, capaciteMax, statut, user_id, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO formations (titre, description, domaine, date_debut, date_fin, prix, capacite_max, statut, user_id, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // ↑ was dateDebut, dateFin, capaciteMax
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, f.getTitre());
             ps.setString(2, f.getDescription());
@@ -38,15 +39,16 @@ public class FormationService {
             ps.setDouble(6, f.getPrix());
             ps.setInt(7, f.getCapaciteMax());
             ps.setString(8, f.getStatut().name());
-            ps.setLong(9, 1); // ID de l'admin par défaut
-            ps.setString(10, f.getImagePath()); // Gestion de l'image
+            ps.setLong(9, 1);
+            ps.setString(10, f.getImagePath());
             ps.executeUpdate();
         }
     }
 
     // Mise à jour incluant potentiellement l'image
     public void updateOne(formations f) throws SQLException {
-        String sql = "UPDATE formations SET titre=?, description=?, domaine=?, dateDebut=?, prix=?, statut=?, image_path=? WHERE idFormation=?";
+        String sql = "UPDATE formations SET titre=?, description=?, domaine=?, date_debut=?, prix=?, statut=?, image_path=? WHERE id_formation=?";
+        // ↑ was dateDebut and idFormation
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setString(1, f.getTitre());
             ps.setString(2, f.getDescription());
@@ -61,7 +63,7 @@ public class FormationService {
     }
 
     public void deleteOne(formations f) throws SQLException {
-        String sql = "DELETE FROM formations WHERE idFormation=?";
+        String sql = "DELETE FROM formations WHERE id_formation=?"; // ← was idFormation
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setInt(1, f.getIdFormation());
             ps.executeUpdate();
@@ -75,16 +77,13 @@ public class FormationService {
         try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
                 formations f = new formations();
-                f.setIdFormation(rs.getInt("idFormation"));
+                f.setIdFormation(rs.getInt("id_formation"));       // ← was "idFormation"
                 f.setTitre(rs.getString("titre"));
                 f.setDescription(rs.getString("description"));
                 f.setDomaine(rs.getString("domaine"));
-                f.setDateDebut(rs.getDate("dateDebut").toLocalDate());
+                f.setDateDebut(rs.getDate("date_debut").toLocalDate()); // ← was "dateDebut"
                 f.setPrix(rs.getDouble("prix"));
                 f.setStatut(StatutFormation.valueOf(rs.getString("statut")));
-
-                // Récupération du chemin de l'image pour l'affichage (style GomyCode)
-                f.setImagePath(rs.getString("image_path"));
 
                 list.add(f);
             }
@@ -93,7 +92,7 @@ public class FormationService {
     }
 
     public void updateRating(int id, int note) throws SQLException {
-        String sql = "UPDATE formations SET rating = ? WHERE idFormation = ?";
+        String sql = "UPDATE formations SET rating = ? WHERE id_formation = ?"; // ← was idFormation
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setDouble(1, (double) note);
             ps.setInt(2, id);

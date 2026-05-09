@@ -87,10 +87,10 @@ public class AssetService implements CRUD <Asset>  {
                     rs.getInt("id"),
                     rs.getString("symbol"),
                     rs.getString("name"),
-                    AssetType.valueOf(rs.getString("type")),
-                    Market.valueOf(rs.getString("market")),
+                    AssetType.valueOf(rs.getString("type").toUpperCase()),    // ✅ already fixed
+                    Market.valueOf(rs.getString("market").toUpperCase()),     // ✅ fix this
                     rs.getDouble("current_price"),
-                    Status.valueOf(rs.getString("status")),
+                    Status.valueOf(rs.getString("status").toUpperCase()),     // ✅ add this too for safety
                     rs.getTimestamp("created_at").toLocalDateTime(),
                     rs.getTimestamp("updated_at").toLocalDateTime(),
                     rs.getInt("user_id")

@@ -17,7 +17,7 @@ public class Product {
     private int stock;
     private ProductCategory category;
     private ProductStatus status;
-    private int userId; // vendeur
+    private int userId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

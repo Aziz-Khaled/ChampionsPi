@@ -80,7 +80,7 @@ public class WalletService implements CRUD<wallet> {
             if (rs.next()) {
                 w = new wallet();
                 w.setIdWallet(rs.getInt("id_wallet"));
-                w.setIdUser(rs.getInt("id_user"));
+                w.setIdUser(rs.getInt("user_id"));
 
                 String type = rs.getString("type_wallet");
                 if (type != null) {
@@ -128,7 +128,7 @@ public class WalletService implements CRUD<wallet> {
         String rib = generateUniqueRIB();
         wallet.setRib(rib); // on met le RIB dans l'objet
 
-        String query = "INSERT INTO wallet (type_wallet, statut, id_user, rib, date_creation, date_derniere_modification) " +
+        String query = "INSERT INTO wallet (type_wallet, statut, user_id, rib, date_creation, date_derniere_modification) " +
                 "VALUES (?, ?, ?, ?, NOW(), NOW())";
         PreparedStatement pst = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         pst.setString(1, wallet.getTypeWallet().name());
@@ -194,7 +194,7 @@ public class WalletService implements CRUD<wallet> {
         while (rs.next()) {
             wallet wallet = new wallet();
             wallet.setIdWallet(rs.getInt("id_wallet"));
-            wallet.setIdUser(rs.getInt("id_user"));
+            wallet.setIdUser(rs.getInt("user_id"));
 
             String type = rs.getString("type_wallet");
             if (type != null) {
@@ -227,7 +227,7 @@ public class WalletService implements CRUD<wallet> {
             if (rs.next()) {
                 wallet w = new wallet();
                 w.setIdWallet(rs.getInt("id_wallet"));
-                w.setIdUser(rs.getInt("id_user"));
+                w.setIdUser(rs.getInt("user_id"));
                 w.setRib(rs.getString("rib"));
 
                 String typeStr = rs.getString("type_wallet");

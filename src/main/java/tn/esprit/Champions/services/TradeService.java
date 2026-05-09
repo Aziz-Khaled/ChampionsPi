@@ -149,6 +149,26 @@ public class TradeService implements CRUD<Trade> {
     }
 
     private Trade mapRowToTrade(ResultSet rs) throws SQLException {
+        // Safe handling of status field
+        String statusStr = rs.getString("status");
+        Status status;
+
+        if (statusStr == null || statusStr.trim().isEmpty()) {
+            // Default to PENDING if status is null or empty
+            status = Status.PENDING;
+            System.out.println("Warning: Trade ID " + rs.getInt("id") + " has null/empty status, defaulting to PENDING");
+        } else {
+            try {
+                status = Status.valueOf(statusStr.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // If status value is invalid, default to PENDING
+                status = Status.PENDING;
+                System.out.println("Warning: Trade ID " + rs.getInt("id") + " has invalid status '" + statusStr + "', defaulting to PENDING");
+            }
+        }
+
+        Timestamp executedAtTs = rs.getTimestamp("executed_at");
+
         return new Trade(
                 rs.getInt("id"),
                 rs.getInt("user_id"),
@@ -157,10 +177,27 @@ public class TradeService implements CRUD<Trade> {
                 OrderMode.valueOf(rs.getString("order_mode")),
                 rs.getDouble("price"),
                 rs.getDouble("quantity"),
-                Status.valueOf(rs.getString("status")),
+                status,  // Use the safely parsed status
                 rs.getTimestamp("created_at").toLocalDateTime(),
-                rs.getTimestamp("executed_at") != null ? rs.getTimestamp("executed_at").toLocalDateTime() : null
+                executedAtTs != null ? executedAtTs.toLocalDateTime() : null
         );
+    }
+
+
+    public List<Trade> getTradesByUserId(int userId) throws SQLException {
+        List<Trade> trades = new ArrayList<>();
+        String req = "SELECT * FROM `trade` WHERE user_id = ? ORDER BY created_at DESC";
+
+        try (PreparedStatement ps = cnx.prepareStatement(req)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    trades.add(mapRowToTrade(rs));
+                }
+            }
+        }
+
+        return trades;
     }
 
 

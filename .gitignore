@@ -49,3 +49,4 @@ tokens/
 src/main/resources/credentials.json
 .idea/
 >>>>>>> origin/module-formations
+src/main/resources/tessdata/
