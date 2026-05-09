@@ -3,9 +3,13 @@ package tn.esprit.Champions.gui.client;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import tn.esprit.Champions.models.Utilisateur;
+import tn.esprit.Champions.models.wallet;
+import tn.esprit.Champions.services.WalletService;
+import tn.esprit.Champions.utils.UserSession;
 
-import java.awt.Desktop;
-import java.net.URI;
+import java.sql.SQLException;
+import java.util.List;
 
 public class CheckoutController {
 
@@ -23,6 +27,12 @@ public class CheckoutController {
     public void setTotalAmount(double amount) {
         totalAmountLabel.setText(String.format("%.8f BTC", amount));
     }
+
+    public void initialize() {
+        // No wallet loading needed anymore
+    }
+
+
 
     @FXML
     private void handleOpenMaps() {
@@ -87,4 +97,6 @@ public class CheckoutController {
     public String getPhone() {
         return phone;
     }
+
+
 }

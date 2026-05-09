@@ -7,20 +7,36 @@ import java.util.Objects;
 public class Order {
 
     private int id;
-    private int userId; // client
+
+    // client
+    private int userId;
+
     private LocalDateTime orderDate;
-    private double totalAmount;
+
+    // decimal(10,2) -> BigDecimal
+    private BigDecimal totalAmount;
+
     private OrderStatus status;
+
     private String shippingAddress;
+
     private String paymentMethod;
+
     private String phoneNumber;
 
     public Order() {
     }
 
-    public Order(int id, int userId, LocalDateTime orderDate,
-            double totalAmount, OrderStatus status,
-            String shippingAddress, String paymentMethod, String phoneNumber) {
+    public Order(
+            int id,
+            int userId,
+            LocalDateTime orderDate,
+            BigDecimal totalAmount,
+            OrderStatus status,
+            String shippingAddress,
+            String paymentMethod,
+            String phoneNumber
+    ) {
         this.id = id;
         this.userId = userId;
         this.orderDate = orderDate;
@@ -31,7 +47,9 @@ public class Order {
         this.phoneNumber = phoneNumber;
     }
 
-    // Getters & Setters
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
 
     public int getId() {
         return id;
@@ -41,6 +59,7 @@ public class Order {
         this.id = id;
     }
 
+
     public int getUserId() {
         return userId;
     }
@@ -48,6 +67,7 @@ public class Order {
     public void setUserId(int userId) {
         this.userId = userId;
     }
+
 
     public LocalDateTime getOrderDate() {
         return orderDate;
@@ -57,13 +77,15 @@ public class Order {
         this.orderDate = orderDate;
     }
 
-    public double getTotalAmount() {
+
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
+
 
     public OrderStatus getStatus() {
         return status;
@@ -73,6 +95,7 @@ public class Order {
         this.status = status;
     }
 
+
     public String getShippingAddress() {
         return shippingAddress;
     }
@@ -80,6 +103,7 @@ public class Order {
     public void setShippingAddress(String shippingAddress) {
         this.shippingAddress = shippingAddress;
     }
+
 
     public String getPaymentMethod() {
         return paymentMethod;
@@ -89,6 +113,7 @@ public class Order {
         this.paymentMethod = paymentMethod;
     }
 
+
     public String getPhoneNumber() {
         return phoneNumber;
     }
@@ -96,6 +121,10 @@ public class Order {
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
+
+    // =========================
+    // toString
+    // =========================
 
     @Override
     public String toString() {
@@ -108,10 +137,21 @@ public class Order {
                 '}';
     }
 
+    // =========================
+    // equals & hashCode
+    // =========================
+
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Order order))
+
+        if (this == o)
+            return true;
+
+        if (!(o instanceof Order))
             return false;
+
+        Order order = (Order) o;
+
         return Objects.equals(id, order.id);
     }
 

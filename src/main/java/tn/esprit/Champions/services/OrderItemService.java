@@ -26,11 +26,11 @@ public class OrderItemService implements CRUD<OrderItem> {
                 "VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, item.getOrder().getId());
-            pstmt.setLong(2, item.getProduct().getId());
+            pstmt.setInt(2, item.getProduct().getId());
             pstmt.setInt(3, item.getQuantity());
-            pstmt.setDouble(4, item.getUnitPrice());
-            pstmt.setDouble(5, item.getSubTotal());
-            pstmt.setDouble(6, item.getDiscountApplied());
+            pstmt.setBigDecimal(4, item.getUnitPrice());
+            pstmt.setBigDecimal(5, item.getSubTotal());
+            pstmt.setBigDecimal(6, item.getDiscountApplied() != null ? item.getDiscountApplied() : java.math.BigDecimal.ZERO);
 
             pstmt.executeUpdate();
 
@@ -49,11 +49,11 @@ public class OrderItemService implements CRUD<OrderItem> {
         String query = "UPDATE order_item SET order_id = ?, product_id = ?, quantity = ?, unit_price = ?, sub_total = ?, discount_applied = ? WHERE id = ?";
         try (PreparedStatement pstmt = cnx.prepareStatement(query)) {
             pstmt.setInt(1, item.getOrder().getId());
-            pstmt.setLong(2, item.getProduct().getId());
+            pstmt.setInt(2, item.getProduct().getId());
             pstmt.setInt(3, item.getQuantity());
-            pstmt.setDouble(4, item.getUnitPrice());
-            pstmt.setDouble(5, item.getSubTotal());
-            pstmt.setDouble(6, item.getDiscountApplied());
+            pstmt.setBigDecimal(4, item.getUnitPrice());
+            pstmt.setBigDecimal(5, item.getSubTotal());
+            pstmt.setBigDecimal(6, item.getDiscountApplied());
             pstmt.setInt(7, item.getId());
 
             pstmt.executeUpdate();
@@ -80,7 +80,7 @@ public class OrderItemService implements CRUD<OrderItem> {
                 "JOIN `order` o ON oi.order_id = o.id " +
                 "JOIN product p ON oi.product_id = p.id";
         try (Statement stmt = cnx.createStatement();
-                ResultSet rs = stmt.executeQuery(query)) {
+             ResultSet rs = stmt.executeQuery(query)) {
             while (rs.next()) {
                 // Note: Simplified loading of related objects.
                 // In a real app, you might want to fetch full objects or use a DAO/Repository
@@ -89,16 +89,16 @@ public class OrderItemService implements CRUD<OrderItem> {
                 order.setId(rs.getInt("order_id"));
 
                 Product product = new Product();
-                product.setId(rs.getLong("product_id"));
+                product.setId(rs.getInt("product_id"));
 
                 OrderItem item = new OrderItem(
                         rs.getInt("id"),
                         order,
                         product,
                         rs.getInt("quantity"),
-                        rs.getDouble("unit_price"),
-                        rs.getDouble("sub_total"),
-                        rs.getDouble("discount_applied"));
+                        rs.getBigDecimal("unit_price"),
+                        rs.getBigDecimal("sub_total"),
+                        rs.getBigDecimal("discount_applied"));
                 items.add(item);
             }
         }

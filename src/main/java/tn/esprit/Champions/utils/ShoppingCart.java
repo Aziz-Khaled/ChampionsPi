@@ -31,13 +31,15 @@ public class ShoppingCart {
         item.setProduct(product);
         item.setQuantity(quantity);
         item.setUnitPrice(product.getPrice());
-        item.setSubTotal(product.getPrice() * quantity);
+        item.setSubTotal(product.getPrice().multiply(java.math.BigDecimal.valueOf(quantity)));
+        item.setDiscountApplied(java.math.BigDecimal.ZERO);
 
         // Check if product already in cart
         for (OrderItem existingItem : items) {
-            if (existingItem.getProduct().getId()== product.getId()) {
+            if (existingItem.getProduct().getId().equals(product.getId())) {
                 existingItem.setQuantity(existingItem.getQuantity() + quantity);
-                existingItem.setSubTotal(existingItem.getUnitPrice() * existingItem.getQuantity());
+                existingItem.setSubTotal(existingItem.getUnitPrice().multiply(java.math.BigDecimal.valueOf(existingItem.getQuantity())));
+                existingItem.setDiscountApplied(java.math.BigDecimal.ZERO);
                 return;
             }
         }
@@ -49,8 +51,10 @@ public class ShoppingCart {
         items.remove(item);
     }
 
-    public double getTotal() {
-        return items.stream().mapToDouble(OrderItem::getSubTotal).sum();
+    public java.math.BigDecimal getTotal() {
+        return items.stream()
+                .map(OrderItem::getSubTotal)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
     }
 
     public void clear() {

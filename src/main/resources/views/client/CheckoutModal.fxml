@@ -28,6 +28,8 @@
             </HBox>
         </VBox>
 
+
+
         <!-- Form fields -->
         <VBox spacing="15" styleClass="card">
             <Label text="Coordonnées de Livraison" styleClass="section-title"/>

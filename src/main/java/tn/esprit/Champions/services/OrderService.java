@@ -26,7 +26,7 @@ public class OrderService implements CRUD<Order> {
         try (PreparedStatement pstmt = cnx.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setInt(1, order.getUserId());
             pstmt.setTimestamp(2, Timestamp.valueOf(order.getOrderDate()));
-            pstmt.setDouble(3, order.getTotalAmount());
+            pstmt.setBigDecimal(3, order.getTotalAmount());
             pstmt.setString(4, order.getStatus().name());
             pstmt.setString(5, order.getShippingAddress());
             pstmt.setString(6, order.getPaymentMethod());
@@ -50,7 +50,7 @@ public class OrderService implements CRUD<Order> {
         try (PreparedStatement pstmt = cnx.prepareStatement(query)) {
             pstmt.setInt(1, order.getUserId());
             pstmt.setTimestamp(2, Timestamp.valueOf(order.getOrderDate()));
-            pstmt.setDouble(3, order.getTotalAmount());
+            pstmt.setBigDecimal(3, order.getTotalAmount());
             pstmt.setString(4, order.getStatus().name());
             pstmt.setString(5, order.getShippingAddress());
             pstmt.setString(6, order.getPaymentMethod());
@@ -79,13 +79,13 @@ public class OrderService implements CRUD<Order> {
         List<Order> orders = new ArrayList<>();
         String query = "SELECT * FROM `orders`";
         try (Statement stmt = cnx.createStatement();
-                ResultSet rs = stmt.executeQuery(query)) {
+             ResultSet rs = stmt.executeQuery(query)) {
             while (rs.next()) {
                 Order order = new Order(
                         rs.getInt("id"),
                         rs.getInt("user_id"),
                         rs.getTimestamp("order_date").toLocalDateTime(),
-                        rs.getDouble("total_amount"),
+                        rs.getBigDecimal("total_amount"),
                         OrderStatus.valueOf(rs.getString("status")),
                         rs.getString("shipping_address"),
                         rs.getString("payment_method"),

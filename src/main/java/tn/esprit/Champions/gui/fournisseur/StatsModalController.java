@@ -39,10 +39,10 @@ public class StatsModalController {
     private void updateStats(List<Product> products) {
         totalProductsLabel.setText(String.valueOf(products.size()));
 
-        double totalValue = products.stream()
-                .mapToDouble(p -> p.getPrice() * p.getStock())
-                .sum();
-        totalValueLabel.setText(String.format("$%.2f", totalValue));
+        java.math.BigDecimal totalValue = products.stream()
+                .map(p -> p.getPrice().multiply(java.math.BigDecimal.valueOf(p.getStock())))
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        totalValueLabel.setText(String.format("$%.2f", totalValue.doubleValue()));
 
         Map<String, Long> categoryCounts = products.stream()
                 .collect(Collectors.groupingBy(p -> p.getCategory().name(), Collectors.counting()));

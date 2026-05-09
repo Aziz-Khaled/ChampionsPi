@@ -6,18 +6,32 @@ import java.util.Objects;
 public class OrderItem {
 
     private int id;
+
     private Order order;
+
     private Product product;
+
     private int quantity;
-    private double unitPrice;
-    private double subTotal;
-    private double discountApplied;
+
+    // decimal(10,2) -> BigDecimal
+    private BigDecimal unitPrice;
+
+    private BigDecimal subTotal;
+
+    private BigDecimal discountApplied;
 
     public OrderItem() {
     }
 
-    public OrderItem(int id, Order order, Product product,
-            int quantity, double unitPrice, double subTotal, double discountApplied) {
+    public OrderItem(
+            int id,
+            Order order,
+            Product product,
+            int quantity,
+            BigDecimal unitPrice,
+            BigDecimal subTotal,
+            BigDecimal discountApplied
+    ) {
         this.id = id;
         this.order = order;
         this.product = product;
@@ -27,7 +41,9 @@ public class OrderItem {
         this.discountApplied = discountApplied;
     }
 
-    // Getters & Setters
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
 
     public int getId() {
         return id;
@@ -37,6 +53,7 @@ public class OrderItem {
         this.id = id;
     }
 
+
     public Order getOrder() {
         return order;
     }
@@ -44,6 +61,7 @@ public class OrderItem {
     public void setOrder(Order order) {
         this.order = order;
     }
+
 
     public Product getProduct() {
         return product;
@@ -53,6 +71,7 @@ public class OrderItem {
         this.product = product;
     }
 
+
     public int getQuantity() {
         return quantity;
     }
@@ -61,44 +80,63 @@ public class OrderItem {
         this.quantity = quantity;
     }
 
-    public double getUnitPrice() {
+
+    public BigDecimal getUnitPrice() {
         return unitPrice;
     }
 
-    public void setUnitPrice(double unitPrice) {
+    public void setUnitPrice(BigDecimal unitPrice) {
         this.unitPrice = unitPrice;
     }
 
-    public double getSubTotal() {
+
+    public BigDecimal getSubTotal() {
         return subTotal;
     }
 
-    public void setSubTotal(double subTotal) {
+    public void setSubTotal(BigDecimal subTotal) {
         this.subTotal = subTotal;
     }
 
-    public double getDiscountApplied() {
+
+    public BigDecimal getDiscountApplied() {
         return discountApplied;
     }
 
-    public void setDiscountApplied(double discountApplied) {
+    public void setDiscountApplied(BigDecimal discountApplied) {
         this.discountApplied = discountApplied;
     }
+
+    // =========================
+    // toString
+    // =========================
 
     @Override
     public String toString() {
         return "OrderItem{" +
                 "id=" + id +
                 ", quantity=" + quantity +
+                ", unitPrice=" + unitPrice +
                 ", subTotal=" + subTotal +
                 ", discountApplied=" + discountApplied +
                 '}';
     }
 
+    // =========================
+    // equals & hashCode
+    // =========================
+
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof OrderItem that))
+
+        if (this == o)
+            return true;
+
+        if (!(o instanceof OrderItem))
             return false;
+
+        OrderItem that = (OrderItem) o;
+
         return Objects.equals(id, that.id);
     }
 

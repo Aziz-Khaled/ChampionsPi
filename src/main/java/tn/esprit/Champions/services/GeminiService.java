@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class GeminiService {
 
-    private static final String API_KEY = "xxxxxxxxxxxx"; // Replace with your actual API key
+    private static final String API_KEY = "AIzaSyCOMS5ipfHJQkhkubVNLMe1FVJdshRVRWg"; // Replace with your actual API key
     private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
             + API_KEY;
     private final Gson gson = new Gson();
@@ -74,7 +74,7 @@ public class GeminiService {
         return description; // Return original if error
     }
 
-    public List<Long> getRecommendedProductIds(List<OrderItem> currentCart, List<Product> allProducts) {
+    public List<Integer> getRecommendedProductIds(List<OrderItem> currentCart, List<Product> allProducts) {
         try {
             String cartContext = currentCart.stream()
                     .map(item -> item.getProduct().getName() + " (Cat: " + item.getProduct().getCategory() + ")")
@@ -129,11 +129,11 @@ public class GeminiService {
                     resultText = resultText.substring(start, end + 1);
                 }
 
-                List<Long> recommendedIds = new ArrayList<>();
+                List<Integer> recommendedIds = new ArrayList<>();
                 try {
                     JsonArray jsonArray = gson.fromJson(resultText, JsonArray.class);
                     for (int i = 0; i < jsonArray.size(); i++) {
-                        recommendedIds.add(jsonArray.get(i).getAsLong());
+                        recommendedIds.add(jsonArray.get(i).getAsInt());
                     }
                 } catch (Exception e) {
                     System.err.println("JSON Parsing Error: " + e.getMessage() + " for text: " + resultText);

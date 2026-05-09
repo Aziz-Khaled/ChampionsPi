@@ -266,9 +266,9 @@ public class FournisseurDashboardController {
             Product p = (editingProduct != null) ? editingProduct : new Product();
             p.setName(nameField.getText());
             p.setDescription(descField.getText());
-            p.setPrice(Double.parseDouble(priceField.getText()));
+            p.setPrice(new java.math.BigDecimal(priceField.getText()));
             p.setDiscountPrice(
-                    discountPriceField.getText().isEmpty() ? 0 : Double.parseDouble(discountPriceField.getText()));
+                    discountPriceField.getText().isEmpty() ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(discountPriceField.getText()));
             p.setBrand(brandField.getText());
             p.setCategory(categoryCombo.getValue() != null ? categoryCombo.getValue() : ProductCategory.ELECTRONICS);
             p.setStock(stockSpinner.getValue());
@@ -332,19 +332,19 @@ public class FournisseurDashboardController {
         }
 
         try {
-            double price = Double.parseDouble(priceField.getText());
-            if (price <= 0)
+            java.math.BigDecimal price = new java.math.BigDecimal(priceField.getText());
+            if (price.compareTo(java.math.BigDecimal.ZERO) <= 0)
                 throw new NumberFormatException();
             priceField.getStyleClass().remove("field-error");
             priceError.setVisible(false);
 
             String discountText = discountPriceField.getText();
             if (discountText != null && !discountText.isEmpty()) {
-                double discount = Double.parseDouble(discountText);
-                if (discount < 0) {
+                java.math.BigDecimal discount = new java.math.BigDecimal(discountText);
+                if (discount.compareTo(java.math.BigDecimal.ZERO) < 0) {
                     discountPriceField.getStyleClass().add("field-error");
                     valid = false;
-                } else if (discount > price) {
+                } else if (discount.compareTo(price) > 0) {
                     discountPriceField.getStyleClass().add("field-error");
                     Notifications.create()
                             .title("Erreur de prix")
@@ -387,7 +387,8 @@ public class FournisseurDashboardController {
             allProducts = productService.SelectAll();
             applyFilters();
         } catch (Exception e) {
-            System.err.println("Database connection failed during refresh.");
+            System.err.println("Database connection failed during refresh: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

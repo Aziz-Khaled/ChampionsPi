@@ -6,28 +6,57 @@ import java.util.Objects;
 
 public class Product {
 
-    private Long id;
+    private Integer id;
+
     private String name;
+
     private String description;
-    private double price;
-    private double discountPrice;
+
+    // DECIMAL(10,2) dans MySQL -> BigDecimal en Java
+    private BigDecimal price;
+
+    private BigDecimal discountPrice;
+
     private String brand;
+
     private double avgRating;
+
     private String imageUrl;
+
     private int stock;
+
+    // varchar dans MySQL
     private ProductCategory category;
+
+    // varchar dans MySQL
     private ProductStatus status;
+
+    // foreign key user_id
     private int userId;
+
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
 
     public Product() {
     }
 
-    public Product(Long id, String name, String description, double price, double discountPrice,
-                   String brand, double avgRating, String imageUrl,
-                   int stock, ProductCategory category, ProductStatus status,
-                   int userId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Product(
+            Integer id,
+            String name,
+            String description,
+            BigDecimal price,
+            BigDecimal discountPrice,
+            String brand,
+            double avgRating,
+            String imageUrl,
+            int stock,
+            ProductCategory category,
+            ProductStatus status,
+            int userId,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -44,13 +73,15 @@ public class Product {
         this.updatedAt = updatedAt;
     }
 
-    // Getters & Setters
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -70,19 +101,19 @@ public class Product {
         this.description = description;
     }
 
-    public double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
-    public double getDiscountPrice() {
+    public BigDecimal getDiscountPrice() {
         return discountPrice;
     }
 
-    public void setDiscountPrice(double discountPrice) {
+    public void setDiscountPrice(BigDecimal discountPrice) {
         this.discountPrice = discountPrice;
     }
 
@@ -158,24 +189,40 @@ public class Product {
         this.updatedAt = updatedAt;
     }
 
+    // =========================
+    // toString
+    // =========================
+
     @Override
     public String toString() {
         return "Product{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", price=" + price +
+                ", discountPrice=" + discountPrice +
                 ", brand='" + brand + '\'' +
-                ", imageUrl='" + imageUrl + '\'' +
+                ", avgRating=" + avgRating +
                 ", stock=" + stock +
                 ", category=" + category +
                 ", status=" + status +
                 '}';
     }
 
+    // =========================
+    // equals & hashCode
+    // =========================
+
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Product product))
+
+        if (this == o)
+            return true;
+
+        if (!(o instanceof Product))
             return false;
+
+        Product product = (Product) o;
+
         return Objects.equals(id, product.id);
     }
 

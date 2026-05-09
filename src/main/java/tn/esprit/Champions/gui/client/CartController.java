@@ -9,6 +9,10 @@ import tn.esprit.Champions.models.*;
 import tn.esprit.Champions.services.OrderItemService;
 import tn.esprit.Champions.services.OrderService;
 import tn.esprit.Champions.services.ProductService;
+import tn.esprit.Champions.services.TransactionService;
+import tn.esprit.Champions.services.WalletService;
+import tn.esprit.Champions.services.wallet_currencyService;
+import tn.esprit.Champions.models.wallet_currency;
 import tn.esprit.Champions.utils.ShoppingCart;
 
 import javafx.application.Platform;
@@ -51,6 +55,12 @@ public class CartController {
     private final OrderService orderService = new OrderService();
 
     private final OrderItemService orderItemService = new OrderItemService();
+
+    private final TransactionService transactionService = new TransactionService();
+
+    private final WalletService walletService = new WalletService();
+
+    private final wallet_currencyService walletCurrencyService = new wallet_currencyService();
 
     private final tn.esprit.Champions.services.PdfService pdfService = new tn.esprit.Champions.services.PdfService();
 
@@ -142,7 +152,7 @@ public class CartController {
         }
 
         item.setQuantity(newQty);
-        item.setSubTotal(item.getUnitPrice() * newQty);
+        item.setSubTotal(item.getUnitPrice().multiply(java.math.BigDecimal.valueOf(newQty)));
         updateTable();
     }
 
@@ -168,7 +178,7 @@ public class CartController {
             javafx.scene.Parent root = loader.load();
 
             CheckoutController controller = loader.getController();
-            controller.setTotalAmount(ShoppingCart.getInstance().getTotal());
+            controller.setTotalAmount(ShoppingCart.getInstance().getTotal().doubleValue());
 
             Stage stage = new Stage();
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
@@ -183,10 +193,10 @@ public class CartController {
             String address = controller.getAddress();
             String phone = controller.getPhone();
 
-            // 1. BTC mock Validation
+            // 1. Direct Payment Notification
             Notifications.create()
-                    .title("Paiement BTC")
-                    .text("Paiement de " + ShoppingCart.getInstance().getTotal() + " BTC ")
+                    .title("Paiement Direct")
+                    .text("Commande de " + ShoppingCart.getInstance().getTotal() + " BTC validée.")
                     .showInformation();
 
             // 2. Validate stock and decrement
@@ -196,12 +206,17 @@ public class CartController {
 
             // 3. Create the Order object
             Order order = new Order();
-            order.setUserId(2); // Static user ID for now
+            Utilisateur currentUser = UserSession.getLoggedInUser();
+            if (currentUser != null) {
+                order.setUserId(currentUser.getId_user());
+            } else {
+                order.setUserId(2); // Fallback user ID
+            }
             order.setOrderDate(LocalDateTime.now());
             order.setTotalAmount(ShoppingCart.getInstance().getTotal());
             order.setStatus(OrderStatus.PAID);
             order.setShippingAddress(address);
-            order.setPaymentMethod("BTC");
+            order.setPaymentMethod("Direct Payment");
             order.setPhoneNumber(phone);
 
             // 4. Save Order to database
@@ -214,7 +229,10 @@ public class CartController {
                 orderItemService.insertOne(item);
             }
 
-            // 6. Generate PDF Receipt
+            // 6. Direct Payment successful
+            System.out.println("✅ Commande validée directement (Paiement Direct).");
+
+            // 7. Generate PDF Receipt
             String uploadsDir = System.getProperty("user.dir") + "/uploads/receipts";
             java.io.File dir = new java.io.File(uploadsDir);
             if (!dir.exists())
@@ -223,7 +241,7 @@ public class CartController {
             String filePath = uploadsDir + "/receipt_order_" + order.getId() + ".pdf";
             pdfService.generateReceipt(order, currentItems, filePath);
 
-            // 7. Show Success Popup with QR Code
+            // 8. Show Success Popup with QR Code
             String qrContent = "Order ID: " + order.getId() + "\nTotal: " + order.getTotalAmount()
                     + " BTC\nStatus: PAID";
             byte[] qrImageData = pdfService.generateQRCodeImage(qrContent);
@@ -263,13 +281,11 @@ public class CartController {
                     .map(item -> "- " + item.getProduct().getName() + " x" + item.getQuantity())
                     .collect(java.util.stream.Collectors.joining("\n"));
 
-            Utilisateur currentUser = UserSession.getLoggedInUser();
-
             if (currentUser != null && currentUser.getEmail() != null && !currentUser.getEmail().isEmpty()) {
                 String recipientEmail = currentUser.getEmail();
 
                 new Thread(() -> {
-                    emailService.sendOrderConfirmation(recipientEmail, orderDetails, order.getTotalAmount());
+                    emailService.sendOrderConfirmation(recipientEmail, orderDetails, order.getTotalAmount().doubleValue());
                 }).start();
             } else {
                 System.err.println("Impossible d'envoyer l'email : aucun utilisateur connecté ou email vide");
@@ -299,7 +315,7 @@ public class CartController {
         new Thread(() -> {
             try {
                 List<Product> allProducts = productService.SelectAll();
-                List<Long> recIds = geminiService.getRecommendedProductIds(ShoppingCart.getInstance().getItems(),
+                List<Integer> recIds = geminiService.getRecommendedProductIds(ShoppingCart.getInstance().getItems(),
                         allProducts);
 
                 List<Product> recommendedProducts = allProducts.stream()
