@@ -5,5 +5,5 @@ import com.stripe.Stripe;
 public class StripeConfig {
 
     public static void init() {
-
+        Stripe.apiKey = "";
 }}

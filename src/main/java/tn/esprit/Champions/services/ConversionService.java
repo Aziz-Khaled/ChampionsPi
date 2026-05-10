@@ -62,7 +62,7 @@ public class ConversionService {
      * Insère une nouvelle conversion et retourne l'ID auto-généré
      */
     public int insertConversion(Conversion c) throws SQLException {
-        String sql = "INSERT INTO conversion (amount_from, currency_from, amount_to, currency_to, exchange_rate) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO conversion (amount_from, currency_from_id, amount_to, currency_to_id, exchange_rate) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setDouble(1, c.getAmountFrom());
@@ -92,9 +92,9 @@ public class ConversionService {
                     Conversion c = new Conversion();
                     c.setIdConversion(rs.getInt("id_conversion"));
                     c.setAmountFrom(rs.getDouble("amount_from"));
-                    c.setCurrencyFrom(rs.getInt("currency_from"));
+                    c.setCurrencyFrom(rs.getInt("currency_from_id"));
                     c.setAmountTo(rs.getDouble("amount_to"));
-                    c.setCurrencyTo(rs.getInt("currency_to"));
+                    c.setCurrencyTo(rs.getInt("currency_to_id"));
                     c.setExchangeRate(rs.getDouble("exchange_rate"));
                     return c;
                 }

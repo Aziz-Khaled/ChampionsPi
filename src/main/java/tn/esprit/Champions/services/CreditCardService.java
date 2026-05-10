@@ -39,14 +39,14 @@ public class CreditCardService {
     }
 
     public CreditCard getCardByUserId(int userId) {
-        String sql = "SELECT * FROM credit_card WHERE id_user = ?";
+        String sql = "SELECT * FROM credit_card WHERE user_id = ?";
         try (PreparedStatement ps = cnx.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 CreditCard card = new CreditCard();
                 card.setIdCard(rs.getInt("id_card"));
-                card.setIdUser(rs.getInt("id_user"));
+                card.setIdUser(rs.getInt("user_id"));
                 card.setCardHolderName(rs.getString("card_holder_name"));
                 card.setLast4Digits(rs.getString("last_4_digits"));
                 card.setExpiryMonth(rs.getInt("expiry_month"));
@@ -69,7 +69,7 @@ public class CreditCardService {
             if (rs.next()) {
                 CreditCard card = new CreditCard();
                 card.setIdCard(rs.getInt("id_card"));
-                card.setIdUser(rs.getInt("id_user"));
+                card.setIdUser(rs.getInt("user_id"));
                 card.setCardHolderName(rs.getString("card_holder_name"));
                 card.setLast4Digits(rs.getString("last_4_digits"));
                 card.setExpiryMonth(rs.getInt("expiry_month"));
@@ -91,7 +91,7 @@ public class CreditCardService {
     public CreditCard insertCard(CreditCard card) {
         try {
             String insert = "INSERT INTO credit_card " +
-                    "(id_user, card_holder_name, last_4_digits, expiry_month, expiry_year, stripe_customer_id, stripe_payment_method_id, statut) " +
+                    "(user_id, card_holder_name, last_4_digits, expiry_month, expiry_year, stripe_customer_id, stripe_payment_method_id, statut) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE')";
             try (PreparedStatement pst = cnx.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
                 pst.setInt(1, card.getIdUser());

@@ -123,7 +123,7 @@ public class TransactionService implements CRUD<transaction> {
             walletCurrencyService.updateOne(destCurrency);
 
             // 3. Insertion de la ligne transaction
-            String insertTransactionSql = "INSERT INTO transaction (id_wallet_source, id_wallet_destination, montant, type, statut, date_transaction, id_currency, id_conversion) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)";
+            String insertTransactionSql = "INSERT INTO transaction (wallet_source_id, wallet_destination_id, montant, type, statut, date_transaction, currency_id, conversion_id) VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)";
             try (PreparedStatement pst = cnx.prepareStatement(insertTransactionSql, Statement.RETURN_GENERATED_KEYS)) {
                 pst.setInt(1, sourceWallet.getIdWallet());
                 pst.setInt(2, destWallet.getIdWallet());
@@ -164,6 +164,7 @@ public class TransactionService implements CRUD<transaction> {
             cnx.setAutoCommit(previousAutoCommit);
         }
     }
+
     public void insertRechargeTransaction(
             int walletDestinationId,
             int currencyId,
@@ -232,10 +233,11 @@ public class TransactionService implements CRUD<transaction> {
             // =====================================================
             String sql = """
             INSERT INTO transaction
-            (id_wallet_source, id_card, id_wallet_destination, montant, type, statut, date_transaction, id_currency)
+            (wallet_source_id, card_id, wallet_destination_id, montant, type, statut, date_transaction, currency_id)
             VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)
         """;
 
+            // 🔴 CORRECTION : idTransaction était toujours 0 car le ResultSet n'était pas lu
             int idTransaction = 0;
 
             try (PreparedStatement pst = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -250,9 +252,11 @@ public class TransactionService implements CRUD<transaction> {
 
                 pst.executeUpdate();
 
-                ResultSet rs = pst.getGeneratedKeys();
-                if (rs.next()) {
-                    idTransaction = rs.getInt(1);
+                // 🔴 CORRECTION : lecture effective de la clé générée
+                try (ResultSet rs = pst.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        idTransaction = rs.getInt(1);
+                    }
                 }
             }
 
@@ -285,6 +289,7 @@ public class TransactionService implements CRUD<transaction> {
             cnx.setAutoCommit(previousAutoCommit);
         }
     }
+
     @Override
     public void updateOne(transaction t) throws SQLException {
 
@@ -299,10 +304,10 @@ public class TransactionService implements CRUD<transaction> {
             if (rs.next()) {
                 oldTransaction = new transaction();
                 oldTransaction.setIdTransaction(rs.getInt("id_transaction"));
-                oldTransaction.setIdWalletSource(rs.getInt("id_wallet_source"));
-                oldTransaction.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+                oldTransaction.setIdWalletSource(rs.getInt("wallet_source_id"));
+                oldTransaction.setIdWalletDestination(rs.getInt("wallet_destination_id"));
                 oldTransaction.setMontant(rs.getDouble("montant"));
-                oldTransaction.setCurrencyId(rs.getInt("id_currency"));
+                oldTransaction.setCurrencyId(rs.getInt("currency_id"));
             } else {
                 throw new SQLException("Transaction introuvable !");
             }
@@ -395,23 +400,24 @@ public class TransactionService implements CRUD<transaction> {
     public List<transaction> SelectAll() throws SQLException {
         return List.of();
     }
+
     public List<transaction> getTransactionsByWallet(int walletId) throws SQLException {
         List<transaction> transactions = new ArrayList<>();
 
-        // 🔹 Ajout de id_conversion dans la requête SELECT
+        // 🔴 CORRECTION : id_wallet_destination_id → wallet_destination_id (nom correct de la colonne)
         String query = """
     SELECT t.id_transaction,
-           t.id_wallet_source,
-           t.id_wallet_destination,
+           t.wallet_source_id,
+           t.wallet_destination_id,
            t.montant,
-           t.id_currency,
+           t.currency_id,
            t.type,
            t.statut,
            t.date_transaction,
-           t.id_card,
-           t.id_conversion
+           t.card_id,
+           t.conversion_id
     FROM transaction t
-    WHERE t.id_wallet_source = ? OR t.id_wallet_destination = ?
+    WHERE t.wallet_source_id = ? OR t.wallet_destination_id = ?
 """;
 
         try (PreparedStatement ps = cnx.prepareStatement(query)) {
@@ -424,10 +430,10 @@ public class TransactionService implements CRUD<transaction> {
 
                     // 🔹 Remplissage des champs de base
                     t.setIdTransaction(rs.getInt("id_transaction"));
-                    t.setIdWalletSource(rs.getInt("id_wallet_source"));
-                    t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+                    t.setIdWalletSource(rs.getInt("wallet_source_id"));
+                    t.setIdWalletDestination(rs.getInt("wallet_destination_id"));
                     t.setMontant(rs.getDouble("montant"));
-                    t.setCurrencyId(rs.getInt("id_currency"));
+                    t.setCurrencyId(rs.getInt("currency_id"));
 
                     // 🔹 Gestion sécurisée de l'Enum Type (pour éviter les erreurs de casse)
                     String typeStr = rs.getString("type").trim().toUpperCase();
@@ -435,16 +441,15 @@ public class TransactionService implements CRUD<transaction> {
 
                     // 🔹 Gestion sécurisée de l'Enum Statut
                     String statutStr = rs.getString("statut").trim();
-                    // Assurez-vous que StatutTransaction contient bien les valeurs en majuscules (ex: PENDING, SUCCESS)
                     t.setStatut(StatutTransaction.valueOf(statutStr));
 
                     t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
 
                     // 🔹 id_card pour les recharges
-                    t.setId_card(rs.getInt("id_card"));
+                    t.setId_card(rs.getInt("card_id"));
 
                     // 🔹 CRUCIAL : Remplissage de id_conversion pour l'affichage des flèches
-                    t.setId_conversion(rs.getInt("id_conversion"));
+                    t.setId_conversion(rs.getInt("conversion_id"));
 
                     transactions.add(t);
                 }
@@ -460,8 +465,8 @@ public class TransactionService implements CRUD<transaction> {
         List<transaction> transactions = new ArrayList<>();
 
         String query = """
-        SELECT id_transaction, id_wallet_source, id_wallet_destination, 
-               montant, id_currency, type, statut, date_transaction, id_card
+        SELECT id_transaction, wallet_source_id, wallet_destination_id, 
+               montant, currency_id, type, statut, date_transaction, card_id
         FROM transaction
         ORDER BY date_transaction DESC
     """;
@@ -472,10 +477,10 @@ public class TransactionService implements CRUD<transaction> {
             while (rs.next()) {
                 transaction t = new transaction();
                 t.setIdTransaction(rs.getInt("id_transaction"));
-                t.setIdWalletSource(rs.getInt("id_wallet_source"));
-                t.setIdWalletDestination(rs.getInt("id_wallet_destination"));
+                t.setIdWalletSource(rs.getInt("wallet_source_id"));
+                t.setIdWalletDestination(rs.getInt("wallet_destination_id"));
                 t.setMontant(rs.getDouble("montant"));
-                t.setCurrencyId(rs.getInt("id_currency"));
+                t.setCurrencyId(rs.getInt("currency_id"));
 
                 // Gestion sécurisée des Enums
                 String typeStr = rs.getString("type");
@@ -488,12 +493,13 @@ public class TransactionService implements CRUD<transaction> {
                     t.setDateTransaction(rs.getTimestamp("date_transaction").toLocalDateTime());
                 }
 
-                t.setId_card(rs.getInt("id_card"));
+                t.setId_card(rs.getInt("card_id"));
                 transactions.add(t);
             }
         }
         return transactions;
     }
+
     public int insertExchange(transaction t, Conversion conv) throws SQLException {
         boolean previousAutoCommit = cnx.getAutoCommit();
         ConversionService convServ = new ConversionService();
@@ -532,7 +538,7 @@ public class TransactionService implements CRUD<transaction> {
 // --- MÉTHODES DE SUPPORT (Obligatoires pour que le code ci-dessus fonctionne) ---
 
     private int saveTransactionToDb(transaction t) throws SQLException {
-        String sql = "INSERT INTO transaction (id_wallet_source, id_wallet_destination, montant, type, statut, date_transaction, id_currency) VALUES (?, ?, ?, ?, ?, NOW(), ?)";
+        String sql = "INSERT INTO transaction (wallet_source_id, wallet_destination_id, montant, type, statut, date_transaction, currency_id) VALUES (?, ?, ?, ?, ?, NOW(), ?)";
         try (PreparedStatement pst = cnx.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pst.setInt(1, t.getIdWalletSource());
             pst.setInt(2, t.getIdWalletDestination());

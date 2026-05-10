@@ -46,6 +46,7 @@ public class AdminPanelService {
     @FXML private Label lblTitle, lblTotalUsers, lblPendingUsers, lblDisabledUsers;
     @FXML private StackPane chartContainer, pieChartContainer;
     @FXML private Label lblActiveUsers;
+    @FXML private Button btnCurrency, btnTransactions;
 
     private final UtilisateurService userService = new UtilisateurService();
     private final LogEntryService logEntryService = new LogEntryService();
@@ -76,6 +77,8 @@ public class AdminPanelService {
         btnGestionUsers.setOnAction(e -> showGestionUsers());
         btnListeUsers.setOnAction(e -> showAllUsers());
         btnLogs.setOnAction(e -> showLogs());
+        btnCurrency.setOnAction(e -> navigateTo("/DashbordAdminCurrency.fxml"));
+        btnTransactions.setOnAction(e -> navigateTo("/DashboardAdminWallet.fxml"));
 
         btnAssetManagement.setOnAction(e -> navigateTo("/crudAsset.fxml"));
         btnCourses.setOnAction(event -> {

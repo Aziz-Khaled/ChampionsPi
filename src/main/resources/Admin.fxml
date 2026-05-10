@@ -36,6 +36,9 @@
                         <Region prefHeight="20" />
                         <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="CONTENT" />
                         <Button fx:id="btnCourses" prefHeight="50.0"  prefWidth="Infinity" styleClass="nav-button" text="Fintech Courses" />
+                        <Label styleClass="input-label" style="-fx-opacity: 0.5; -fx-font-size: 11;" text="FINANCE" />
+                        <Button fx:id="btnCurrency" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="💰 Currency" />
+                        <Button fx:id="btnTransactions" prefHeight="50.0" prefWidth="Infinity" styleClass="nav-button" text="💸 Flux Transactions" />
                     </children>
                 </VBox>
 

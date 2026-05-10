@@ -214,13 +214,9 @@ public class admin_wallet_controller {
     @FXML
     private void handleSignOut() {
         try {
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Admin.fxml"));
             Parent root = loader.load();
-
-
             btnSignOut.getScene().setRoot(root);
-
         } catch (IOException e) {
             e.printStackTrace();
         }

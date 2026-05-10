@@ -31,7 +31,7 @@
                             maxWidth="Infinity"
                             mnemonicParsing="false"
                             style="-fx-text-fill: #e74c3c; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: transparent; -fx-padding: 10 0 10 0; -fx-cursor: hand;"
-                            text="🚪 Sign Out"
+                            text="⬅ Dashboard"
                             textAlignment="CENTER" />
                 </VBox>
             </VBox>

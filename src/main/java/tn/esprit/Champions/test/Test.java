@@ -12,7 +12,7 @@ public class Test extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/invest/Marketplace.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/LoginPage.fxml"));
         StripeConfig.init();
         BlockchainService blockchainService = new BlockchainService();
         blockchainService.verifyBlockchain();

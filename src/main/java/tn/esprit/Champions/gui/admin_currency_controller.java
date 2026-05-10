@@ -307,16 +307,12 @@ public class admin_currency_controller {
     @FXML
     private void handleSignOut() {
         try {
-            // Charger le FXML depuis resources racine
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/DashboardWalletClient.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Admin.fxml"));
             Parent root = loader.load();
-
-            // Remplacer la scène actuelle par le Dashboard client
             btnSignOut.getScene().setRoot(root);
-
         } catch (IOException e) {
             e.printStackTrace();
-            showAlert("Erreur", "Impossible de charger le Dashboard client !");
+            showAlert("Erreur", "Impossible de retourner au panneau admin !");
         }
     }
 }
