@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class RiskAnalysisService {
-    private static final Dotenv dotenv = Dotenv.load();
+    private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
     private static final String GEMINI_KEY = dotenv.get("GEMINI_KEY") != null ? dotenv.get("GEMINI_KEY").trim() : "";
 
     public String getAiAnalysis(credit c, wallet w) {

@@ -20,10 +20,14 @@ import java.net.URL;
 
 public class CreditCardController {
 
-    @FXML private VBox cardRoot;
-    @FXML private ImageView imgProject;
-    @FXML private Label lblTitle, lblMontant, lblTaux, lblRisque, lblProgressionText;
-    @FXML private ProgressBar progressFinancement;
+    @FXML
+    private VBox cardRoot;
+    @FXML
+    private ImageView imgProject;
+    @FXML
+    private Label lblTitle, lblMontant, lblTaux, lblRisque, lblProgressionText;
+    @FXML
+    private ProgressBar progressFinancement;
 
     private final projetService ps = new projetService();
     private credit currentCredit;
@@ -45,14 +49,15 @@ public class CreditCardController {
     }
 
     public void setCreditData(credit c) {
-        if (c == null) return;
+        if (c == null)
+            return;
         this.currentCredit = c;
 
         try {
             projet p = ps.findById(c.getProject_id());
             if (p != null) {
                 lblTitle.setText(p.getTitle());
-                chargerImageDynamique(p.getImageUrl());
+                chargerImageDynamique(p.getImage_url());
             }
 
             lblMontant.setText(String.format("%.0f %s", c.getMontant(), c.getDevise() != null ? c.getDevise() : "DT"));
@@ -92,7 +97,8 @@ public class CreditCardController {
 
     private void chargerImageParDefaut() {
         URL res = getClass().getResource("/images/default_project.png");
-        if (res != null) imgProject.setImage(new Image(res.toExternalForm()));
+        if (res != null)
+            imgProject.setImage(new Image(res.toExternalForm()));
     }
 
     private void configurerBadgeRisque(credit c) {
@@ -113,12 +119,11 @@ public class CreditCardController {
         progressFinancement.setProgress(0);
         Timeline timeline = new Timeline(
                 new KeyFrame(Duration.ZERO, new KeyValue(progressFinancement.progressProperty(), 0)),
-                new KeyFrame(Duration.seconds(1.2), new KeyValue(progressFinancement.progressProperty(), valeurCible))
-        );
+                new KeyFrame(Duration.seconds(1.2), new KeyValue(progressFinancement.progressProperty(), valeurCible)));
         timeline.play();
 
-        if(lblProgressionText != null) {
-            lblProgressionText.setText((int)(valeurCible * 100) + "%");
+        if (lblProgressionText != null) {
+            lblProgressionText.setText((int) (valeurCible * 100) + "%");
         }
     }
 
@@ -128,11 +133,10 @@ public class CreditCardController {
                     new KeyFrame(Duration.millis(200),
                             new KeyValue(cardRoot.translateYProperty(), -10),
                             new KeyValue(cardRoot.scaleXProperty(), 1.02),
-                            new KeyValue(cardRoot.scaleYProperty(), 1.02)
-                    )
-            );
+                            new KeyValue(cardRoot.scaleYProperty(), 1.02)));
             timeline.play();
-            cardRoot.setStyle(cardRoot.getStyle() + "-fx-effect: dropshadow(three-pass-box, rgba(56, 189, 248, 0.2), 30, 0, 0, 15);");
+            cardRoot.setStyle(cardRoot.getStyle()
+                    + "-fx-effect: dropshadow(three-pass-box, rgba(56, 189, 248, 0.2), 30, 0, 0, 15);");
         });
 
         cardRoot.setOnMouseExited(e -> {
@@ -140,11 +144,10 @@ public class CreditCardController {
                     new KeyFrame(Duration.millis(200),
                             new KeyValue(cardRoot.translateYProperty(), 0),
                             new KeyValue(cardRoot.scaleXProperty(), 1.0),
-                            new KeyValue(cardRoot.scaleYProperty(), 1.0)
-                    )
-            );
+                            new KeyValue(cardRoot.scaleYProperty(), 1.0)));
             timeline.play();
-            cardRoot.setStyle(cardRoot.getStyle() + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 20, 0, 0, 15);");
+            cardRoot.setStyle(
+                    cardRoot.getStyle() + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 20, 0, 0, 15);");
         });
     }
 

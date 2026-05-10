@@ -37,12 +37,18 @@ import java.util.stream.Collectors;
 
 public class MarketplaceController implements Initializable {
 
-    @FXML private HBox mainContainer;
-    @FXML private FlowPane gridPane;
-    @FXML private TextField txtSearch;
-    @FXML private ComboBox<String> comboFilter;
-    @FXML private Button btnRefresh;
-    @FXML private Label lblTotalProjects, lblTotalVolume;
+    @FXML
+    private HBox mainContainer;
+    @FXML
+    private FlowPane gridPane;
+    @FXML
+    private TextField txtSearch;
+    @FXML
+    private ComboBox<String> comboFilter;
+    @FXML
+    private Button btnRefresh;
+    @FXML
+    private Label lblTotalProjects, lblTotalVolume;
 
     private final creditService cs = new creditService();
     private final projetService ps = new projetService();
@@ -53,8 +59,7 @@ public class MarketplaceController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         comboFilter.setItems(FXCollections.observableArrayList(
-                "Tous les secteurs", "Agriculture", "Technologie", "Énergie", "Santé", "Immobilier", "Autre"
-        ));
+                "Tous les secteurs", "Agriculture", "Technologie", "Énergie", "Santé", "Immobilier", "Autre"));
         comboFilter.getSelectionModel().selectFirst();
 
         mainContainer.setOpacity(0);
@@ -95,17 +100,17 @@ public class MarketplaceController implements Initializable {
 
             for (Negociation n : offresAcceptees) {
                 credit cLinked = touteLaListe.stream()
-                        .filter(c -> c.getId() == n.getCredit_id())
+                        .filter(c -> c.getId_credit() == n.getCredit_id())
                         .findFirst()
                         .orElse(null);
 
                 if (cLinked != null) {
                     projet pLinked = ps.SelectAll().stream()
-                            .filter(p -> p.getId_project() == cLinked.getProject_id())
+                            .filter(p -> p.getId_projet() == cLinked.getProject_id())
                             .findFirst()
                             .orElse(null);
 
-                    String nomProjet = (pLinked != null) ? pLinked.getTitle() : "Investissement #" + cLinked.getId();
+                    String nomProjet = (pLinked != null) ? pLinked.getTitle() : "Investissement #" + cLinked.getId_credit();
                     Platform.runLater(() -> showToastNotification(n, nomProjet, cLinked));
                 }
             }
@@ -121,7 +126,8 @@ public class MarketplaceController implements Initializable {
 
         VBox root = new VBox(10);
         root.setPadding(new Insets(15));
-        root.setStyle("-fx-background-color: #1e293b; -fx-border-color: #10b981; -fx-border-width: 2; -fx-background-radius: 12; -fx-border-radius: 12;");
+        root.setStyle(
+                "-fx-background-color: #1e293b; -fx-border-color: #10b981; -fx-border-width: 2; -fx-background-radius: 12; -fx-border-radius: 12;");
         root.setPrefWidth(300);
 
         HBox header = new HBox();
@@ -142,7 +148,8 @@ public class MarketplaceController implements Initializable {
         // Bouton de paiement mis à jour pour ouvrir la transaction
         Button btnAction = new Button("💳 PAYER " + n.getMontant() + " TND");
         btnAction.setMaxWidth(Double.MAX_VALUE);
-        btnAction.setStyle("-fx-background-color: #10b981; -fx-text-fill: #064e3b; -fx-font-weight: bold; -fx-cursor: hand;");
+        btnAction.setStyle(
+                "-fx-background-color: #10b981; -fx-text-fill: #064e3b; -fx-font-weight: bold; -fx-cursor: hand;");
 
         btnAction.setOnAction(e -> {
             toastStage.close();
@@ -209,14 +216,17 @@ public class MarketplaceController implements Initializable {
                     boolean matchesSearch = recherche.isEmpty() ||
                             (c.getDescription() != null && c.getDescription().toLowerCase().contains(recherche));
 
-                    if (secteurFiltre == null || secteurFiltre.equals("Tous les secteurs")) return matchesSearch;
+                    if (secteurFiltre == null || secteurFiltre.equals("Tous les secteurs"))
+                        return matchesSearch;
 
                     try {
                         projet p = ps.SelectAll().stream()
-                                .filter(proj -> proj.getId_project() == c.getProject_id())
+                                .filter(proj -> proj.getId_projet() == c.getProject_id())
                                 .findFirst().orElse(null);
                         return matchesSearch && p != null && p.getSecteur().equalsIgnoreCase(secteurFiltre);
-                    } catch (SQLException e) { return false; }
+                    } catch (SQLException e) {
+                        return false;
+                    }
                 }).collect(Collectors.toList());
 
         afficherCredits(filtree);
@@ -259,6 +269,7 @@ public class MarketplaceController implements Initializable {
             System.err.println("Erreur lors de l'ouverture des détails : " + ex.getMessage());
         }
     }
+
     @FXML
     private void handleLogout(ActionEvent event) {
         try {

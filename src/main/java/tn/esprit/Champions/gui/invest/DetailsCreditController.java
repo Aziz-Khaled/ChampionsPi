@@ -29,12 +29,18 @@ import java.sql.SQLException;
 
 public class DetailsCreditController {
 
-    @FXML private VBox detailsRoot;
-    @FXML private Label lblTitle, lblSecteurBadge, lblWalletSolde, lblDescription;
-    @FXML private Label lblMontant, lblTaux, lblDuree, lblProfit;
-    @FXML private Label lblProjetDescription, lblProjetStatut;
-    @FXML private ImageView imgLarge;
-    @FXML private VBox boxAnalyseIA, boxConditions, boxProjet;
+    @FXML
+    private VBox detailsRoot;
+    @FXML
+    private Label lblTitle, lblSecteurBadge, lblWalletSolde, lblDescription;
+    @FXML
+    private Label lblMontant, lblTaux, lblDuree, lblProfit;
+    @FXML
+    private Label lblProjetDescription, lblProjetStatut;
+    @FXML
+    private ImageView imgLarge;
+    @FXML
+    private VBox boxAnalyseIA, boxConditions, boxProjet;
 
     private credit currentCredit;
     private wallet userWallet;
@@ -47,7 +53,8 @@ public class DetailsCreditController {
     }
 
     public void initData(credit c) {
-        if (c == null) return;
+        if (c == null)
+            return;
         this.currentCredit = c;
         remplirInterface(c);
         jouerAnimationsEntree();
@@ -78,7 +85,7 @@ public class DetailsCreditController {
                 lblSecteurBadge.setText(p.getSecteur().toUpperCase());
                 lblProjetDescription.setText(p.getDescription());
                 lblProjetStatut.setText("STATUT : " + p.getSecteur());
-                chargerImageDynamique(p.getImageUrl());
+                chargerImageDynamique(p.getImage_url());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -86,7 +93,8 @@ public class DetailsCreditController {
     }
 
     private void chargerImageDynamique(String path) {
-        if (path == null || path.isEmpty()) return;
+        if (path == null || path.isEmpty())
+            return;
         try {
             if (path.startsWith("http")) {
                 imgLarge.setImage(new Image(path, true));
@@ -121,20 +129,18 @@ public class DetailsCreditController {
     }
 
     private void animerSlideUp(Node node, int delayMs) {
-        if (node == null) return;
+        if (node == null)
+            return;
         node.setTranslateY(30);
         node.setOpacity(0);
 
         Timeline timeline = new Timeline(
                 new KeyFrame(Duration.millis(delayMs),
                         new KeyValue(node.translateYProperty(), 30),
-                        new KeyValue(node.opacityProperty(), 0)
-                ),
+                        new KeyValue(node.opacityProperty(), 0)),
                 new KeyFrame(Duration.millis(delayMs + 600),
                         new KeyValue(node.translateYProperty(), 0, Interpolator.EASE_OUT),
-                        new KeyValue(node.opacityProperty(), 1)
-                )
-        );
+                        new KeyValue(node.opacityProperty(), 1)));
         timeline.play();
     }
 
@@ -189,7 +195,9 @@ public class DetailsCreditController {
             NegociationController controller = loader.getController();
             controller.initData(currentCredit);
             detailsRoot.getScene().setRoot(root);
-        } catch (IOException e) { e.printStackTrace(); }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void afficherAlerte(String titre, String message, Alert.AlertType type) {

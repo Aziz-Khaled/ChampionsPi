@@ -36,7 +36,7 @@ public class ModifierProjetController {
     private void enregistrer() {
         try {
             projetSelectionne.setTitle(txtTitre.getText());
-            projetSelectionne.setTarget_amount((float) Double.parseDouble(txtMontant.getText()));
+            projetSelectionne.setTarget_amount(Double.parseDouble(txtMontant.getText()));
             projetSelectionne.setDescription(txtDescription.getText());
             projetSelectionne.setStatus(comboStatus.getValue());
 

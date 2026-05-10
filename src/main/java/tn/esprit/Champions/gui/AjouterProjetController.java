@@ -12,17 +12,21 @@ import tn.esprit.Champions.services.ImageAiService;
 import tn.esprit.Champions.services.projetService;
 
 import java.net.URL;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 public class AjouterProjetController implements Initializable {
 
-    @FXML private TextField txtTitre, txtMontant;
-    @FXML private TextArea txtDescription;
-    @FXML private ComboBox<projetStatus> comboStatus;
-    @FXML private DatePicker dateDebut, dateFin;
-    @FXML private Button btnEnregistrer; // Ajouter l'id dans le FXML pour pouvoir le désactiver
+    @FXML
+    private TextField txtTitre, txtMontant;
+    @FXML
+    private TextArea txtDescription;
+    @FXML
+    private ComboBox<projetStatus> comboStatus;
+    @FXML
+    private DatePicker dateDebut, dateFin;
+    @FXML
+    private Button btnEnregistrer; // Ajouter l'id dans le FXML pour pouvoir le désactiver
 
     private final projetService ps = new projetService();
     private Utilisateur connectedOwner;
@@ -58,7 +62,8 @@ public class AjouterProjetController implements Initializable {
     @FXML
     private void enregistrer() {
         if (estValide()) {
-            // Verrouiller le bouton pour éviter les doubles clics pendant le travail de l'IA
+            // Verrouiller le bouton pour éviter les doubles clics pendant le travail de
+            // l'IA
             btnEnregistrer.setDisable(true);
             btnEnregistrer.setText("IA en cours...");
 
@@ -71,8 +76,8 @@ public class AjouterProjetController implements Initializable {
                     p.setDescription(txtDescription.getText().trim());
                     p.setTarget_amount(Double.parseDouble(txtMontant.getText()));
                     p.setStatus(comboStatus.getValue());
-                    p.setStart_date(Timestamp.valueOf(dateDebut.getValue().atStartOfDay()));
-                    p.setEnd_date(Timestamp.valueOf(dateFin.getValue().atStartOfDay()));
+                    p.setStart_date(dateDebut.getValue());
+                    p.setEnd_date(dateFin.getValue());
                     p.setOwner_id(this.connectedOwner);
 
                     // 2. IA : Détection du secteur
@@ -83,7 +88,7 @@ public class AjouterProjetController implements Initializable {
                     // 3. IA : Génération de l'image
                     System.out.println("IA : Génération de l'image via Flux...");
                     String imagePath = ImageAiService.generateAndSaveAiImage(p.getTitle(), p.getDescription());
-                    p.setImageUrl(imagePath);
+                    p.setImage_url(imagePath);
 
                     // 4. Sauvegarde Base de Données
                     ps.insertOne(p);
@@ -109,10 +114,14 @@ public class AjouterProjetController implements Initializable {
 
     private boolean estValide() {
         StringBuilder erreurs = new StringBuilder();
-        if (connectedOwner == null) erreurs.append("- Erreur : Utilisateur non connecté.\n");
-        if (txtTitre.getText().trim().isEmpty()) erreurs.append("- Le titre est requis.\n");
-        if (txtDescription.getText().trim().length() < 10) erreurs.append("- Description trop courte.\n");
-        if (txtMontant.getText().isEmpty()) erreurs.append("- Montant requis.\n");
+        if (connectedOwner == null)
+            erreurs.append("- Erreur : Utilisateur non connecté.\n");
+        if (txtTitre.getText().trim().isEmpty())
+            erreurs.append("- Le titre est requis.\n");
+        if (txtDescription.getText().trim().length() < 10)
+            erreurs.append("- Description trop courte.\n");
+        if (txtMontant.getText().isEmpty())
+            erreurs.append("- Montant requis.\n");
         if (dateDebut.getValue() == null || dateFin.getValue() == null) {
             erreurs.append("- Dates requises.\n");
         } else if (dateFin.getValue().isBefore(dateDebut.getValue())) {

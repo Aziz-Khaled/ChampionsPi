@@ -16,7 +16,7 @@ import java.util.Scanner;
 
 public class ImageAiService {
 
-    private static final Dotenv dotenv = Dotenv.load();
+    private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
     private static final String OPENROUTER_KEY = dotenv.get("OPENROUTER_KEY");
     private static final String HF_TOKEN = dotenv.get("HF_TOKEN");
     // Utilisation d'un modèle "free" pour garantir l'accès

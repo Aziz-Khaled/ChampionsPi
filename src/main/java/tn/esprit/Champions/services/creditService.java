@@ -21,7 +21,13 @@ public class creditService implements CRUD<credit> {
     @Override
     public void insertOne(credit c) throws SQLException {
 
-        int userId = UserSession.getLoggedInUser().getId_user();
+        int userId = 1;
+        if (UserSession.getLoggedInUser() != null) {
+            userId = UserSession.getLoggedInUser().getId_user();
+        } else if (c.getBorrower_id() != null) {
+            userId = c.getBorrower_id().getId_user();
+        }
+
         String req = "INSERT INTO `credit` (`project_id`, `borrower_id`, `montant`, `devise`, `taux`, `duree`, `description`, `status`, `date_demande`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         PreparedStatement pst = cnx.prepareStatement(req);
@@ -37,7 +43,7 @@ public class creditService implements CRUD<credit> {
         pst.setInt(6, c.getDuree());
         pst.setString(7, c.getDescription());
         pst.setString(8, (c.getStatus() != null) ? c.getStatus().name() : "PENDING");
-        pst.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+        pst.setTimestamp(9, c.getDate_demande() != null ? java.sql.Timestamp.valueOf(c.getDate_demande()) : new java.sql.Timestamp(System.currentTimeMillis()));
 
         pst.executeUpdate();
         pst.close();
@@ -59,7 +65,7 @@ public class creditService implements CRUD<credit> {
         pst.setInt(5, credit.getDuree());
         pst.setString(6, credit.getDescription());
         pst.setString(7, (credit.getStatus() != null) ? credit.getStatus().name() : "OPEN");
-        pst.setInt(8, credit.getId());
+        pst.setInt(8, credit.getId_credit());
 
         pst.executeUpdate();
         pst.close();
@@ -70,7 +76,7 @@ public class creditService implements CRUD<credit> {
     public void deleteOne(credit credit) throws SQLException {
         String req = "DELETE FROM credit WHERE id_credit = ?";
         PreparedStatement pst = cnx.prepareStatement(req);
-        pst.setInt(1, credit.getId());
+        pst.setInt(1, credit.getId_credit());
         pst.executeUpdate();
         pst.close();
     }
@@ -84,7 +90,7 @@ public class creditService implements CRUD<credit> {
 
         while (rs.next()) {
             credit c = new credit();
-            c.setId(rs.getInt("id_credit"));
+            c.setId_credit(rs.getInt("id_credit"));
             c.setProject_id(rs.getInt("project_id"));
 
             // CORRECTION : On crée des objets Utilisateur et on leur donne l'ID lu en DB
@@ -108,8 +114,8 @@ public class creditService implements CRUD<credit> {
             }
 
             c.setContrat_id(rs.getString("contrat_id"));
-            c.setDate_demande(rs.getTimestamp("date_demande"));
-            c.setDate_contrat(rs.getTimestamp("date_contrat"));
+            c.setDate_demande(rs.getTimestamp("date_demande") != null ? rs.getTimestamp("date_demande").toLocalDateTime() : null);
+            c.setDate_contrat(rs.getTimestamp("date_contrat") != null ? rs.getTimestamp("date_contrat").toLocalDateTime() : null);
 
             credits.add(c);
         }
@@ -122,8 +128,9 @@ public class creditService implements CRUD<credit> {
         int count = 0;
         String query = "SELECT COUNT(*) FROM `credit`";
         try (Statement st = cnx.createStatement();
-             ResultSet rs = st.executeQuery(query)) {
-            if (rs.next()) count = rs.getInt(1);
+                ResultSet rs = st.executeQuery(query)) {
+            if (rs.next())
+                count = rs.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
         }

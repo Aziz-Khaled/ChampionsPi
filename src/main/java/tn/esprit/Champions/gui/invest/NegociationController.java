@@ -20,8 +20,10 @@ import java.util.Optional;
 
 public class NegociationController {
 
-    @FXML private HBox negocRoot;
-    @FXML private Label lblMontantOrigine, lblTauxOrigine, lblDureeOrigine, lblStatutNegoc, lblGainEstime;
+    @FXML
+    private HBox negocRoot;
+    @FXML
+    private Label lblMontantOrigine, lblTauxOrigine, lblDureeOrigine, lblStatutNegoc, lblGainEstime;
 
     private credit currentCredit;
     private final negociationService ns = new negociationService();
@@ -62,7 +64,8 @@ public class NegociationController {
         dialog.getDialogPane().getButtonTypes().addAll(proposerBtnType, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
-        grid.setHgap(15); grid.setVgap(15);
+        grid.setHgap(15);
+        grid.setVgap(15);
         grid.setPadding(new Insets(20));
 
         // Nettoyage des valeurs pour les champs de texte
@@ -83,7 +86,7 @@ public class NegociationController {
             if (dialogButton == proposerBtnType) {
                 try {
                     // CORRECTION DU BUG : Remplacer virgule par point
-                    return new double[]{
+                    return new double[] {
                             Double.parseDouble(txtM.getText().replace(",", ".")),
                             Double.parseDouble(txtT.getText().replace(",", ".")),
                             Double.parseDouble(txtD.getText().replace(",", "."))
@@ -104,7 +107,7 @@ public class NegociationController {
                 int d = (int) data[2];
 
                 Negociation n = new Negociation();
-                n.setCredit_id(currentCredit.getId());
+                n.setCredit_id(currentCredit.getId_credit());
                 n.setInvestor_id(2); // ID de test
                 n.setMontant(m);
                 n.setTaux_propose(t);
@@ -119,7 +122,6 @@ public class NegociationController {
             }
         });
     }
-
 
     @FXML
     private void retourDetails(ActionEvent event) {

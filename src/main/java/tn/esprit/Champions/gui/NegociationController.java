@@ -29,10 +29,14 @@ import java.util.stream.Collectors;
 
 public class NegociationController implements Initializable {
 
-    @FXML private VBox containerOffres;
-    @FXML private Label lblTitreCredit;
-    @FXML private Label lblDetailsCredit;
-    @FXML private Label lblNbOffres;
+    @FXML
+    private VBox containerOffres;
+    @FXML
+    private Label lblTitreCredit;
+    @FXML
+    private Label lblDetailsCredit;
+    @FXML
+    private Label lblNbOffres;
 
     private final negociationService ns = new negociationService();
     private final creditService cs = new creditService();
@@ -50,7 +54,8 @@ public class NegociationController implements Initializable {
 
     public void setCreditSelectionne(credit c, String titreProjet) {
         this.creditSelectionne = c;
-        if (lblTitreCredit != null) lblTitreCredit.setText(titreProjet.toUpperCase());
+        if (lblTitreCredit != null)
+            lblTitreCredit.setText(titreProjet.toUpperCase());
         if (lblDetailsCredit != null) {
             lblDetailsCredit.setText("Besoin : " + c.getMontant() + " " + c.getDevise() +
                     " | Taux souhaité : " + c.getTaux() + "%");
@@ -59,15 +64,17 @@ public class NegociationController implements Initializable {
     }
 
     private void chargerOffresRecues() {
-        if (creditSelectionne == null) return;
+        if (creditSelectionne == null)
+            return;
         try {
             containerOffres.getChildren().clear();
             List<Negociation> toutesLesOffres = ns.SelectAll();
             List<Negociation> offresFiltrees = toutesLesOffres.stream()
-                    .filter(n -> n.getCredit_id() == creditSelectionne.getId())
+                    .filter(n -> n.getCredit_id() == creditSelectionne.getId_credit())
                     .collect(Collectors.toList());
 
-            if (lblNbOffres != null) lblNbOffres.setText(offresFiltrees.size() + " OFFRE(S) REÇUE(S)");
+            if (lblNbOffres != null)
+                lblNbOffres.setText(offresFiltrees.size() + " OFFRE(S) REÇUE(S)");
 
             if (offresFiltrees.isEmpty()) {
                 Label msg = new Label("Aucune offre pour le moment.");
@@ -93,7 +100,8 @@ public class NegociationController implements Initializable {
 
         // 1. Ligne Investisseur
         Utilisateur invDetails = recupererUtilisateurSansErreur(n.getInvestor_id());
-        String nomAffichage = (invDetails != null) ? invDetails.getNom() + " " + invDetails.getPrenom() : "ID #" + n.getInvestor_id();
+        String nomAffichage = (invDetails != null) ? invDetails.getNom() + " " + invDetails.getPrenom()
+                : "ID #" + n.getInvestor_id();
         Label lblInv = new Label("INVESTISSEUR : " + nomAffichage);
         lblInv.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
 
@@ -121,11 +129,13 @@ public class NegociationController implements Initializable {
         actions.setAlignment(Pos.CENTER_RIGHT);
 
         Button btnRejeter = new Button("Rejeter");
-        btnRejeter.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 8 15;");
+        btnRejeter.setStyle(
+                "-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 8 15;");
         btnRejeter.setOnAction(e -> handleRejet(n));
 
         Button btnAccepter = new Button("Accepter");
-        btnAccepter.setStyle("-fx-background-color: #22c55e; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 8 15;");
+        btnAccepter.setStyle(
+                "-fx-background-color: #22c55e; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 6; -fx-padding: 8 15;");
         btnAccepter.setOnAction(e -> handleAcceptation(n));
 
         actions.getChildren().addAll(btnRejeter, btnAccepter);
@@ -145,13 +155,12 @@ public class NegociationController implements Initializable {
             if (investisseur != null) {
                 // Déploiement du contrat et envoi d'email
                 scs.deployAndNotify(
-                        creditSelectionne.getId(),
+                        creditSelectionne.getId_credit(),
                         n.getMontant(),
                         lblTitreCredit.getText(),
                         investisseur,
                         n.getTaux_propose(),
-                        creditSelectionne.getDuree()
-                );
+                        creditSelectionne.getDuree());
             } else {
                 new Alert(Alert.AlertType.ERROR, "Erreur : Profil investisseur introuvable.").show();
             }
@@ -179,8 +188,7 @@ public class NegociationController implements Initializable {
                         rs.getString("piece_identite"),
                         rs.getString("user_image"),
                         null,
-                        null
-                );
+                        null);
             }
         } catch (SQLException e) {
             System.err.println("Erreur SQL : " + e.getMessage());

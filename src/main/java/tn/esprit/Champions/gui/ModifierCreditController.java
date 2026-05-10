@@ -17,10 +17,14 @@ import java.util.ResourceBundle;
 
 public class ModifierCreditController implements Initializable {
 
-    @FXML private ComboBox<projet> comboProjet;
-    @FXML private ComboBox<String> comboDevise;
-    @FXML private TextField txtMontant, txtTaux, txtDuree;
-    @FXML private TextArea txtDescription;
+    @FXML
+    private ComboBox<projet> comboProjet;
+    @FXML
+    private ComboBox<String> comboDevise;
+    @FXML
+    private TextField txtMontant, txtTaux, txtDuree;
+    @FXML
+    private TextArea txtDescription;
 
     private final creditService cs = new creditService();
     private final projetService ps = new projetService();
@@ -54,7 +58,7 @@ public class ModifierCreditController implements Initializable {
 
         // Sélectionner le bon projet dans la combo
         for (projet p : comboProjet.getItems()) {
-            if (p.getId_project() == c.getProject_id()) {
+            if (p.getId_projet() == c.getProject_id()) {
                 comboProjet.setValue(p);
                 break;
             }
@@ -64,7 +68,7 @@ public class ModifierCreditController implements Initializable {
     @FXML
     private void modifier() {
         try {
-            selectedCredit.setProject_id(comboProjet.getValue().getId_project());
+            selectedCredit.setProject_id(comboProjet.getValue().getId_projet());
             selectedCredit.setMontant(Double.parseDouble(txtMontant.getText()));
             selectedCredit.setDevise(comboDevise.getValue());
             selectedCredit.setTaux(Double.parseDouble(txtTaux.getText()));
@@ -77,6 +81,7 @@ public class ModifierCreditController implements Initializable {
             e.printStackTrace();
         }
     }
+
     private void configurerComboBoxProjet() {
         // 1. Ce qui s'affiche dans la liste déroulante
         comboProjet.setCellFactory(lv -> new ListCell<projet>() {
@@ -97,7 +102,8 @@ public class ModifierCreditController implements Initializable {
         });
     }
 
-    @FXML private void fermer() {
+    @FXML
+    private void fermer() {
         ((Stage) txtMontant.getScene().getWindow()).close();
     }
 }

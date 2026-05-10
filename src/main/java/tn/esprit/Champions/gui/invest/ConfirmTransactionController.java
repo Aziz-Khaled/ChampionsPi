@@ -22,11 +22,16 @@ import java.util.stream.Collectors;
 
 public class ConfirmTransactionController {
 
-    @FXML private VBox confirmRoot;
-    @FXML private VBox containerRIB;
-    @FXML private Label lblMontant, lblDestinataire, lblSoldeActuel, lblNouveauSolde;
-    @FXML private ComboBox<wallet> comboWalletSelection;
-    @FXML private Button btnConfirmer;
+    @FXML
+    private VBox confirmRoot;
+    @FXML
+    private VBox containerRIB;
+    @FXML
+    private Label lblMontant, lblDestinataire, lblSoldeActuel, lblNouveauSolde;
+    @FXML
+    private ComboBox<wallet> comboWalletSelection;
+    @FXML
+    private Button btnConfirmer;
 
     private credit currentCredit;
     private final WalletService walletService = new WalletService();
@@ -47,8 +52,11 @@ public class ConfirmTransactionController {
         try (PreparedStatement pst = walletService.getCnx().prepareStatement(query)) {
             pst.setString(1, name);
             ResultSet rs = pst.executeQuery();
-            if (rs.next()) return rs.getInt("id_currency");
-        } catch (SQLException e) { e.printStackTrace(); }
+            if (rs.next())
+                return rs.getInt("id_currency");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return 13; // ID TND par défaut
     }
 
@@ -58,8 +66,11 @@ public class ConfirmTransactionController {
             pst.setInt(1, idWallet);
             pst.setInt(2, idCurrency);
             ResultSet rs = pst.executeQuery();
-            if (rs.next()) return rs.getDouble("solde");
-        } catch (SQLException e) { e.printStackTrace(); }
+            if (rs.next())
+                return rs.getDouble("solde");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return 0.0;
     }
 
@@ -72,14 +83,24 @@ public class ConfirmTransactionController {
 
             comboWalletSelection.getItems().setAll(userWallets);
             comboWalletSelection.setConverter(new StringConverter<wallet>() {
-                @Override public String toString(wallet w) { return (w == null) ? "" : "RIB: " + w.getRib(); }
-                @Override public wallet fromString(String string) { return null; }
+                @Override
+                public String toString(wallet w) {
+                    return (w == null) ? "" : "RIB: " + w.getRib();
+                }
+
+                @Override
+                public wallet fromString(String string) {
+                    return null;
+                }
             });
 
             comboWalletSelection.getSelectionModel().selectedItemProperty().addListener((obs, oldW, newW) -> {
-                if (newW != null) updateTransactionUI(newW);
+                if (newW != null)
+                    updateTransactionUI(newW);
             });
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void updateTransactionUI(wallet selectedWallet) {
@@ -109,17 +130,19 @@ public class ConfirmTransactionController {
             containerRIB.setManaged(true);
             btnConfirmer.setText("SÉLECTIONNEZ UN COMPTE");
             isSelectionMode = true;
-            if (confirmRoot.getScene() != null) confirmRoot.getScene().getWindow().sizeToScene();
+            if (confirmRoot.getScene() != null)
+                confirmRoot.getScene().getWindow().sizeToScene();
         } else {
             wallet sourceWallet = comboWalletSelection.getSelectionModel().getSelectedItem();
-            if (sourceWallet == null) return;
+            if (sourceWallet == null)
+                return;
 
             try {
                 int idTND = getCurrencyIdByName("TND");
 
                 // 1. Trouver le projet associé
                 projet p = ps.SelectAll().stream()
-                        .filter(proj -> proj.getId_project() == currentCredit.getProject_id())
+                        .filter(proj -> proj.getId_projet() == currentCredit.getProject_id())
                         .findFirst()
                         .orElse(null);
 
@@ -128,7 +151,8 @@ public class ConfirmTransactionController {
                     return;
                 }
 
-                // 2. Extraire l'ID de l'objet Utilisateur (Vérifiez le nom de la méthode dans Utilisateur.java)
+                // 2. Extraire l'ID de l'objet Utilisateur (Vérifiez le nom de la méthode dans
+                // Utilisateur.java)
                 int idProprietaire = p.getOwner_id().getId_user();
 
                 // 3. Trouver le wallet FIAT du propriétaire
@@ -166,7 +190,8 @@ public class ConfirmTransactionController {
     private void setupAutoRefresh() {
         Timeline autoRefresh = new Timeline(new KeyFrame(Duration.seconds(3), event -> {
             wallet selected = comboWalletSelection.getValue();
-            if (selected != null) updateTransactionUI(selected);
+            if (selected != null)
+                updateTransactionUI(selected);
         }));
         autoRefresh.setCycleCount(Animation.INDEFINITE);
         autoRefresh.play();
@@ -180,8 +205,13 @@ public class ConfirmTransactionController {
         }
     }
 
-    @FXML private void handleAnnuler() { closeWindow(); }
+    @FXML
+    private void handleAnnuler() {
+        closeWindow();
+    }
+
     private void closeWindow() {
-        if (confirmRoot.getScene() != null) ((Stage) confirmRoot.getScene().getWindow()).close();
+        if (confirmRoot.getScene() != null)
+            ((Stage) confirmRoot.getScene().getWindow()).close();
     }
 }

@@ -16,10 +16,14 @@ import java.util.ResourceBundle;
 
 public class AjouterCreditController implements Initializable {
 
-    @FXML private ComboBox<projet> comboProjet;
-    @FXML private ComboBox<String> comboDevise;
-    @FXML private TextField txtMontant, txtTaux, txtDuree;
-    @FXML private TextArea txtDescription;
+    @FXML
+    private ComboBox<projet> comboProjet;
+    @FXML
+    private ComboBox<String> comboDevise;
+    @FXML
+    private TextField txtMontant, txtTaux, txtDuree;
+    @FXML
+    private TextArea txtDescription;
 
     private final projetService ps = new projetService();
     private final creditService cs = new creditService();
@@ -74,13 +78,16 @@ public class AjouterCreditController implements Initializable {
 
     private void appliquerControlesSaisieTempsReel() {
         txtMontant.textProperty().addListener((obs, old, newVal) -> {
-            if (!newVal.matches("\\d*(\\.\\d*)?")) txtMontant.setText(old);
+            if (!newVal.matches("\\d*(\\.\\d*)?"))
+                txtMontant.setText(old);
         });
         txtTaux.textProperty().addListener((obs, old, newVal) -> {
-            if (!newVal.matches("\\d*(\\.\\d*)?")) txtTaux.setText(old);
+            if (!newVal.matches("\\d*(\\.\\d*)?"))
+                txtTaux.setText(old);
         });
         txtDuree.textProperty().addListener((obs, old, newVal) -> {
-            if (!newVal.matches("\\d*")) txtDuree.setText(old);
+            if (!newVal.matches("\\d*"))
+                txtDuree.setText(old);
         });
     }
 
@@ -94,7 +101,7 @@ public class AjouterCreditController implements Initializable {
                 credit nouveauCredit = new credit();
 
                 // On associe les objets (POO)
-                nouveauCredit.setProject_id(pSelected.getId_project());
+                nouveauCredit.setProject_id(pSelected.getId_projet());
                 nouveauCredit.setBorrower_id(this.connectedUser);
 
                 nouveauCredit.setMontant(Double.parseDouble(txtMontant.getText()));
@@ -147,7 +154,8 @@ public class AjouterCreditController implements Initializable {
             erreurs.append("- Le taux d'intérêt est obligatoire.\n");
         } else {
             double t = Double.parseDouble(txtTaux.getText());
-            if (t < 0 || t > 30) erreurs.append("- Le taux doit être entre 0% et 30%.\n");
+            if (t < 0 || t > 30)
+                erreurs.append("- Le taux doit être entre 0% et 30%.\n");
         }
 
         // 4. Vérification Durée
@@ -155,7 +163,8 @@ public class AjouterCreditController implements Initializable {
             erreurs.append("- La durée est obligatoire.\n");
         } else {
             int d = Integer.parseInt(txtDuree.getText());
-            if (d < 1 || d > 360) erreurs.append("- La durée doit être entre 1 et 360 mois.\n");
+            if (d < 1 || d > 360)
+                erreurs.append("- La durée doit être entre 1 et 360 mois.\n");
         }
 
         if (erreurs.length() > 0) {

@@ -46,7 +46,7 @@ public class MainDashboardController {
     private List<Node> initialDashboardNodes;
 
     // CONFIGURATION SÉCURISÉE VIA DOTENV
-    private static final Dotenv dotenv = Dotenv.load();
+    private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
     private final String API_KEY = dotenv.get("NEWS_API_KEY");
     private final String NEWS_URL = "https://newsapi.org/v2/everything?q=fintech+investment&language=fr&sortBy=publishedAt&apiKey=" + API_KEY;
 
@@ -122,6 +122,7 @@ public class MainDashboardController {
             System.err.println("⚠️ NEWS_API_KEY manquante dans le fichier .env");
             return;
         }
+        System.out.println("✅ Clé API NewsAPI chargée : " + API_KEY.substring(0, 5) + "...");
 
         Thread thread = new Thread(() -> {
             try {
@@ -160,6 +161,7 @@ public class MainDashboardController {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
         try (BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
             StringBuilder result = new StringBuilder();
             String line;

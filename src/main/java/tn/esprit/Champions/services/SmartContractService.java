@@ -35,7 +35,7 @@ import java.util.UUID;
 public class SmartContractService {
 
     private final OkHttpClient httpClient = new OkHttpClient();
-    private final Dotenv dotenv = Dotenv.load();
+    private final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
     // Récupération sécurisée depuis le fichier .env
     private final String SMTP_EMAIL = dotenv.get("SMTP_EMAIL");
@@ -113,7 +113,7 @@ public class SmartContractService {
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SMTP_EMAIL, SMTP_PASS.trim());
+                return new PasswordAuthentication(SMTP_EMAIL, SMTP_PASS.replace(" ", ""));
             }
         });
 

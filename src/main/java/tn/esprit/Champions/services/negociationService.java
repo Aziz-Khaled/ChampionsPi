@@ -18,7 +18,11 @@ public class negociationService implements CRUD<Negociation> {
 
     @Override
     public void insertOne(Negociation n) throws SQLException {
-        int userId = UserSession.getLoggedInUser().getId_user();
+        int userId = 1;
+        if (UserSession.getLoggedInUser() != null) {
+            userId = UserSession.getLoggedInUser().getId_user();
+        }
+
         // Ajout du status par défaut 'PROPOSED' lors de l'insertion
         String req = "INSERT INTO `negociation` (`credit_id`, `investor_id`, `montant`, `taux_propose`, `status`) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement pst = cnx.prepareStatement(req)) {

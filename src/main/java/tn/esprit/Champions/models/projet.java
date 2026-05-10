@@ -1,26 +1,26 @@
 package tn.esprit.Champions.models;
 
-import java.sql.Timestamp;
+import java.time.LocalDate;
 
 public class projet {
-    private int id_project;
+    private int id_projet;
     private Utilisateur owner_id; // On conserve exactement ce nom
     private String title;
     private String description;
     private projetStatus status;
     private double target_amount;
-    private Timestamp start_date;
-    private Timestamp end_date;
-    private String imageUrl; // Ajout pour l'IA
+    private LocalDate start_date;
+    private LocalDate end_date;
+    private String image_url; // Modifié de imageUrl à image_url pour correspondre à SQL
     private String secteur;
 
     public projet() {}
 
     // Constructeur complet avec Image
-    public projet(int id_project, Utilisateur owner_id, String title, String description,
-                  projetStatus status, double target_amount, Timestamp start_date,
-                  Timestamp end_date, String imageUrl) {
-        this.id_project = id_project;
+    public projet(int id_projet, Utilisateur owner_id, String title, String description,
+                  projetStatus status, double target_amount, LocalDate start_date,
+                  LocalDate end_date, String image_url) {
+        this.id_projet = id_projet;
         this.owner_id = owner_id;
         this.title = title;
         this.description = description;
@@ -28,19 +28,19 @@ public class projet {
         this.target_amount = target_amount;
         this.start_date = start_date;
         this.end_date = end_date;
-        this.imageUrl = imageUrl;
+        this.image_url = image_url;
         this.secteur = secteur;
 
     }
 
     // --- GETTERS ET SETTERS ---
 
-    public int getId_project() {
-        return id_project;
+    public int getId_projet() {
+        return id_projet;
     }
 
-    public void setId_project(int id_project) {
-        this.id_project = id_project;
+    public void setId_projet(int id_projet) {
+        this.id_projet = id_projet;
     }
 
     public Utilisateur getOwner_id() {
@@ -83,29 +83,29 @@ public class projet {
         this.target_amount = target_amount;
     }
 
-    public Timestamp getStart_date() {
+    public LocalDate getStart_date() {
         return start_date;
     }
 
-    public void setStart_date(Timestamp start_date) {
+    public void setStart_date(LocalDate start_date) {
         this.start_date = start_date;
     }
 
-    public Timestamp getEnd_date() {
+    public LocalDate getEnd_date() {
         return end_date;
     }
 
-    public void setEnd_date(Timestamp end_date) {
+    public void setEnd_date(LocalDate end_date) {
         this.end_date = end_date;
     }
 
     // NOUVEAU : Accesseurs pour l'image
-    public String getImageUrl() {
-        return imageUrl;
+    public String getImage_url() {
+        return image_url;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setImage_url(String image_url) {
+        this.image_url = image_url;
     }
     public String getSecteur() { return secteur; }
     public void setSecteur(String secteur) { this.secteur = secteur; }
@@ -113,12 +113,12 @@ public class projet {
     @Override
     public String toString() {
         return "projet{" +
-                "id_project=" + id_project +
+                "id_projet=" + id_projet +
                 ", owner_id=" + (owner_id != null ? owner_id.getNom() : "null") +
                 ", title='" + title + '\'' +
                 ", secteur='" + secteur + '\'' +
                 ", target_amount=" + target_amount +
-                ", imageUrl='" + imageUrl + '\'' +
+                ", image_url='" + image_url + '\'' +
                 '}';
     }
 }

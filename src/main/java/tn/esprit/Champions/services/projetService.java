@@ -20,25 +20,37 @@ public class projetService implements CRUD<projet> {
     private String detecterSecteur(String titre, String description) {
         String texte = ((titre != null ? titre : "") + " " + (description != null ? description : "")).toLowerCase();
 
-        if (texte.contains("agri") || texte.contains("ferme") || texte.contains("culture")) return "Agriculture";
-        if (texte.contains("tech") || texte.contains("ai") || texte.contains("logiciel") || texte.contains("hub")) return "Technologie";
-        if (texte.contains("solaire") || texte.contains("energie") || texte.contains("electrique")) return "Énergie";
-        if (texte.contains("santé") || texte.contains("medical") || texte.contains("clinique") || texte.contains("diagnostic")) return "Santé";
-        if (texte.contains("coworking") || texte.contains("immobilier") || texte.contains("bureau")) return "Immobilier";
+        if (texte.contains("agri") || texte.contains("ferme") || texte.contains("culture"))
+            return "Agriculture";
+        if (texte.contains("tech") || texte.contains("ai") || texte.contains("logiciel") || texte.contains("hub"))
+            return "Technologie";
+        if (texte.contains("solaire") || texte.contains("energie") || texte.contains("electrique"))
+            return "Énergie";
+        if (texte.contains("santé") || texte.contains("medical") || texte.contains("clinique")
+                || texte.contains("diagnostic"))
+            return "Santé";
+        if (texte.contains("coworking") || texte.contains("immobilier") || texte.contains("bureau"))
+            return "Immobilier";
 
         return "Autre";
     }
 
-
     @Override
     public void insertOne(projet p) throws SQLException {
-        // 1. On vérifie si un secteur est déjà présent (détecté par l'IA dans le contrôleur)
+        // 1. On vérifie si un secteur est déjà présent (détecté par l'IA dans le
+        // contrôleur)
         // S'il est nul ou vide, seulement là on utilise la détection manuelle locale.
         String secteurFinal = (p.getSecteur() != null && !p.getSecteur().isEmpty())
                 ? p.getSecteur()
                 : detecterSecteur(p.getTitle(), p.getDescription());
 
-        int userId = UserSession.getLoggedInUser().getId_user();
+        int userId = 1;
+        if (UserSession.getLoggedInUser() != null) {
+            userId = UserSession.getLoggedInUser().getId_user();
+        } else if (p.getOwner_id() != null) {
+            userId = p.getOwner_id().getId_user();
+        }
+        
         String req = "INSERT INTO `projet` (`owner_id`, `title`, `description`, `status`, `target_amount`, `start_date`, `end_date`, `image_url`, `secteur`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pst = cnx.prepareStatement(req)) {
@@ -47,9 +59,9 @@ public class projetService implements CRUD<projet> {
             pst.setString(3, p.getDescription());
             pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : "ACTIVE");
             pst.setDouble(5, p.getTarget_amount());
-            pst.setTimestamp(6, p.getStart_date());
-            pst.setTimestamp(7, p.getEnd_date());
-            pst.setString(8, p.getImageUrl());
+            pst.setDate(6, p.getStart_date() != null ? java.sql.Date.valueOf(p.getStart_date()) : null);
+            pst.setDate(7, p.getEnd_date() != null ? java.sql.Date.valueOf(p.getEnd_date()) : null);
+            pst.setString(8, p.getImage_url());
             pst.setString(9, secteurFinal); // On utilise la valeur consolidée
 
             pst.executeUpdate();
@@ -69,11 +81,11 @@ public class projetService implements CRUD<projet> {
             pst.setString(3, p.getDescription());
             pst.setString(4, (p.getStatus() != null) ? p.getStatus().name() : null);
             pst.setDouble(5, p.getTarget_amount());
-            pst.setTimestamp(6, p.getStart_date());
-            pst.setTimestamp(7, p.getEnd_date());
-            pst.setString(8, p.getImageUrl());
+            pst.setDate(6, p.getStart_date() != null ? java.sql.Date.valueOf(p.getStart_date()) : null);
+            pst.setDate(7, p.getEnd_date() != null ? java.sql.Date.valueOf(p.getEnd_date()) : null);
+            pst.setString(8, p.getImage_url());
             pst.setString(9, secteurDetecte);
-            pst.setInt(10, p.getId_project());
+            pst.setInt(10, p.getId_projet());
 
             pst.executeUpdate();
         }
@@ -83,7 +95,7 @@ public class projetService implements CRUD<projet> {
     public void deleteOne(projet p) throws SQLException {
         String req = "DELETE FROM `projet` WHERE `id_projet` = ?";
         try (PreparedStatement pst = cnx.prepareStatement(req)) {
-            pst.setInt(1, p.getId_project());
+            pst.setInt(1, p.getId_projet());
             pst.executeUpdate();
         }
     }
@@ -116,7 +128,7 @@ public class projetService implements CRUD<projet> {
     // Méthode interne pour éviter la répétition de code et ne rien oublier
     private projet mapperResultSetToProjet(ResultSet rs) throws SQLException {
         projet p = new projet();
-        p.setId_project(rs.getInt("id_projet"));
+        p.setId_projet(rs.getInt("id_projet"));
 
         Utilisateur owner = new Utilisateur();
         owner.setId_user(rs.getInt("owner_id"));
@@ -131,9 +143,9 @@ public class projetService implements CRUD<projet> {
         }
 
         p.setTarget_amount(rs.getDouble("target_amount"));
-        p.setStart_date(rs.getTimestamp("start_date"));
-        p.setEnd_date(rs.getTimestamp("end_date"));
-        p.setImageUrl(rs.getString("image_url"));
+        p.setStart_date(rs.getDate("start_date") != null ? rs.getDate("start_date").toLocalDate() : null);
+        p.setEnd_date(rs.getDate("end_date") != null ? rs.getDate("end_date").toLocalDate() : null);
+        p.setImage_url(rs.getString("image_url"));
 
         // --- LA LIGNE CRUCIALE POUR TON FILTRAGE ---
         p.setSecteur(rs.getString("secteur"));
@@ -144,7 +156,8 @@ public class projetService implements CRUD<projet> {
     public int getTotalProjets() {
         String query = "SELECT COUNT(*) FROM `projet`";
         try (Statement st = cnx.createStatement(); ResultSet rs = st.executeQuery(query)) {
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next())
+                return rs.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
         }

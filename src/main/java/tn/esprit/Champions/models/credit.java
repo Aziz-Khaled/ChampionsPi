@@ -1,10 +1,10 @@
 package tn.esprit.Champions.models;
 import tn.esprit.Champions.models.Utilisateur;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 public class credit {
-    private int id;
+    private int id_credit;
     private int project_id;
     private Utilisateur borrower_id;
     private Utilisateur investisseur_id;
@@ -15,8 +15,8 @@ public class credit {
     private String description;
     private CreditStatus status;
     private String contrat_id;
-    private Timestamp date_demande;
-    private Timestamp date_contrat;
+    private LocalDateTime date_demande;
+    private LocalDateTime date_contrat;
 
     public credit() {}
 
@@ -24,7 +24,7 @@ public class credit {
     public String toString() {
         return "credit{" +
                 "borrower_id=" + borrower_id +
-                ", id=" + id +
+                ", id_credit=" + id_credit +
                 ", project_id=" + project_id +
                 ", investisseur_id=" + investisseur_id +
                 ", montant=" + montant +
@@ -32,7 +32,7 @@ public class credit {
                 ", taux=" + taux +
                 ", duree=" + duree +
                 ", description='" + description + '\'' +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 ", contrat_id='" + contrat_id + '\'' +
                 ", date_demande=" + date_demande +
                 ", date_contrat=" + date_contrat +
@@ -40,7 +40,7 @@ public class credit {
     }
 
 
-    public credit(Utilisateur borrower_id, String contrat_id, Timestamp date_contrat, Timestamp date_demande, String description, String devise, int duree, int id, Utilisateur investisseur_id, double montant, int project_id, CreditStatus status, double taux) {
+    public credit(Utilisateur borrower_id, String contrat_id, LocalDateTime date_contrat, LocalDateTime date_demande, String description, String devise, int duree, int id_credit, Utilisateur investisseur_id, double montant, int project_id, CreditStatus status, double taux) {
         this.borrower_id = borrower_id;
         this.contrat_id = contrat_id;
         this.date_contrat = date_contrat;
@@ -48,7 +48,7 @@ public class credit {
         this.description = description;
         this.devise = devise;
         this.duree = duree;
-        this.id = id;
+        this.id_credit = id_credit;
         this.investisseur_id = investisseur_id;
         this.montant = montant;
         this.project_id = project_id;
@@ -64,11 +64,11 @@ public class credit {
         return contrat_id;
     }
 
-    public Timestamp getDate_contrat() {
+    public LocalDateTime getDate_contrat() {
         return date_contrat;
     }
 
-    public Timestamp getDate_demande() {
+    public LocalDateTime getDate_demande() {
         return date_demande;
     }
 
@@ -84,8 +84,8 @@ public class credit {
         return duree;
     }
 
-    public int getId() {
-        return id;
+    public int getId_credit() {
+        return id_credit;
     }
 
     public Utilisateur getInvestisseur_id() {
@@ -116,11 +116,11 @@ public class credit {
         this.contrat_id = contrat_id;
     }
 
-    public void setDate_contrat(Timestamp date_contrat) {
+    public void setDate_contrat(LocalDateTime date_contrat) {
         this.date_contrat = date_contrat;
     }
 
-    public void setDate_demande(Timestamp date_demande) {
+    public void setDate_demande(LocalDateTime date_demande) {
         this.date_demande = date_demande;
     }
 
@@ -136,8 +136,8 @@ public class credit {
         this.duree = duree;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setId_credit(int id_credit) {
+        this.id_credit = id_credit;
     }
 
     public void setInvestisseur_id(Utilisateur investisseur_id) {
@@ -159,6 +159,4 @@ public class credit {
     public void setTaux(double taux) {
         this.taux = taux;
     }
-
-
 }
